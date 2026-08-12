@@ -20,14 +20,53 @@ Men's Discipline App
 
 ## Current Objective
 
-Prepare and validate the Apple and iOS prerequisites required before Family Controls implementation begins.
+Prepare and validate the Apple and iOS prerequisites required before Family Controls implementation begins, while allowing business and App Store readiness work to run in parallel without blocking technical prototyping.
+
+## Primary Track — Technical Feasibility
 
 Immediate work:
 
-1. Apple Developer Program status
+1. Apple Developer Program enrollment/status required for real-device capability work
 2. App identifier / Bundle ID strategy
-3. Family Controls entitlement prerequisites
+3. Family Controls development entitlement/capability prerequisites
 4. iOS native development / build requirements
+5. Smallest App Selection → Lock/Shield → Unlock prototype
+6. Camera / pose prototype planning after the first Family Controls prerequisite work is understood
+
+## Parallel Track — Business / Apple Account
+
+This track must not block Phase 03 coding.
+
+1. Apple Developer membership may begin as **Individual** if company setup is still pending
+2. Incorporate the intended company
+3. Obtain D-U-N-S for the company
+4. Prepare company-domain email and public functional website
+5. Convert the same Apple Developer membership from Individual → Organization before public commercial App Store launch
+6. Complete paid commerce setup after the organization identity is stable
+
+Detailed business sequencing is tracked in:
+
+`docs/business/BUSINESS_APPLE_ACCOUNT_PLAN.md`
+
+## Parallel Track — Release Compliance
+
+Start release readiness now rather than waiting until Phase 16.
+
+Current release-readiness work:
+
+1. Track Family Controls Distribution entitlement requirements for the main app and every Screen Time extension actually used
+2. Maintain the App Review risk register
+3. Start data / permission / SDK inventory as technical dependencies are selected
+4. Treat Apple Guideline 4.10—which explicitly names camera and Screen Time APIs—as a P1 packaging/review risk with no explicit safe harbor for this implementation; do not redesign the locked subscription model solely on that basis, and review the final paywall, metadata, value proposition, and Review Notes before submission
+5. Record any release impact when Phase 03 introduces a new capability, permission, native target, SDK, or data flow
+
+Operational source:
+
+`docs/release/IOS_LAUNCH_READINESS.md`
+
+Risk source:
+
+`docs/release/APP_REVIEW_RISK_REGISTER.md`
 
 ## Phase 03 Primary Goal
 
@@ -59,7 +98,10 @@ Validate:
 - Locking selected apps
 - Unlocking selected apps
 - Required Screen Time extensions
+- main-app / extension Bundle ID architecture
 - Distribution entitlement requirements
+- behavior after app relaunch / device reboot where relevant
+- Lock Time state behavior around device/system edge cases
 
 ### 2. Camera / Motion Tracking
 
@@ -71,6 +113,7 @@ Validate:
 - Simple movement state detection
 - Rep counting
 - Reliable basic completion verification
+- realistic failure states such as no person / partial body / poor lighting / denied camera permission
 
 Core principle:
 
@@ -102,16 +145,23 @@ Do not begin:
 - Leaderboards
 - Large exercise library
 
+Business formation, Apple account preparation, and release-readiness documentation are exceptions because they run in parallel and prevent avoidable launch delays.
+
 ## Exit Criteria For Phase 03
 
-Phase 03 is complete only when we have enough evidence that the following flow can work on a real iPhone:
+Phase 03 is complete only when we have enough evidence that:
 
-1. User selects distracting apps
+1. User can select distracting apps on a real iPhone
 2. Selected apps can be restricted
-3. User begins a routine
-4. Camera can detect the user
-5. At least one representative movement can be counted reliably
-6. Routine completion can trigger app unlock
+3. Selected apps can be reliably unshielded/unlocked in the intended core loop
+4. Main app + required Screen Time extension architecture is known
+5. Family Controls Distribution entitlement request strategy is documented and started at the appropriate point
+6. User can begin a routine
+7. Camera can detect the user
+8. At least one representative MVP movement can be counted reliably enough to justify further implementation
+9. Routine completion can trigger app unlock
+10. Major failure states discovered during feasibility work are documented
+11. No known P0 technical assumption is being postponed solely for visual polish
 
 The prototype may be visually rough.
 

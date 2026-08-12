@@ -8,6 +8,19 @@ This is an iOS-first mobile application built with React Native / Expo plus nati
 
 Before making product, UX, architecture, or scope decisions, read the relevant project documents under `docs/`.
 
+Minimum startup reading for meaningful product/technical work:
+
+1. `docs/CURRENT_PHASE.md`
+2. `docs/product/MVP_SCOPE.md`
+3. `docs/DECISIONS.md`
+4. `docs/product/MASTER_PRODUCT_PLAN.md` when broader context is needed
+
+Also read:
+
+- `docs/release/IOS_LAUNCH_READINESS.md` for tasks touching Apple capabilities, permissions, accounts, subscriptions, App Store, privacy, TestFlight, or release behavior;
+- `docs/release/APP_REVIEW_RISK_REGISTER.md` when a task can affect review risk;
+- `docs/business/BUSINESS_APPLE_ACCOUNT_PLAN.md` when a task touches Apple legal entity, banking, tax, company identity, or commercial account setup.
+
 Do not silently change locked product decisions, add new product features, or broaden MVP scope.
 
 Current technical priorities are:
@@ -149,7 +162,31 @@ Prefer diagnosis and narrow fixes over large speculative rewrites.
 
 ---
 
-## 8. Dependencies and configuration
+## 8. Release impact check
+
+Before implementing a change, determine whether it adds or changes any of the following:
+
+- Apple capability / entitlement;
+- native target or extension;
+- permission;
+- SDK or external service;
+- collected / stored / shared data;
+- account, login, deletion, or retention behavior;
+- subscription, trial, paywall, purchase, or restore behavior;
+- App Store metadata / reviewer flow.
+
+If yes:
+
+1. Read the relevant release/risk documentation before implementation.
+2. Explain the release/privacy/compliance impact before making the change.
+3. Update `docs/release/IOS_LAUNCH_READINESS.md` and/or `docs/release/APP_REVIEW_RISK_REGISTER.md` when the change creates a new requirement or materially changes an existing one.
+4. Do not silently redesign locked product behavior to solve a compliance concern; surface the issue and request approval if product behavior would need to change.
+
+Adding an SDK is a privacy/security/release decision, not just a package-management action.
+
+---
+
+## 9. Dependencies and configuration
 
 Do not add, remove, or upgrade major dependencies without explaining:
 
@@ -157,7 +194,8 @@ Do not add, remove, or upgrade major dependencies without explaining:
 - what functionality it provides;
 - whether it contains native code;
 - whether it affects iOS/Android builds;
-- whether it introduces configuration or migration work.
+- whether it introduces configuration or migration work;
+- whether it changes permissions, data collection/sharing, App Privacy labels, Privacy Manifest / Required Reason APIs, or other release obligations.
 
 Do not commit secrets, private keys, certificates, credentials, tokens, or `.env` values.
 
@@ -167,7 +205,7 @@ Do not modify Apple signing, entitlements, EAS configuration, native targets, Po
 
 ---
 
-## 9. Verification
+## 10. Verification
 
 A task is not complete merely because code was written.
 
@@ -186,7 +224,7 @@ If a check could not be run, state that clearly.
 
 ---
 
-## 10. Completion report
+## 11. Completion report
 
 At the end of every meaningful coding task, report:
 
@@ -215,6 +253,9 @@ Do not invent an HTML preview link for a native mobile feature.
 
 **Rollback**
 Give the safest specific way to return to the previous known-good version.
+
+**Release impact**
+State whether the change affected capabilities, permissions, SDK/privacy, account behavior, subscription behavior, or App Store reviewability. If not, say no material release impact was identified.
 
 **Remaining risks**
 Mention unresolved technical risks or unverified behavior.

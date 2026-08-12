@@ -562,7 +562,42 @@ The exact backend provider is not yet locked.
 
 ---
 
-# 25. Brand and UI Direction
+# 25. Release-Critical MVP Requirements
+
+The following items are release requirements when the corresponding functionality exists in the MVP.
+
+They do not change the locked product loop.
+
+They are implemented and validated in the relevant later account and monetization phases. They are not part of the Phase 03 technical-feasibility exit scope.
+
+## Restore Purchases
+
+Because the MVP uses auto-renewable subscriptions, the released app must provide a clear and functional:
+
+**Restore Purchases**
+
+path.
+
+Subscription access must be recoverable after reinstall and on another device where the user's valid App Store purchase can be restored.
+
+Detailed RevenueCat / StoreKit implementation belongs to the monetization phase.
+
+## In-App Account Deletion
+
+If the MVP allows users to create an account, the released app must also provide a clear in-app method to:
+
+**Delete Account**
+
+and initiate deletion/anonymization of associated account data according to the final privacy/data-retention design.
+
+If Sign in with Apple is implemented, account deletion must include the required Apple authorization/token cleanup where applicable.
+
+These are release-compliance requirements and must not be removed merely to simplify implementation.
+
+
+---
+
+# 26. Brand and UI Direction
 
 The existing brand direction remains:
 
@@ -583,7 +618,7 @@ It does not authorize copying another company's visual assets or interface.
 
 ---
 
-# 26. MVP Explicitly Does Not Include
+# 27. MVP Explicitly Does Not Include
 
 Unless a later explicit decision changes this, MVP does not include:
 
@@ -604,7 +639,7 @@ Unless a later explicit decision changes this, MVP does not include:
 
 ---
 
-# 27. Important Details Still To Be Finalized
+# 28. Important Details Still To Be Finalized
 
 The following are not permission for Codex to invent answers.
 
@@ -630,7 +665,7 @@ When one of these details becomes necessary:
 
 ---
 
-# 28. Superseded Earlier Examples
+# 29. Superseded Earlier Examples
 
 The following earlier examples must NOT be treated as current MVP requirements.
 
@@ -695,7 +730,7 @@ Implementation must follow the newer Phase 02 behavior.
 
 ---
 
-# 29. MVP Product Loop
+# 30. MVP Product Loop
 
 The current MVP loop is:
 
@@ -755,7 +790,7 @@ after all seven movements are completed, a new cycle begins.
 
 ---
 
-# 30. MVP Implementation Principle
+# 31. MVP Implementation Principle
 
 When implementing this scope:
 

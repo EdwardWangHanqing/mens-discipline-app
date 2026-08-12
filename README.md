@@ -27,6 +27,27 @@ Read:
 
 Use `docs/product/MASTER_PRODUCT_PLAN.md` when broader product context is required.
 
+## Documentation Map
+
+### Product / Scope
+
+- `docs/product/MVP_SCOPE.md` — authoritative locked MVP behavior
+- `docs/product/MASTER_PRODUCT_PLAN.md` — strategic product context
+
+### Current Work / Decisions
+
+- `docs/CURRENT_PHASE.md` — what should be worked on now
+- `docs/DECISIONS.md` — accepted decisions and clarifications
+
+### iOS Release / App Review
+
+- `docs/release/IOS_LAUNCH_READINESS.md` — operational checklist from prototype through TestFlight / App Store
+- `docs/release/APP_REVIEW_RISK_REGISTER.md` — P0/P1 launch and review risks
+
+### Business / Apple Commercial Setup
+
+- `docs/business/BUSINESS_APPLE_ACCOUNT_PLAN.md` — company, Apple Developer legal entity, D-U-N-S, banking, tax, Small Business Program sequencing
+
 ## Core Product Principles
 
 - Private
@@ -57,6 +78,8 @@ Primary Phase 03 risks:
 3. Camera / pose detection
 4. Rep counting
 5. React Native ↔ native iOS integration
+
+Business setup and release-readiness work run in parallel so they do not become launch-week blockers.
 
 ## Technology
 

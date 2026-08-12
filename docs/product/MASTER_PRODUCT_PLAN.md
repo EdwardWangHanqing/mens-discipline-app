@@ -585,6 +585,16 @@ Preferred positioning centers around:
 
 Exercise presentation and marketing imagery should remain non-explicit.
 
+App Store compliance must be treated as an operational requirement, not merely a launch-week task.
+
+Important operational release requirements are tracked separately in:
+
+- `docs/release/IOS_LAUNCH_READINESS.md`
+- `docs/release/APP_REVIEW_RISK_REGISTER.md`
+- `docs/business/BUSINESS_APPLE_ACCOUNT_PLAN.md`
+
+These files must not redefine locked product scope.
+
 ---
 
 # 23. Android Strategy
@@ -787,6 +797,46 @@ Current high-level roadmap:
 
 Some phases may overlap where appropriate.
 
+The numbered phases remain the primary product/development sequence, but release readiness is no longer deferred to Phase 16.
+
+The following cross-phase workstreams run in parallel when relevant:
+
+1. **Apple capability readiness**
+   - Developer Program membership
+   - Bundle IDs / native targets
+   - Family Controls development and Distribution entitlements
+   - signing / capability requirements
+
+2. **Business and commerce readiness**
+   - company formation
+   - D-U-N-S
+   - Individual → Organization conversion
+   - Paid Apps Agreement
+   - tax / banking
+   - App Store Small Business Program
+   - RevenueCat production readiness
+
+3. **Privacy and legal readiness**
+   - data inventory
+   - permissions
+   - App Privacy labels
+   - Privacy Manifest / Required Reason APIs
+   - third-party SDK review
+   - Privacy Policy
+   - Terms / EULA
+   - support contact
+   - account deletion
+   - export compliance
+   - territory-specific requirements where applicable
+
+4. **Reviewability**
+   - reviewer test path
+   - Review Notes
+   - demo credentials where required
+   - subscription Sandbox/TestFlight testing
+   - metadata / screenshots / age rating
+   - no placeholders or inaccessible paid functionality
+
 ---
 
 # 29. Current Phase
@@ -806,7 +856,44 @@ Visual polish is secondary during this phase.
 
 ---
 
-# 30. Product Governance Rule
+# 30. Cross-Phase Release Readiness
+
+A feature is not considered fully release-ready merely because it works locally.
+
+For any material feature, the project should know and test as applicable:
+
+1. technical behavior;
+2. Apple capability / entitlement requirements;
+3. permission and privacy impact;
+4. commerce / subscription impact;
+5. reviewer testability;
+6. failure and recovery behavior.
+
+At the end of every future phase, perform a **Release Impact Check**:
+
+1. Did this phase add or change an Apple entitlement or capability?
+2. Did it add or change a permission, data type, SDK, or external service?
+3. Did it add or change account, login, deletion, or data-retention behavior?
+4. Did it add or change subscription, paywall, trial, restore, or paid value?
+5. Did it affect App Store metadata, age rating, legal copy, screenshots, or reviewer instructions?
+
+If the answer to any item is yes, update the release checklist and/or risk register during the same phase rather than postponing the issue until launch.
+
+### Built-in Apple capability packaging note
+
+Apple review rules should be interpreted carefully and in context.
+
+Guideline 4.10 explicitly names the camera and Screen Time APIs. Existing approved paid apps suggest that these capabilities can be integrated into paid products in practice, but Apple provides no explicit safe harbor for this product's specific implementation or monetization structure.
+
+This therefore remains a P1 App Review and packaging risk. The final paywall, metadata, value proposition, and Review Notes must be reviewed before submission and should describe the complete Men's Discipline training/accountability experience without claiming that this packaging guarantees approval.
+
+Do not change the locked subscription model solely because a paid feature uses Screen Time or camera APIs.
+
+If App Review raises a concrete concern, address the specific review issue and record any resulting product decision explicitly.
+
+---
+
+# 31. Product Governance Rule
 
 This document provides strategic context.
 

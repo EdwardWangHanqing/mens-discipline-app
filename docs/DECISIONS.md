@@ -189,3 +189,151 @@ The final Phase 02 MVP Scope defines the current daily training structure:
 - exact repetition targets will be determined later on a movement-by-movement basis.
 
 Do not silently revive superseded requirements.
+
+---
+
+## DEC-010 — Apple Developer Membership May Start as Individual
+
+**Status:** Proposed — Pending Owner Approval
+
+Technical development may begin under an **Individual Apple Developer Program** membership if company formation is still in progress.
+
+If the intended App Store seller is the future company, the preferred path is to convert the same membership to an **Organization** before public commercial App Store launch.
+
+Company formation, D-U-N-S, tax, banking, and other commercial setup should run in parallel and must not unnecessarily block Phase 03 technical feasibility work.
+
+### Reason
+
+Family Controls and other Apple-specific technical validation should begin early, while commercial legal-entity setup can proceed separately.
+
+---
+
+## DEC-011 — Commercial Apple Setup Follows Organization Conversion
+
+**Status:** Proposed — Pending Owner Approval
+
+Unless there is a specific development need to do otherwise, the preferred commercial sequencing is:
+
+Organization conversion
+
+→ Paid Apps Agreement
+
+→ required tax information
+
+→ company banking
+
+→ App Store Small Business Program
+
+→ paid public launch.
+
+Do not create duplicate commercial setup under a temporary individual legal identity merely for speed.
+
+### Reason
+
+The intended company should own the commercial seller relationship and receive App Store proceeds.
+
+---
+
+## DEC-012 — App Store Release Readiness Is Cross-Phase Work
+
+**Status:** Proposed — Pending Owner Approval
+
+App Store readiness is not deferred until Phase 16.
+
+Whenever a phase introduces or changes any of the following:
+
+- Apple capability / entitlement;
+- native target or extension;
+- permission;
+- SDK or external service;
+- collected/stored/shared data;
+- account/login/deletion behavior;
+- subscription/paywall/trial behavior;
+- App Store metadata or reviewer flow;
+
+the relevant release checklist and risk register must be reviewed and updated during the same phase.
+
+### Principle
+
+A feature is not release-ready merely because it works locally.
+
+---
+
+## DEC-013 — Account Creation Requires In-App Account Deletion for Release
+
+**Status:** Proposed — Pending Owner Approval
+
+The Phase 02 decision remains:
+
+the user's first full product experience should not be blocked by forced account creation.
+
+If the released MVP supports account creation, it must also support a clear in-app **Delete Account** flow.
+
+If Sign in with Apple is used, required authorization/token revocation must be handled during deletion where applicable.
+
+This is a release requirement and does not authorize changing the Phase 02 login timing.
+
+---
+
+## DEC-014 — Restore Purchases Is an MVP Release Requirement
+
+**Status:** Proposed — Pending Owner Approval
+
+Because the MVP uses auto-renewable subscriptions, the released app must provide a clear and functional **Restore Purchases** path.
+
+Local StoreKit success alone is not sufficient evidence that subscription implementation is release-ready.
+
+Before App Store submission, the purchase / entitlement flow must be validated through real Sandbox/TestFlight scenarios including restoration and relevant expired/reinstall recovery paths.
+
+---
+
+## DEC-015 — SDK Changes Trigger Privacy and Release Review
+
+**Status:** Proposed — Pending Owner Approval
+
+Adding or changing a third-party SDK is not treated as only a coding dependency change.
+
+Before shipping an SDK change, review as applicable:
+
+- data collected / shared;
+- permission impact;
+- App Privacy labels;
+- `PrivacyInfo.xcprivacy`;
+- Required Reason APIs;
+- third-party privacy manifest/signature requirements;
+- secrets / credentials;
+- Terms / Privacy Policy impact.
+
+Codex must not silently add analytics, attribution, authentication, advertising, crash-reporting, or similar SDKs without explaining these impacts.
+
+---
+
+## DEC-016 — Guideline 4.10 Does Not By Itself Change the Locked Subscription Model
+
+**Status:** Proposed — Pending Owner Approval
+
+Apple Guideline 4.10 explicitly names the camera and Screen Time APIs in its restriction on monetizing built-in hardware, operating-system capabilities, and Apple services or technologies.
+
+Existing approved paid apps integrating these capabilities suggest that they can be part of a paid product in practice. Apple does not provide an explicit safe harbor for the Men's Discipline implementation or monetization structure, so this remains an App Review and packaging risk.
+
+Do not redesign the locked 3-day-trial + subscription model or create a free Screen Time/camera tier solely on the basis of Guideline 4.10.
+
+Before submission, review the final paywall, metadata, value proposition, and Review Notes specifically for this risk. Do not state or imply that presenting the subscription as a complete proprietary experience guarantees approval.
+
+If App Review raises a concrete concern, address the specific review issue and record any resulting product decision explicitly.
+
+---
+
+## DEC-017 — Reviewer Testability Is a Release Gate
+
+**Status:** Proposed — Pending Owner Approval
+
+Before App Store submission:
+
+- important paid functionality must be reachable and testable;
+- Family Controls setup must be reproducible;
+- Review Notes must explain non-obvious setup and the core flow;
+- demo credentials must be supplied if required;
+- subscription purchase/restore behavior must work in the review environment.
+
+A feature that the reviewer cannot reasonably reach or reproduce is not considered release-ready.
