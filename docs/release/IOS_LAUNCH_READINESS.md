@@ -53,6 +53,12 @@ Before finalizing App Store copy and paywall packaging:
 
 ## 1.4 Camera / rep-counting validation gates
 
+### Phase 03 offline foundation
+- [x] Define a movement-agnostic derived pose contract with explicit per-joint availability and confidence.
+- [x] Establish an Apple Vision adapter that accepts local files and returns typed complete/partial/no-pose/error outcomes.
+- [x] Confirm the offline foundation adds no camera permission, live capture, networking, raw-image return, or image/video persistence.
+- [ ] Validate normalized pose output and partial-body observations from representative human input on a physical iPhone.
+
 ### Phase 03 Technical Feasibility exit
 - [ ] Validate at least **one representative MVP movement** on a real iPhone.
 - [ ] Prove camera/pose detection → movement state → rep count → completion can work reliably enough to justify continued development.

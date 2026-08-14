@@ -40,7 +40,10 @@ Establish the smallest reproducible Family Controls native foundation before app
 - The Technical Baseline screen is only a temporary engineering test surface; it is not production UI.
 - FamilyActivityPicker, ManagedSettings shielding, Screen Time extensions, App Groups, and scheduling have not started.
 - The accepted motion-tracking direction is tolerant automatic rep counting with a non-blocking assisted-completion path; tracking failure must not prevent routine completion or app unlock.
-- Movement-agnostic pose architecture and offline/local Vision feasibility can proceed on `spike/vision-pose-foundation` while Family Controls real-device work waits for Apple Developer Program readiness.
+- Movement-agnostic pose architecture and offline/local Vision Checkpoint A is implemented on `spike/vision-pose-foundation` while Family Controls real-device work waits for Apple Developer Program readiness.
+- Checkpoint A adds a local Apple Vision adapter, a 19-joint normalized TypeScript contract, explicit unavailable-joint representation, and typed complete/partial/no-pose/input/processing outcomes.
+- The adapter accepts local image files only; it adds no camera permission, live capture, networking, raw-image return, persistence, movement rules, repetition counting, or production training UI.
+- The iOS Simulator loads the module and returns the expected typed `invalidInput / fileNotFound` bridge result. A valid local PNG reached Vision but returned typed `processingFailed / visionError` in the Simulator, so successful pose inference and partial-body behavior are not yet claimed.
 
 ## Primary Track — Technical Feasibility
 
@@ -52,10 +55,10 @@ Immediate work:
 4. Add FamilyActivityPicker only after this foundation checkpoint is accepted
 5. Validate CNG and native integration against the required Family Controls / Screen Time extension architecture
 6. Build the smallest App Selection → Lock/Shield → Unlock prototype
-7. Establish the movement-agnostic pose data contract and offline/local Vision foundation without adding production camera UI
+7. Review and accept the implemented movement-agnostic pose data contract and offline/local Vision Checkpoint A
 8. Validate live camera framing, latency, partial-body behavior, tolerant counting, and assisted completion on a physical iPhone
 
-The Family Controls Checkpoint 1 implementation is complete, accepted, and merged; real-device authorization validation remains pending. App selection, shielding, extensions, App Groups, and scheduling remain future tasks.
+The Family Controls Checkpoint 1 implementation is complete, accepted, and merged; real-device authorization validation remains pending. Pose Checkpoint A is implemented locally and awaiting owner review. App selection, shielding, extensions, App Groups, scheduling, live camera, and movement counting remain future tasks.
 
 ## Parallel Track — Business / Apple Account
 

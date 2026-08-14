@@ -1,9 +1,15 @@
-import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import FamilyControls, {
   type FamilyControlsAuthorizationStatus,
 } from '../../modules/family-controls';
+import VisionPose, {
+  type PoseDetectionResult,
+} from '../../modules/vision-pose';
+
+const missingDiagnosticImagePath =
+  '/expo-vision-pose-diagnostic/missing-image.png';
 
 function formatError(error: unknown): string {
   if (error instanceof Error) {
@@ -35,6 +41,9 @@ function readAuthorizationDiagnostic(): AuthorizationDiagnostic {
 export default function HomeScreen() {
   const [diagnostic, setDiagnostic] = useState(readAuthorizationDiagnostic);
   const [isRequesting, setIsRequesting] = useState(false);
+  const [poseResult, setPoseResult] = useState<PoseDetectionResult | null>(null);
+  const [poseErrorMessage, setPoseErrorMessage] = useState<string | null>(null);
+  const [isRunningPoseDiagnostic, setIsRunningPoseDiagnostic] = useState(false);
 
   const refreshAuthorizationStatus = useCallback(() => {
     setDiagnostic(readAuthorizationDiagnostic());
@@ -57,8 +66,32 @@ export default function HomeScreen() {
     }
   }, []);
 
+  const runPoseBridgeDiagnostic = useCallback(async () => {
+    setIsRunningPoseDiagnostic(true);
+    setPoseResult(null);
+    setPoseErrorMessage(null);
+
+    try {
+      const result = await VisionPose.detectPoseFromImageFile(
+        missingDiagnosticImagePath
+      );
+      setPoseResult(result);
+    } catch (error) {
+      setPoseErrorMessage(formatError(error));
+    } finally {
+      setIsRunningPoseDiagnostic(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void runPoseBridgeDiagnostic();
+  }, [runPoseBridgeDiagnostic]);
+
   return (
-    <View style={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      style={styles.screen}
+    >
       <Text style={styles.eyebrow}>{"MEN'S DISCIPLINE"}</Text>
       <Text style={styles.title}>Technical baseline</Text>
       <Text style={styles.body}>
@@ -95,16 +128,55 @@ export default function HomeScreen() {
           </Text>
         ) : null}
       </View>
-    </View>
+
+      <View style={styles.diagnosticSection}>
+        <Text style={styles.diagnosticTitle}>Vision pose diagnostic</Text>
+        <Text style={styles.status}>
+          Status: {poseResult?.status ?? 'notRun'}
+        </Text>
+        {poseResult?.errorCode ? (
+          <Text style={styles.status}>Code: {poseResult.errorCode}</Text>
+        ) : null}
+
+        <Pressable
+          accessibilityRole="button"
+          disabled={isRunningPoseDiagnostic}
+          onPress={runPoseBridgeDiagnostic}
+          style={[
+            styles.button,
+            isRunningPoseDiagnostic && styles.buttonDisabled,
+          ]}
+        >
+          <Text style={styles.buttonText}>
+            {isRunningPoseDiagnostic ? 'Running…' : 'Test native bridge'}
+          </Text>
+        </Pressable>
+
+        <Text style={styles.caption}>
+          Uses an intentionally missing local file. Expected: invalidInput /
+          fileNotFound.
+        </Text>
+
+        {poseResult?.message || poseErrorMessage ? (
+          <Text selectable style={styles.error}>
+            {poseResult?.message ?? poseErrorMessage}
+          </Text>
+        ) : null}
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 32,
+  screen: {
     backgroundColor: '#171817',
+  },
+  container: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingBottom: 48,
+    paddingHorizontal: 32,
+    paddingTop: 48,
   },
   eyebrow: {
     marginBottom: 12,
@@ -136,6 +208,11 @@ const styles = StyleSheet.create({
   status: {
     color: '#A8A8A2',
     fontSize: 16,
+  },
+  caption: {
+    color: '#7F807B',
+    fontSize: 13,
+    lineHeight: 18,
   },
   actions: {
     gap: 10,

@@ -1,6 +1,6 @@
 # Pose & Motion Tracking Feasibility Plan
 
-**Status:** Active Phase 03 spike plan
+**Status:** Checkpoint A implemented locally; Checkpoints B–C require physical-iPhone evidence
 
 **Branch:** `spike/vision-pose-foundation`
 
@@ -124,14 +124,25 @@ The representative movement, exact repetition target, confidence thresholds, rec
 - coach animations or final audio;
 - final assisted-completion UX polish.
 
-## 8. Immediate Next Engineering Task
+## 8. Checkpoint A Implementation Status
 
-After this plan is accepted and committed, implement Checkpoint A only:
+Checkpoint A is implemented on `spike/vision-pose-foundation`:
 
-1. define the normalized pose observation TypeScript types;
-2. scaffold the Apple-only local Vision module;
-3. add a local-input diagnostic method with typed results;
-4. validate compilation, module loading, privacy boundaries, and missing-joint handling;
-5. stop before camera permission, live capture, or movement-specific counting.
+- the TypeScript contract defines 19 canonical joints, normalized coordinates, per-joint confidence, timestamp, orientation, mirroring, coordinate origin, and explicit unavailable joints;
+- the application-local `ExpoVisionPose` module wraps Apple's on-device Vision framework;
+- the native API accepts local image files only and rejects network/non-file URIs;
+- processing runs through an Expo asynchronous native function rather than the main UI queue;
+- JavaScript receives only derived pose observations and typed status/error metadata;
+- typed results distinguish complete pose, partial pose, no pose, invalid input, and Vision processing failure;
+- the Technical Baseline screen includes an engineering-only bridge diagnostic;
+- no camera permission, live capture, image picker, networking, raw-image return, or persistence was added.
 
-Checkpoint B and Checkpoint C remain explicitly dependent on physical-iPhone evidence.
+Local validation proved that the module compiles, autolinks, loads in the iOS Simulator, and returns `invalidInput / fileNotFound` across the native bridge for a missing local file. A valid local PNG reached the Vision request and returned the typed `processingFailed / visionError` result in the iOS 26.5 Simulator. Therefore, Checkpoint A proves the adapter and error/data boundary but does **not** claim successful Simulator pose inference. A partial-pose result and normalized joint output still require representative human input and physical-iPhone validation.
+
+## 9. Immediate Next Engineering Task
+
+1. Review and accept the Checkpoint A implementation as an architecture checkpoint.
+2. Keep Checkpoint A isolated on `spike/vision-pose-foundation` until owner acceptance.
+3. When Apple Developer Program enrollment and a physical iPhone are ready, perform Checkpoint B before implementing production live-camera behavior.
+4. Select one representative MVP movement before Checkpoint C movement logic.
+5. Stop before camera permission, live capture, movement-specific counting, or assisted-completion UI until the applicable checkpoint and release review are ready.
