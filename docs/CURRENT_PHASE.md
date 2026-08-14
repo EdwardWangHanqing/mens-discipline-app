@@ -39,6 +39,8 @@ Establish the smallest reproducible Family Controls native foundation before app
 - The iOS Simulator can load the bridge and return `notDetermined`, but its system log reports that the `FamilyControlsAgent` service is unavailable; this is not evidence of real-device authorization behavior.
 - The Technical Baseline screen is only a temporary engineering test surface; it is not production UI.
 - FamilyActivityPicker, ManagedSettings shielding, Screen Time extensions, App Groups, and scheduling have not started.
+- The accepted motion-tracking direction is tolerant automatic rep counting with a non-blocking assisted-completion path; tracking failure must not prevent routine completion or app unlock.
+- Movement-agnostic pose architecture and offline/local Vision feasibility can proceed on `spike/vision-pose-foundation` while Family Controls real-device work waits for Apple Developer Program readiness.
 
 ## Primary Track — Technical Feasibility
 
@@ -50,9 +52,10 @@ Immediate work:
 4. Add FamilyActivityPicker only after this foundation checkpoint is accepted
 5. Validate CNG and native integration against the required Family Controls / Screen Time extension architecture
 6. Build the smallest App Selection → Lock/Shield → Unlock prototype
-7. Plan the camera / pose prototype after the first Family Controls feasibility work is understood
+7. Establish the movement-agnostic pose data contract and offline/local Vision foundation without adding production camera UI
+8. Validate live camera framing, latency, partial-body behavior, tolerant counting, and assisted completion on a physical iPhone
 
-Family Controls authorization foundation work is in progress. App selection, shielding, extensions, App Groups, and scheduling remain future tasks.
+The Family Controls Checkpoint 1 implementation is complete, accepted, and merged; real-device authorization validation remains pending. App selection, shielding, extensions, App Groups, and scheduling remain future tasks.
 
 ## Parallel Track — Business / Apple Account
 

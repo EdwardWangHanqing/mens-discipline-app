@@ -375,3 +375,32 @@ For the current architecture, use Expo Continuous Native Generation (CNG) as the
 ### Reason
 
 CNG keeps the official application baseline reproducible while native iOS feasibility is still being established. Family Controls may require native targets or extension configuration that changes the final React Native ↔ native iOS boundary, so the current strategy remains subject to evidence from the Phase 03 technical spike.
+
+---
+
+## DEC-020 — Tolerant Automatic Rep Counting With Non-Blocking Assisted Completion
+
+**Status:** Accepted
+
+Automatic repetition counting remains the preferred MVP training experience, but camera tracking must not become a single point of failure that prevents an honest user from completing the routine or unlocking selected apps.
+
+The motion system must follow these rules:
+
+- require only the movement-specific body regions and joints needed for broad verification rather than requiring a perfectly aligned full body by default;
+- use tolerant movement states, temporal smoothing, and confidence handling rather than strict pose matching or form scoring;
+- preserve already-counted repetitions when tracking is interrupted or temporarily loses required joints;
+- provide calm, minimal framing guidance instead of repeated corrective warnings;
+- offer an assisted-completion path when reliable automatic tracking cannot be recovered;
+- allow assisted completion to satisfy the daily routine and unlock selected apps so a technical failure cannot trap the user.
+
+Assisted completion is a failure-recovery path, not a frictionless replacement for the normal training flow. Exact activation thresholds, recovery timing, confirmation friction, and how assisted sessions appear in streak/progress detail remain pending real-device feasibility and UX validation.
+
+This decision does not remove camera-assisted verification or automatic rep counting from the normal MVP path. It clarifies how the product behaves when tracking conditions are not reliable.
+
+### Reason
+
+In this product, a false negative has unusually high cost because training completion controls access to selected apps. A user who performed the routine must not be punished because of room size, camera placement, partial-body visibility, lighting, clothing, or temporary tracking loss.
+
+### Principle
+
+**Verify when possible. Recover when necessary. Never let tracking failure become a lockout.**

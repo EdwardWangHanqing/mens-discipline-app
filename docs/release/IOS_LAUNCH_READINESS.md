@@ -56,6 +56,9 @@ Before finalizing App Store copy and paywall packaging:
 ### Phase 03 Technical Feasibility exit
 - [ ] Validate at least **one representative MVP movement** on a real iPhone.
 - [ ] Prove camera/pose detection → movement state → rep count → completion can work reliably enough to justify continued development.
+- [ ] Verify the representative movement does not require perfect full-body alignment when a smaller movement-specific joint set is sufficient.
+- [ ] Verify temporary tracking loss preserves valid rep progress and does not reset the set.
+- [ ] Verify repeated tracking failure can enter assisted completion and cannot leave an honest user unable to complete or unlock.
 - [ ] Confirm no raw training video is stored or uploaded in MVP.
 
 ### Phase 09 Motion Tracking / before Beta
@@ -65,6 +68,7 @@ Before finalizing App Store copy and paywall packaging:
 
 ### Before public release
 - [ ] Test all 7 movements under reasonable real-world failure conditions, including camera distance, partial-body visibility, lighting, interruption, and denied/revoked camera permission.
+- [ ] Test assisted-completion entry, recovery, completion, unlock, and progress behavior for every movement where automatic tracking can fail.
 
 ---
 
@@ -283,6 +287,8 @@ Each permission must have a specific user-facing reason and a denial path.
 - [ ] Routine deck/cycle does not repeat movement before cycle reset.
 - [ ] Set/rest logic works.
 - [ ] Camera counts expected reps and handles failure states.
+- [ ] Temporary pose-tracking loss preserves completed reps and does not reset the current set.
+- [ ] Unrecoverable tracking failure offers assisted completion and still allows the daily requirement to complete and selected apps to unlock.
 
 ## System edge cases
 - [ ] Permission denied.

@@ -4,7 +4,7 @@
 
 **Repository:** `/Users/hanqingwang/Developer/mens-discipline-app`
 
-**Current branch:** `main`
+**Current branch:** `spike/vision-pose-foundation`
 
 ## Purpose
 
@@ -147,6 +147,18 @@ This mapping does **not** enable or request the App & Website Usage entitlement.
 - not yet verified: paid Apple membership/provisioning, real-device authorization, signing entitlement behavior, and physical-iPhone Family Controls runtime behavior;
 - not started: FamilyActivityPicker, ManagedSettings shielding, Screen Time extensions, App Groups, and scheduling.
 
+### Accepted Motion Reliability Direction
+
+The owner accepted tolerant automatic rep counting with a non-blocking assisted-completion path.
+
+- Automatic counting remains the normal path.
+- Movement-specific minimum joints should replace perfect full-body framing where technically sufficient.
+- Temporary tracking loss must preserve valid repetition progress.
+- If reliable tracking cannot be recovered, assisted completion must allow the routine to complete and selected apps to unlock.
+- Exact thresholds, recovery timing, confirmation friction, and progress presentation remain pending real-device validation.
+
+The active plan is `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md`. Checkpoint A intentionally stops before camera permission, live capture, movement-specific counting, or production UI.
+
 ## Verification Evidence
 
 The following checks were re-run successfully after the final threading correction:
@@ -169,7 +181,7 @@ The Simulator system log still contains the known `UIScene` lifecycle warning, t
 
 Branch:
 
-`main`
+`spike/vision-pose-foundation`
 
 The accepted Checkpoint 1 implementation commit is:
 
@@ -177,7 +189,9 @@ The accepted Checkpoint 1 implementation commit is:
 
 The checkpoint and this continuity update have been fast-forwarded into `main` and pushed to `origin/main`. The source branch remains available as `spike/family-controls-foundation`; it has not been deleted.
 
-Checkpoint files:
+The current pose-foundation branch starts from `main` commit `9f433ff0a28913e7de1c288b6563428a24a761fe`. Its first documentation checkpoint records DEC-020, the locked MVP clarification, release/risk updates, and the movement-agnostic feasibility plan. The branch is pushed to `origin/spike/vision-pose-foundation` after that checkpoint is committed.
+
+Family Controls Checkpoint 1 files:
 
 - `AGENTS.md`
 - `app.json`
@@ -194,6 +208,16 @@ Checkpoint files:
 - `modules/family-controls/src/ExpoFamilyControlsModule.web.ts`
 
 `package.json` and `package-lock.json` have not changed.
+
+Pose-foundation documentation checkpoint files:
+
+- `docs/CURRENT_PHASE.md`
+- `docs/DECISIONS.md`
+- `docs/PROJECT_HANDOFF.md`
+- `docs/product/MVP_SCOPE.md`
+- `docs/release/APP_REVIEW_RISK_REGISTER.md`
+- `docs/release/IOS_LAUNCH_READINESS.md`
+- `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md`
 
 ## Explicitly Not Implemented
 
@@ -224,8 +248,9 @@ Real-device and distribution viability remain gated by Apple Developer Program m
 1. Apple Developer Program membership is not ready; the owner will report when enrollment is complete.
 2. Validate Family Controls authorization on a physical iPhone when membership, provisioning, signing, and the device are ready.
 3. Do not claim FamilyActivityPicker, shielding, extensions, App Groups, or scheduling feasibility until the relevant real-device path can actually be verified.
-4. While the Apple account gate remains, the recommended independent Phase 03 work is a separately scoped on-device pose / motion-tracking feasibility spike or release/business-readiness documentation.
-5. Create a new logical branch before beginning either engineering track; do not implement normal work directly on `main`.
+4. The owner accepted tolerant automatic rep counting with non-blocking assisted completion; tracking failure must not prevent routine completion or app unlock.
+5. Continue Checkpoint A from `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md`: movement-agnostic pose types, Apple Vision adapter boundary, and local-input diagnostics only.
+6. Stop before camera permission, live capture, movement-specific counting, or assisted-completion UI until the applicable checkpoint and real-device validation are ready.
 
 Do not fill the Apple gate with production UI or lower-priority product work. Technical feasibility remains the priority.
 
@@ -253,4 +278,4 @@ Routine work inside this repository is already writable. Do not weaken security 
 
 Use the following instruction to resume work in a new conversation:
 
-> Open `/Users/hanqingwang/Developer/mens-discipline-app`. Read `AGENTS.md` and `docs/PROJECT_HANDOFF.md` completely, then read the required project and release documents referenced by them. Confirm that `main` contains the accepted Family Controls Checkpoint 1 and preserve a clean working tree. Apple Developer Program membership is not ready, so real-device Family Controls authorization and later app-selection/shielding work remain gated. If continuing independent Phase 03 work, create a new branch and scope the on-device pose / motion-tracking feasibility spike before implementation. Do not use Superpowers. Explain important decisions and final status in Chinese.
+> Open `/Users/hanqingwang/Developer/mens-discipline-app`. Read `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, and `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md` completely, then read the required product and release documents referenced by them. Confirm the `spike/vision-pose-foundation` branch and preserve existing work. The accepted direction is tolerant automatic rep counting with assisted completion that prevents technical lockout. Continue only Checkpoint A: movement-agnostic pose types, Apple Vision adapter boundary, and local-input diagnostics. Do not add camera permission, live capture, movement-specific counting, or production UI yet. Apple Developer Program and physical-iPhone gates remain. Do not use Superpowers. Explain important decisions and final status in Chinese.

@@ -249,6 +249,25 @@ The MVP should not provide:
 
 ---
 
+## Tracking Reliability and Assisted Completion
+
+Automatic repetition counting is the preferred normal path, but the MVP must not require a perfectly aligned full body when a movement can be broadly verified from a smaller movement-specific set of joints or body regions.
+
+The system must:
+
+- tolerate reasonable camera placement and partial-body visibility where the movement-specific evidence remains sufficient;
+- preserve valid repetition progress through temporary tracking interruptions;
+- avoid resetting a set because tracking confidence drops;
+- use calm, limited framing guidance;
+- offer assisted completion when reliable automatic tracking cannot be recovered;
+- allow assisted completion to satisfy the daily requirement and unlock selected apps.
+
+Assisted completion is failure recovery rather than an always-prominent bypass. Exact thresholds, timing, confirmation friction, and progress presentation require real-device validation before they are locked.
+
+This recovery behavior does not authorize detailed form scoring and does not remove automatic rep counting from the normal MVP flow.
+
+---
+
 # 9. Camera Privacy
 
 Camera processing should remain on device whenever technically practical.
@@ -658,6 +677,7 @@ They are intentionally pending later decisions or technical validation:
 - final navigation structure;
 - exact implementation of cross-device sync;
 - exact motion-detection thresholds.
+- exact assisted-completion trigger, recovery timing, confirmation friction, and progress presentation.
 
 When one of these details becomes necessary:
 
@@ -762,7 +782,11 @@ approximately five sets
 
 →
 
-camera verifies movement and counts reps
+camera broadly verifies movement and counts reps when tracking is reliable
+
+→
+
+if reliable tracking cannot be recovered, assisted completion prevents technical lockout
 
 →
 

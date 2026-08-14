@@ -1,6 +1,6 @@
 # Men's Discipline App — App Review & Launch Risk Register
 
-**Last updated:** 2026-08-11
+**Last updated:** 2026-08-13
 
 **Purpose:** Make review/compliance risks explicit early instead of discovering them at submission. This register tracks risk; it does not redefine locked MVP behavior.
 
@@ -30,6 +30,7 @@
 | R-22 | Secrets/API keys committed to Git | P0 | Development | `.gitignore`, environment/secret management, rotate exposed credentials immediately, least-privilege keys. |
 | R-23 | Lock schedule breaks around midnight, timezone, DST, app termination or reboot | P0 | Phase 03–15 | Explicit state machine + persistence; system-edge test suite. |
 | R-24 | Subscription/account state diverges across reinstall/device/account | P1 | Phase 13–15 | RevenueCat entitlement source of truth + restore path + identity mapping strategy. |
+| R-25 | Strict framing or pose false negatives prevent an honest user from completing the routine or unlocking selected apps | P0 | Phase 03 + beta | Movement-specific minimum joints; tolerant state machine; preserve counted reps; calm framing recovery; assisted completion that can satisfy the routine and unlock; real-device tests across room size, crop, lighting, clothing, and interruption. |
 
 ## Exit rule
 No public App Store submission while any P0 risk is unresolved or lacks a documented mitigation/test result.
