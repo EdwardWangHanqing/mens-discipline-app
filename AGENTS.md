@@ -10,10 +10,13 @@ Before making product, UX, architecture, or scope decisions, read the relevant p
 
 Minimum startup reading for meaningful product/technical work:
 
-1. `docs/CURRENT_PHASE.md`
-2. `docs/product/MVP_SCOPE.md`
-3. `docs/DECISIONS.md`
-4. `docs/product/MASTER_PRODUCT_PLAN.md` when broader context is needed
+1. `docs/PROJECT_HANDOFF.md`
+2. `docs/CURRENT_PHASE.md`
+3. `docs/product/MVP_SCOPE.md`
+4. `docs/DECISIONS.md`
+5. `docs/product/MASTER_PRODUCT_PLAN.md` when broader context is needed
+
+Keep `docs/PROJECT_HANDOFF.md` current when a meaningful checkpoint is completed, the active branch or phase changes, validation status changes, a new external blocker appears, or owner intervention changes the development plan. It is a continuity summary, not a replacement for the authoritative product, decision, release, or business documents.
 
 Also read:
 

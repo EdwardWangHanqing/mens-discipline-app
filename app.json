@@ -14,7 +14,10 @@
       "reactCompiler": true
     },
     "ios": {
-      "bundleIdentifier": "com.temperline.mensdiscipline"
+      "bundleIdentifier": "com.temperline.mensdiscipline",
+      "entitlements": {
+        "com.apple.developer.family-controls": true
+      }
     }
   }
 }

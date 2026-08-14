@@ -14,36 +14,45 @@ Men's Discipline App
 
 **03.2 — Apple / iOS Prerequisites**
 
+**03.3 — Official App Baseline / Expo Project Bootstrap**
+
 **Status:** Complete
 
 ## Current Sub-phase
 
-**03.3 — Official App Baseline / Expo Project Bootstrap**
+**03.4 — Family Controls Engineering**
 
 ## Current Objective
 
-Close out a reproducible official Expo SDK 57 application baseline in this repository before the Family Controls / App Lock technical spike begins.
+Establish the smallest reproducible Family Controls native foundation before app selection, shielding, extensions, App Groups, or scheduling are introduced.
 
-## Phase 03.3 Baseline State
+## Phase 03.4 Current State
 
 - The official Expo SDK 57 application baseline is established in this repository.
-- The official repository builds and launches successfully in the iPhone Simulator.
+- The Checkpoint 1 Family Controls authorization bridge/native module builds, launches, and reads authorization status successfully in the iPhone Simulator.
 - The iOS Bundle ID is `com.temperline.mensdiscipline`.
-- Expo Continuous Native Generation (CNG) is the current working native-project strategy, subject to validation against upcoming Family Controls and App Extension requirements.
-- The current Technical Baseline screen confirms the application shell only; it is not production UI.
+- Expo Continuous Native Generation (CNG) remains the current working native-project strategy.
+- The first checkpoint is a local Expo module for reading and requesting Family Controls authorization from the main application.
+- The bridge performs `AuthorizationCenter` status access and authorization requests on the main queue / main actor as required by Apple.
+- The main-app development entitlement is expressed through tracked Expo application configuration.
+- Real-device authorization, paid Apple Developer membership/provisioning, signing entitlement behavior, and Family Controls runtime behavior on a physical iPhone have not yet been verified.
+- The iOS Simulator can load the bridge and return `notDetermined`, but its system log reports that the `FamilyControlsAgent` service is unavailable; this is not evidence of real-device authorization behavior.
+- The Technical Baseline screen is only a temporary engineering test surface; it is not production UI.
+- FamilyActivityPicker, ManagedSettings shielding, Screen Time extensions, App Groups, and scheduling have not started.
 
 ## Primary Track — Technical Feasibility
 
 Immediate work:
 
-1. Complete and verify the Phase 03.3 official Expo application baseline checkpoint
+1. Validate the main application's Family Controls authorization bridge and development entitlement
 2. Preserve the locked iOS Bundle ID and reproducible CNG configuration
-3. Begin the Family Controls / App Lock technical spike only after this checkpoint is accepted
-4. Validate CNG and native integration against the required Family Controls / Screen Time extension architecture
-5. Build the smallest App Selection → Lock/Shield → Unlock prototype
-6. Plan the camera / pose prototype after the first Family Controls feasibility work is understood
+3. Validate the authorization flow on a real iPhone after Apple Developer Program enrollment and provisioning are ready
+4. Add FamilyActivityPicker only after this foundation checkpoint is accepted
+5. Validate CNG and native integration against the required Family Controls / Screen Time extension architecture
+6. Build the smallest App Selection → Lock/Shield → Unlock prototype
+7. Plan the camera / pose prototype after the first Family Controls feasibility work is understood
 
-Family Controls implementation has not started. It is the next technical task after the Phase 03.3 baseline checkpoint.
+Family Controls authorization foundation work is in progress. App selection, shielding, extensions, App Groups, and scheduling remain future tasks.
 
 ## Parallel Track — Business / Apple Account
 
