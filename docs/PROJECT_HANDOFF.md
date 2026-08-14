@@ -1,6 +1,6 @@
 # Men's Discipline App — Project Handoff
 
-**Last updated:** 2026-08-13 (America/Vancouver)
+**Last updated:** 2026-08-14 (America/Vancouver)
 
 **Repository:** `/Users/hanqingwang/Developer/mens-discipline-app`
 
@@ -217,6 +217,10 @@ Branch:
 
 `spike/vision-pose-foundation`
 
+At the start of the 2026-08-14 handoff refresh, the working tree was clean and the local branch matched `origin/spike/vision-pose-foundation` at `de150e8fcf8c5d71e231c6b36467e9a5c9a507dd`. This refresh is documentation-only; no product or native source changed after the validated Checkpoint A implementation.
+
+`origin/main` remains at `9f433ff0a28913e7de1c288b6563428a24a761fe`. Pose Checkpoint A is pushed to its spike branch but has **not** been accepted by the owner or merged into `main`.
+
 The accepted Checkpoint 1 implementation commit is:
 
 `aa8351350db14c31e56e0f638b70b05cbef4cb96 spike: establish Family Controls authorization foundation`
@@ -303,14 +307,15 @@ Real-device and distribution viability remain gated by Apple Developer Program m
 
 ## Next Safe Development Sequence
 
-1. Apple Developer Program membership is not ready; the owner will report when enrollment is complete.
-2. Validate Family Controls authorization on a physical iPhone when membership, provisioning, signing, and the device are ready.
-3. Do not claim FamilyActivityPicker, shielding, extensions, App Groups, or scheduling feasibility until the relevant real-device path can actually be verified.
-4. The owner accepted tolerant automatic rep counting with non-blocking assisted completion; tracking failure must not prevent routine completion or app unlock.
-5. Review and accept Pose Checkpoint A; keep it isolated on `spike/vision-pose-foundation` until owner acceptance.
-6. When Apple Developer Program enrollment and a physical iPhone are ready, perform Checkpoint B live-camera feasibility with the required permission/release review.
-7. Select one representative MVP movement before implementing Checkpoint C movement rules and tolerant counting.
-8. Stop before camera permission, live capture, movement-specific counting, or assisted-completion UI until the applicable checkpoint and real-device validation are ready.
+1. The owner should review Pose Checkpoint A and explicitly say whether it is accepted for merge.
+2. If accepted, fast-forward `spike/vision-pose-foundation` into `main`, push `origin/main`, retain the source branch, and update this handoff with the merge state.
+3. Apple Developer Program membership is not ready; the owner will report when enrollment is complete.
+4. When membership, provisioning, signing, and a physical iPhone are ready, validate Family Controls authorization on the real device.
+5. Do not claim FamilyActivityPicker, shielding, extensions, App Groups, or scheduling feasibility until the relevant real-device path can actually be verified.
+6. Perform Pose Checkpoint B live-camera feasibility only after its camera-permission and release-impact review.
+7. Select one representative MVP movement before implementing Checkpoint C movement rules, tolerant counting, and assisted completion.
+8. Preserve the accepted product rule: tracking failure must never prevent routine completion or app unlock.
+9. Stop before camera permission, live capture, movement-specific counting, or assisted-completion UI until the applicable checkpoint and real-device validation are ready.
 
 Do not fill the Apple gate with production UI or lower-priority product work. Technical feasibility remains the priority.
 
@@ -340,4 +345,4 @@ Routine work inside this repository is already writable. Do not weaken security 
 
 Use the following instruction to resume work in a new conversation:
 
-> Open `/Users/hanqingwang/Developer/mens-discipline-app`. Read `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, and `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md` completely, then read the required product and release documents referenced by them. Confirm the `spike/vision-pose-foundation` branch and preserve existing work. Pose Checkpoint A is implemented in `8a6f737` and awaits owner review/acceptance; do not merge it without acceptance. The accepted direction is tolerant automatic rep counting with assisted completion that prevents technical lockout. Do not add camera permission, live capture, movement-specific counting, assisted-completion UI, or production UI before the applicable physical-iPhone checkpoint. Apple Developer Program and physical-iPhone gates remain. Do not use Superpowers. Explain important decisions and final status in Chinese.
+> Open `/Users/hanqingwang/Developer/mens-discipline-app`. First run `git status --short --branch`, then read `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PHASE.md`, `docs/product/MVP_SCOPE.md`, `docs/DECISIONS.md`, and `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md` completely; read the release documents before any permission, capability, account, privacy, or App Store work. Preserve all existing work. The current work should be on `spike/vision-pose-foundation`. Family Controls Checkpoint 1 is already accepted and merged into `main`. Pose Checkpoint A is implemented in `8a6f737`, documented through `de150e8`, pushed, and still awaits explicit owner acceptance; do not merge it unless the owner now clearly authorizes the merge. The accepted direction is tolerant automatic rep counting plus assisted completion so tracking failure can never trap the user in the locked state. Apple Developer Program and physical-iPhone validation are still pending. Until those gates are ready, do not add camera permission, live capture, movement-specific thresholds/counting, assisted-completion UI, or production UI. First report the exact Git state and recommend either (a) owner review/merge of Checkpoint A, or (b) real-device Checkpoints B–C once the owner confirms the account and iPhone are ready. Do not use Superpowers. Explain important decisions and final status in Chinese.
