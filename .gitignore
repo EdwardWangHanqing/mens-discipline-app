@@ -44,3 +44,8 @@ coverage/
 
 # EAS local files
 .eas/
+# Expo generated native projects (CNG)
+/ios
+/android
+expo-env.d.ts
+*.tsbuildinfo

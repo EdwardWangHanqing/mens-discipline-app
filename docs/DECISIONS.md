@@ -337,3 +337,41 @@ Before App Store submission:
 - subscription purchase/restore behavior must work in the review environment.
 
 A feature that the reviewer cannot reasonably reach or reproduce is not considered release-ready.
+
+---
+
+## DEC-018 — Working Company, Brand, Namespace, and Bundle Identity
+
+**Status:** Accepted
+
+The current project identity is:
+
+- umbrella company / working company name: **Temperline Labs**;
+- consumer-facing umbrella brand: **TEMPERLINE**;
+- developer namespace: `temperline`;
+- iOS main-app Bundle ID: `com.temperline.mensdiscipline`.
+
+**Men's Discipline** remains a working product and display name. It may change during later branding work without changing the accepted developer namespace or Bundle ID.
+
+Temperline Labs is the selected working umbrella/company name. This decision does not state or imply that a legal entity named **Temperline Labs Inc.** has already been incorporated. Formal name clearance, registration, incorporation, and related business actions remain part of the separate business-readiness track.
+
+### Reason
+
+A stable developer namespace and Bundle ID are required for Apple identifiers, native targets, capabilities, and technical validation, while the consumer-facing product name can remain flexible until later branding work.
+
+---
+
+## DEC-019 — Expo CNG Is the Working Native-Project Strategy
+
+**Status:** Accepted in principle; Family Controls and App Extension requirements must be validated during Phase 03.
+
+For the current architecture, use Expo Continuous Native Generation (CNG) as the working native-project strategy.
+
+- `/ios` and `/android` remain generated and ignored.
+- Reproducible native configuration should be expressed through Expo app configuration, config plugins, and native modules rather than relying on untracked manual edits inside generated native directories.
+- Manual changes inside generated `/ios` or `/android` directories are not a durable source of truth and may be overwritten when native projects are regenerated.
+- The architecture must be technically validated against the upcoming Family Controls, Screen Time, and App Extension requirements before it is treated as irreversible.
+
+### Reason
+
+CNG keeps the official application baseline reproducible while native iOS feasibility is still being established. Family Controls may require native targets or extension configuration that changes the final React Native ↔ native iOS boundary, so the current strategy remains subject to evidence from the Phase 03 technical spike.

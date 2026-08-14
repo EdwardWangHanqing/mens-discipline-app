@@ -8,30 +8,42 @@ Men's Discipline App
 
 **03 — Technical Feasibility**
 
-## Completed Sub-phase
+## Completed Sub-phases
 
 **03.1 — Project Bootstrap**
+
+**03.2 — Apple / iOS Prerequisites**
 
 **Status:** Complete
 
 ## Current Sub-phase
 
-**03.2 — Apple / iOS Prerequisites**
+**03.3 — Official App Baseline / Expo Project Bootstrap**
 
 ## Current Objective
 
-Prepare and validate the Apple and iOS prerequisites required before Family Controls implementation begins, while allowing business and App Store readiness work to run in parallel without blocking technical prototyping.
+Close out a reproducible official Expo SDK 57 application baseline in this repository before the Family Controls / App Lock technical spike begins.
+
+## Phase 03.3 Baseline State
+
+- The official Expo SDK 57 application baseline is established in this repository.
+- The official repository builds and launches successfully in the iPhone Simulator.
+- The iOS Bundle ID is `com.temperline.mensdiscipline`.
+- Expo Continuous Native Generation (CNG) is the current working native-project strategy, subject to validation against upcoming Family Controls and App Extension requirements.
+- The current Technical Baseline screen confirms the application shell only; it is not production UI.
 
 ## Primary Track — Technical Feasibility
 
 Immediate work:
 
-1. Apple Developer Program enrollment/status required for real-device capability work
-2. App identifier / Bundle ID strategy
-3. Family Controls development entitlement/capability prerequisites
-4. iOS native development / build requirements
-5. Smallest App Selection → Lock/Shield → Unlock prototype
-6. Camera / pose prototype planning after the first Family Controls prerequisite work is understood
+1. Complete and verify the Phase 03.3 official Expo application baseline checkpoint
+2. Preserve the locked iOS Bundle ID and reproducible CNG configuration
+3. Begin the Family Controls / App Lock technical spike only after this checkpoint is accepted
+4. Validate CNG and native integration against the required Family Controls / Screen Time extension architecture
+5. Build the smallest App Selection → Lock/Shield → Unlock prototype
+6. Plan the camera / pose prototype after the first Family Controls feasibility work is understood
+
+Family Controls implementation has not started. It is the next technical task after the Phase 03.3 baseline checkpoint.
 
 ## Parallel Track — Business / Apple Account
 

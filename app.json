@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Men's Discipline",
+    "slug": "mens-discipline-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "mensdiscipline",
+    "userInterfaceStyle": "automatic",
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "ios": {
+      "bundleIdentifier": "com.temperline.mensdiscipline"
+    }
+  }
+}
