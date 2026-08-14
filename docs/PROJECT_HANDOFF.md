@@ -4,7 +4,7 @@
 
 **Repository:** `/Users/hanqingwang/Developer/mens-discipline-app`
 
-**Current branch:** `spike/family-controls-foundation`
+**Current branch:** `main`
 
 ## Purpose
 
@@ -80,7 +80,7 @@ Marked complete. The stable repository baseline is:
 
 ### Phase 03.4 — Family Controls Engineering, Checkpoint 1
 
-The smallest Family Controls authorization foundation has been implemented, reviewed, validated locally, committed as the stable Checkpoint 1 branch head, and pushed to `origin/spike/family-controls-foundation`.
+The smallest Family Controls authorization foundation has been implemented, reviewed, validated locally, accepted by the project owner, and integrated into `main`. The implementation checkpoint is commit `aa8351350db14c31e56e0f638b70b05cbef4cb96`.
 
 Implemented:
 
@@ -169,13 +169,13 @@ The Simulator system log still contains the known `UIScene` lifecycle warning, t
 
 Branch:
 
-`spike/family-controls-foundation`
+`main`
 
-The stable Checkpoint 1 commit is the branch head containing this handoff document. Resolve its immutable hash with:
+The accepted Checkpoint 1 implementation commit is:
 
-`git log -1 --oneline`
+`aa8351350db14c31e56e0f638b70b05cbef4cb96 spike: establish Family Controls authorization foundation`
 
-The branch is pushed to `origin/spike/family-controls-foundation`. It has not been merged. `main` remains at the verified baseline `6e4753162b8feb3ac05893391bd2355a590274ad`.
+The checkpoint and this continuity update have been fast-forwarded into `main` and pushed to `origin/main`. The source branch remains available as `spike/family-controls-foundation`; it has not been deleted.
 
 Checkpoint files:
 
@@ -221,13 +221,13 @@ Real-device and distribution viability remain gated by Apple Developer Program m
 
 ## Next Safe Development Sequence
 
-1. Review and accept the pushed Checkpoint 1 branch before any merge or scope expansion.
-2. Do not merge the branch into `main` without owner acceptance.
-3. Validate Family Controls authorization on a physical iPhone when Apple Developer Program membership, provisioning, signing, and the device are ready.
-4. Only after this foundation checkpoint is accepted should FamilyActivityPicker work begin on the appropriate logical branch/checkpoint.
-5. Do not begin ManagedSettings shielding, extensions, App Groups, scheduling, or production UI as part of Checkpoint 1.
+1. Apple Developer Program membership is not ready; the owner will report when enrollment is complete.
+2. Validate Family Controls authorization on a physical iPhone when membership, provisioning, signing, and the device are ready.
+3. Do not claim FamilyActivityPicker, shielding, extensions, App Groups, or scheduling feasibility until the relevant real-device path can actually be verified.
+4. While the Apple account gate remains, the recommended independent Phase 03 work is a separately scoped on-device pose / motion-tracking feasibility spike or release/business-readiness documentation.
+5. Create a new logical branch before beginning either engineering track; do not implement normal work directly on `main`.
 
-If Apple membership or physical-device access is unavailable, stop at that external gate and report it clearly rather than claiming real-device feasibility.
+Do not fill the Apple gate with production UI or lower-priority product work. Technical feasibility remains the priority.
 
 ## Safe Rollback Position
 
@@ -253,4 +253,4 @@ Routine work inside this repository is already writable. Do not weaken security 
 
 Use the following instruction to resume work in a new conversation:
 
-> Open `/Users/hanqingwang/Developer/mens-discipline-app`. Read `AGENTS.md` and `docs/PROJECT_HANDOFF.md` completely, then read the required project and release documents referenced by them. Confirm the current branch, pushed Checkpoint 1 branch head, and clean working tree. Do not merge into `main` without owner acceptance. Real-device Family Controls authorization remains gated on Apple Developer Program membership, signing/provisioning, and a physical iPhone. Do not start FamilyActivityPicker or later shielding/extension work until Checkpoint 1 is accepted, and do not use Superpowers. Explain important decisions and final status in Chinese.
+> Open `/Users/hanqingwang/Developer/mens-discipline-app`. Read `AGENTS.md` and `docs/PROJECT_HANDOFF.md` completely, then read the required project and release documents referenced by them. Confirm that `main` contains the accepted Family Controls Checkpoint 1 and preserve a clean working tree. Apple Developer Program membership is not ready, so real-device Family Controls authorization and later app-selection/shielding work remain gated. If continuing independent Phase 03 work, create a new branch and scope the on-device pose / motion-tracking feasibility spike before implementation. Do not use Superpowers. Explain important decisions and final status in Chinese.
