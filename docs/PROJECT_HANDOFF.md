@@ -159,6 +159,24 @@ The owner accepted tolerant automatic rep counting with a non-blocking assisted-
 
 The active plan is `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md`. Checkpoint A intentionally stops before camera permission, live capture, movement-specific counting, or production UI.
 
+### Phase 03 — Pose & Motion Tracking, Checkpoint A
+
+The movement-agnostic offline foundation is implemented in commit `8a6f7378b6a15cafb31c2699df354442e216f5ee` (`spike: establish offline Vision pose foundation`).
+
+Implemented:
+
+- application-local Apple-only Expo module under `modules/vision-pose/`;
+- Apple Vision `VNDetectHumanBodyPoseRequest` adapter for local image files;
+- 19-joint TypeScript contract with normalized coordinates, per-joint confidence, timestamp, orientation, mirroring, coordinate origin, and explicit unavailable joints;
+- typed complete-pose, partial-pose, no-pose, invalid-input, and native-processing-failure results;
+- rejection of network/non-file URIs and unsupported local inputs;
+- asynchronous native processing and derived-observation-only bridge output;
+- engineering-only Technical Baseline diagnostic that automatically verifies native-module loading and the typed missing-file result.
+
+Privacy and scope boundaries were preserved: no camera permission, `AVFoundation` capture, image picker, networking, raw-image return, image/video persistence, movement-specific rule, repetition counter, assisted-completion UI, or production training UI was added.
+
+The iOS 26.5 Simulator loads the module and returns `invalidInput / fileNotFound` for the diagnostic request. A valid local PNG passed native file validation but Vision returned the typed `processingFailed / visionError` result in the Simulator. A separate macOS-host Vision sanity check accepted the same PNG and returned zero observations. This proves the adapter/error boundary but is not physical-iPhone pose evidence. Normalized human-joint output, partial-body behavior, live-camera performance, and tolerant counting remain unverified until Checkpoints B–C.
+
 ## Verification Evidence
 
 The following checks were re-run successfully after the final threading correction:
@@ -177,6 +195,22 @@ The following checks were re-run successfully after the final threading correcti
 
 The Simulator system log still contains the known `UIScene` lifecycle warning, transient development-server connection attempts, and the Simulator-only `FamilyControlsAgent` connection error described above. No claim of zero dependency warnings or real-device authorization is made.
 
+For Pose Checkpoint A, the following checks were run successfully:
+
+- `git diff --check`
+- `npm run lint`
+- `npx tsc --noEmit`
+- `npx expo-doctor` — 20/20 checks passed
+- `npx expo-modules-autolinking search --platform apple` — `vision-pose` discovered
+- `npx expo config --type introspect` — `vision-pose` discovered and no camera usage description added
+- `npx pod-install ios` — `ExpoVisionPose (1.0.0)` installed into the generated iOS workspace
+- `ExpoVisionPose` iOS Simulator target build — succeeded
+- full `MensDiscipline` iOS Simulator Debug build — succeeded with existing third-party dependency warnings only
+- application installation and launch in iPhone 17 Pro / iOS 26.5 Simulator
+- runtime missing-local-file diagnostic — returned `invalidInput / fileNotFound` through the native bridge
+- runtime valid-local-PNG diagnostic — returned typed `processingFailed / visionError`; successful Simulator or physical-iPhone pose inference is not claimed
+- screenshot inspection — both Family Controls and Vision engineering diagnostics rendered in the scrollable Technical Baseline screen
+
 ## Exact Git State at Handoff
 
 Branch:
@@ -189,7 +223,11 @@ The accepted Checkpoint 1 implementation commit is:
 
 The checkpoint and this continuity update have been fast-forwarded into `main` and pushed to `origin/main`. The source branch remains available as `spike/family-controls-foundation`; it has not been deleted.
 
-The current pose-foundation branch starts from `main` commit `9f433ff0a28913e7de1c288b6563428a24a761fe`. Its first documentation checkpoint records DEC-020, the locked MVP clarification, release/risk updates, and the movement-agnostic feasibility plan. The branch is pushed to `origin/spike/vision-pose-foundation` after that checkpoint is committed.
+The current pose-foundation branch starts from `main` commit `9f433ff0a28913e7de1c288b6563428a24a761fe`. Its first documentation checkpoint is `a5110c745ce0d029ce8574db9f7149ce925066ee`; it records DEC-020, the locked MVP clarification, release/risk updates, and the movement-agnostic feasibility plan.
+
+The Checkpoint A implementation commit is:
+
+`8a6f7378b6a15cafb31c2699df354442e216f5ee spike: establish offline Vision pose foundation`
 
 Family Controls Checkpoint 1 files:
 
@@ -219,6 +257,21 @@ Pose-foundation documentation checkpoint files:
 - `docs/release/IOS_LAUNCH_READINESS.md`
 - `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md`
 
+Pose Checkpoint A implementation files:
+
+- `docs/CURRENT_PHASE.md`
+- `docs/release/IOS_LAUNCH_READINESS.md`
+- `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md`
+- `src/app/index.tsx`
+- `modules/vision-pose/expo-module.config.json`
+- `modules/vision-pose/index.ts`
+- `modules/vision-pose/ios/ExpoVisionPose.podspec`
+- `modules/vision-pose/ios/ExpoVisionPoseModule.swift`
+- `modules/vision-pose/src/ExpoVisionPose.types.ts`
+- `modules/vision-pose/src/ExpoVisionPoseModule.ios.ts`
+- `modules/vision-pose/src/ExpoVisionPoseModule.ts`
+- `modules/vision-pose/src/ExpoVisionPoseModule.web.ts`
+
 ## Explicitly Not Implemented
 
 Do not infer that the following exists:
@@ -233,13 +286,18 @@ Do not infer that the following exists:
 - production Family Controls UI
 - App & Website Usage entitlement
 - real-device Family Controls verification
+- camera permission or live camera capture
+- normalized pose output verified from human input on a physical iPhone
+- movement-specific pose rules or repetition counting
+- assisted-completion implementation
+- production camera/training UI
 - TestFlight or App Store verification
 
 ## Release and Privacy Impact
 
-Checkpoint 1 adds the main-app Family Controls development entitlement declaration and a native iOS framework bridge. This creates a real Apple capability, provisioning, signing, and App Review dependency.
+Family Controls Checkpoint 1 adds the main-app Family Controls development entitlement declaration and a native iOS framework bridge. This creates a real Apple capability, provisioning, signing, and App Review dependency.
 
-It does not add a third-party SDK, upload data, collect camera data, alter subscriptions, or change account behavior. The current diagnostic UI is temporary engineering UI and is not a production feature.
+Pose Checkpoint A links Apple's system Vision and ImageIO frameworks through an application-local Expo module. It adds no entitlement, permission, native target, third-party SDK, networking, raw-image return, storage behavior, account behavior, subscription behavior, or App Privacy collection claim. The module accepts only caller-provided local files and returns derived joint/status metadata. The current diagnostic UI is temporary engineering UI and is not a production feature.
 
 Real-device and distribution viability remain gated by Apple Developer Program membership, provisioning, signing, and later App Store distribution entitlement approval.
 
@@ -249,8 +307,10 @@ Real-device and distribution viability remain gated by Apple Developer Program m
 2. Validate Family Controls authorization on a physical iPhone when membership, provisioning, signing, and the device are ready.
 3. Do not claim FamilyActivityPicker, shielding, extensions, App Groups, or scheduling feasibility until the relevant real-device path can actually be verified.
 4. The owner accepted tolerant automatic rep counting with non-blocking assisted completion; tracking failure must not prevent routine completion or app unlock.
-5. Continue Checkpoint A from `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md`: movement-agnostic pose types, Apple Vision adapter boundary, and local-input diagnostics only.
-6. Stop before camera permission, live capture, movement-specific counting, or assisted-completion UI until the applicable checkpoint and real-device validation are ready.
+5. Review and accept Pose Checkpoint A; keep it isolated on `spike/vision-pose-foundation` until owner acceptance.
+6. When Apple Developer Program enrollment and a physical iPhone are ready, perform Checkpoint B live-camera feasibility with the required permission/release review.
+7. Select one representative MVP movement before implementing Checkpoint C movement rules and tolerant counting.
+8. Stop before camera permission, live capture, movement-specific counting, or assisted-completion UI until the applicable checkpoint and real-device validation are ready.
 
 Do not fill the Apple gate with production UI or lower-priority product work. Technical feasibility remains the priority.
 
@@ -261,6 +321,8 @@ The baseline before Checkpoint 1 is commit:
 `6e4753162b8feb3ac05893391bd2355a590274ad`
 
 The safest non-destructive comparison is `git diff 6e47531..spike/family-controls-foundation`. If Checkpoint 1 must be undone after review, use a new `git revert` commit for the Checkpoint 1 branch head rather than reset, clean, or history rewriting.
+
+The baseline immediately before Pose Checkpoint A implementation is `a5110c745ce0d029ce8574db9f7149ce925066ee`. Compare with `git diff a5110c7..8a6f737`. If the implementation must be undone after review, create a new `git revert 8a6f737` commit on the pose branch; do not reset or rewrite history.
 
 ## Remote Permission Setup
 
@@ -278,4 +340,4 @@ Routine work inside this repository is already writable. Do not weaken security 
 
 Use the following instruction to resume work in a new conversation:
 
-> Open `/Users/hanqingwang/Developer/mens-discipline-app`. Read `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, and `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md` completely, then read the required product and release documents referenced by them. Confirm the `spike/vision-pose-foundation` branch and preserve existing work. The accepted direction is tolerant automatic rep counting with assisted completion that prevents technical lockout. Continue only Checkpoint A: movement-agnostic pose types, Apple Vision adapter boundary, and local-input diagnostics. Do not add camera permission, live capture, movement-specific counting, or production UI yet. Apple Developer Program and physical-iPhone gates remain. Do not use Superpowers. Explain important decisions and final status in Chinese.
+> Open `/Users/hanqingwang/Developer/mens-discipline-app`. Read `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, and `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md` completely, then read the required product and release documents referenced by them. Confirm the `spike/vision-pose-foundation` branch and preserve existing work. Pose Checkpoint A is implemented in `8a6f737` and awaits owner review/acceptance; do not merge it without acceptance. The accepted direction is tolerant automatic rep counting with assisted completion that prevents technical lockout. Do not add camera permission, live capture, movement-specific counting, assisted-completion UI, or production UI before the applicable physical-iPhone checkpoint. Apple Developer Program and physical-iPhone gates remain. Do not use Superpowers. Explain important decisions and final status in Chinese.
