@@ -4,7 +4,9 @@
 
 **Repository:** `/Users/hanqingwang/Developer/mens-discipline-app`
 
-**Active branch:** `spike/vision-pose-foundation`
+**Active branch after accepted integration:** `main`
+
+**Retained source branch:** `spike/vision-pose-foundation`
 
 ## Purpose and Authority
 
@@ -46,15 +48,18 @@ Always begin a coding task with `git status --short --branch` and preserve exist
 
 The accepted reliability decision is DEC-020 in `docs/DECISIONS.md`. The implementation plan is `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md`.
 
-## Current Git State
+## Accepted Integration State
 
-At the start of this documentation-only condensation:
+The owner accepted Pose Checkpoint A on 2026-08-14 and explicitly authorized a fast-forward-only integration into `main` followed by a push to `origin/main`. The source branch must remain available locally and remotely.
+
+Immediately before this acceptance update:
 
 - working tree: clean;
-- active branch: `spike/vision-pose-foundation`;
-- local/remote branch head: `830657cb73b3acbb05a16aa5ea61aec98e9075c9`;
+- source branch: `spike/vision-pose-foundation` at `8d2e7b6276459ea778de2333345d2283c630cafb`;
 - `main` / `origin/main`: `9f433ff0a28913e7de1c288b6563428a24a761fe`;
-- Pose Checkpoint A is pushed but has not been accepted or merged.
+- `main` was the source branch's linear ancestor, with five source commits ahead and no divergence.
+
+After the authorized integration, local `main`, `origin/main`, and the retained source branch are expected to point to the accepted checkpoint including this documentation update. Verify exact hashes from Git rather than treating the pre-update hashes above as the final integrated SHA.
 
 Key commits:
 
@@ -83,7 +88,19 @@ Key commits:
 
 Not yet implemented: FamilyActivityPicker, shielding, Screen Time extensions, App Groups, scheduling, and the complete lock → routine → unlock prototype.
 
-### Pose Checkpoint A — Implemented, Pushed, Awaiting Acceptance
+### Pose Checkpoint A — Owner Accepted and Integrated
+
+Owner acceptance is limited to:
+
+- the offline Apple Vision native-module foundation;
+- the Swift and TypeScript type contract;
+- the 19-joint data structure;
+- the local-file and derived-data privacy boundary;
+- typed error results;
+- the React Native ↔ Swift bridge;
+- the Pose Checkpoint A/B/C technical plan.
+
+Acceptance does not claim that real human pose inference, partial-human behavior, orientation/mirroring output, live camera processing, automatic counting, assisted completion, or unlock integration has been verified.
 
 - Application-local Apple-only `ExpoVisionPose` module wraps `VNDetectHumanBodyPoseRequest` for caller-provided local image files.
 - TypeScript contract defines 19 joints, normalized coordinates, confidence, timestamp, orientation/mirroring, coordinate origin, and explicit unavailable joints.
@@ -96,16 +113,18 @@ Simulator evidence:
 
 - the module autolinks, compiles, loads, and returns `invalidInput / fileNotFound` across the native bridge;
 - a valid local PNG reached Vision but returned typed `processingFailed / visionError` in the iOS 26.5 Simulator;
-- therefore successful human-pose inference, partial-body behavior, live-camera performance, and counting are not yet claimed.
+- no successful runtime result has yet produced `poseAvailable`, `partialPoseAvailable`, or `noPose`;
+- the valid-PNG `visionError` requires continued investigation during the physical-device checkpoint;
+- therefore successful human-pose inference, partial-body behavior, orientation/mirroring output, live-camera performance, and counting are not yet claimed.
 
 ## Validation Summary
 
-The validated checkpoints passed:
+The validated checkpoints and acceptance review passed:
 
 - `git diff --check`;
 - `npm run lint`;
 - `npx tsc --noEmit`;
-- `npx expo-doctor` — 20/20;
+- `npx expo-doctor` — the acceptance review used a temporary `/tmp` npm cache and passed 21/21 without changing `~/.npm` ownership; the earlier checkpoint's historical 20/20 result is not represented as a fresh run;
 - Expo config/autolinking inspection;
 - CocoaPods integration;
 - individual native module target builds;
@@ -126,15 +145,14 @@ Until the applicable real-device checkpoint and release review, do not add or cl
 - app selection, shielding, extensions, App Groups, scheduling, or reliable unlock integration;
 - production training UI, TestFlight readiness, or App Store readiness.
 
-## Next Safe Sequence
+## Authorized Integration and Next Safe Sequence
 
-1. Owner reviews Pose Checkpoint A and explicitly accepts or rejects merge.
-2. If accepted, fast-forward `spike/vision-pose-foundation` into `main`, push `origin/main`, retain the source branch, and update this handoff.
-3. Wait for the owner to confirm Apple Developer Program enrollment, provisioning/signing readiness, and physical iPhone availability.
-4. Validate Family Controls authorization on the real iPhone.
-5. Perform Pose Checkpoint B live-camera feasibility after camera-permission and release-impact review.
-6. Select one representative MVP movement, then implement Checkpoint C tolerant counting, recovery, and assisted completion from real-device evidence.
-7. Build the smallest App Selection → Lock/Shield → Routine → Completion → Unlock prototype only after the underlying real-device paths are proven.
+1. The owner accepted the limited Checkpoint A scope and authorized fast-forward-only integration into `main`, pushing `origin/main`, and retaining the source branch.
+2. After that integration, stop and wait for the owner to confirm Apple Developer Program enrollment, provisioning/signing readiness, and physical iPhone availability.
+3. Validate Family Controls authorization on the real iPhone.
+4. Investigate the valid-local-PNG Vision failure and perform Pose Checkpoint B live-camera feasibility only after camera-permission and release-impact review.
+5. Select one representative MVP movement before Checkpoint C tolerant counting, recovery, and assisted completion work.
+6. Build the smallest App Selection → Lock/Shield → Routine → Completion → Unlock prototype only after the underlying real-device paths are proven.
 
 Do not fill the Apple/device gate with production UI or invented thresholds.
 
@@ -150,4 +168,4 @@ Safe comparison/rollback points:
 
 ## New-Chat Startup Instruction
 
-> Open `/Users/hanqingwang/Developer/mens-discipline-app`. First run `git status --short --branch`, then completely read `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PHASE.md`, `docs/product/MVP_SCOPE.md`, `docs/DECISIONS.md`, and `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md`. Read the relevant release documents before permission, capability, account, privacy, subscription, TestFlight, or App Store work. Preserve all existing work. Family Controls Checkpoint 1 is accepted and merged into `main`. Pose Checkpoint A is implemented in `8a6f737`, validated/documented, pushed on `spike/vision-pose-foundation`, and still awaits explicit owner acceptance; do not merge unless the owner clearly authorizes it. The accepted direction is tolerant automatic counting plus assisted completion so tracking failure can never trap the user in the locked state. Apple Developer Program enrollment and physical-iPhone validation remain pending. Until those gates are ready, do not add camera permission, live capture, movement-specific thresholds/counting, assisted-completion UI, or production UI. Report the exact Git state first, then recommend either owner review/merge of Checkpoint A or real-device Checkpoints B–C after the owner confirms readiness. Do not use Superpowers. Explain important decisions and final status in Chinese.
+> Open `/Users/hanqingwang/Developer/mens-discipline-app`. First run `git status --short --branch`, then completely read `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PHASE.md`, `docs/product/MVP_SCOPE.md`, `docs/DECISIONS.md`, and `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md`. Read the relevant release documents before permission, capability, account, privacy, subscription, TestFlight, or App Store work. Preserve all existing work. Family Controls Checkpoint 1 and the owner-accepted Pose Checkpoint A are integrated into `main`; retain `spike/vision-pose-foundation`. Pose acceptance is limited to the offline Apple Vision module foundation, Swift/TypeScript contract, 19-joint structure, local-file/derived-data boundary, typed errors, bridge, and A/B/C plan. No runtime result has yet produced `poseAvailable`, `partialPoseAvailable`, or `noPose`; a valid local PNG returned `processingFailed / visionError` and requires physical-device investigation. The accepted product direction is tolerant automatic counting plus assisted completion so tracking failure can never trap the user in the locked state, but neither path is implemented yet. Apple Developer Program enrollment, Family Controls real-device validation, and Pose Checkpoint B remain pending. Until the owner confirms the physical-device gate, do not add camera permission/live capture, movement thresholds, automatic counting, assisted-completion UI, or production UI. Do not use Superpowers. Explain important decisions and final status in Chinese.
