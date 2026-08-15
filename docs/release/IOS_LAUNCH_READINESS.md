@@ -27,14 +27,19 @@
 - [x] Validate paid Individual-team Automatic Signing, physical-device registration, development provisioning, and the signed main-app Family Controls development entitlement.
 - [x] Present the real `.individual` system authorization flow on a physical iPhone and read `approved` after the owner allows access.
 - [x] Safely handle the initial `notDetermined` value for the approved cold-launch path by observing Apple's publisher, displaying `checking`, reading after App active, and using bounded retries; five consecutive real-device cold starts automatically resolved to `approved` without manual refresh or another authorization prompt.
-- [ ] Validate the implemented `FamilyActivityPicker` save/modify/empty/cancel paths and local opaque-selection persistence on the physical iPhone.
-- [ ] Validate the implemented named-store Apply Shield → Remove Shield path on explicitly selected harmless apps, including repeated apply/remove and relaunch.
-- [ ] Build the smallest possible App Selection → Shield/Lock → Unlock prototype.
-- [ ] Verify user-selected apps can be shielded and restored reliably.
+- [x] Validate the implemented `FamilyActivityPicker` save, modify, and empty-selection paths plus local opaque-selection persistence on the physical iPhone.
+- [ ] Validate picker Cancel / interactive-dismiss behavior on the physical iPhone; the implementation exists but this path was not included in the reported owner evidence.
+- [x] Validate the implemented named-store Apply Shield → Remove Shield path on explicitly selected apps, including repeated apply/remove.
+- [x] Build and validate the smallest direct App Selection → Shield/Lock → Unlock diagnostic prototype.
+- [x] Verify user-selected apps display Apple's `Restricted` screen when shielded and return to normal access after removal.
 - [ ] Verify authorization denied/revoked behavior.
-- [ ] Verify behavior after app relaunch and device reboot.
+- [x] Verify the saved selection remains available after the Debug development relaunch workflow once Metro connectivity is restored.
+- [ ] Verify production/TestFlight bundle behavior after full app termination and direct relaunch without Metro.
+- [ ] Verify Family Controls behavior after device reboot.
 - [ ] Verify daily schedule behavior across time-zone changes and daylight-saving transitions.
 - [ ] Test on the current shipping iOS release before considering the technical risk closed.
+
+Phase 03.7 Debug-build observation: force-quitting and reopening the installed Debug build while Metro was unavailable displayed `No script URL provided`. Restoring Metro and relaunching restored the React Native UI and persisted selection. This is currently a development-bundle workflow observation, not a Family Controls failure; production/TestFlight bundle behavior remains untested.
 
 ## 1.2 Family Controls distribution entitlement
 - [x] Preserve the explicit main-app identifier `com.temperline.mensdiscipline`.
@@ -207,7 +212,7 @@ Maintain a simple table for every data type:
 
 At minimum audit: account identifiers, email, routine history, streak/momentum, selected-app tokens, camera frames/pose landmarks, analytics events, subscription identifiers, crash diagnostics.
 
-Current Phase 03.7 evidence: `FamilyActivitySelection` is encoded only in local app storage through Apple's `Codable` conformance. JavaScript receives storage state and aggregate token counts only; token contents are not logged, uploaded, reverse-engineered, or exposed through the bridge. Final retention/deletion behavior must still be defined before release.
+Current Phase 03.7 evidence: `FamilyActivitySelection` is encoded only in local app storage through Apple's `Codable` conformance. JavaScript receives storage state and aggregate token counts only; token contents are not logged, uploaded, reverse-engineered, or exposed through the bridge. Physical-iPhone validation observed 5 application tokens, 1 category token, and 0 web-domain tokens; clearing the picker retained a saved but empty selection with all counts at zero and disabled Apply Shield. Final retention/deletion behavior must still be defined before release.
 
 ## 5.2 Privacy Policy
 - [ ] Explains what is collected and what is not collected.

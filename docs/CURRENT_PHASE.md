@@ -22,9 +22,11 @@ Men's Discipline App
 
 **03.7 — Family Activity Selection and Managed Settings Shielding**
 
+**Status:** Complete — real-device validation passed
+
 ## Current Objective
 
-Prove the smallest privacy-preserving real-device path from Apple's `FamilyActivityPicker` through locally persisted opaque selection tokens to applying and removing a `ManagedSettingsStore` shield.
+Completed: prove the smallest privacy-preserving real-device path from Apple's `FamilyActivityPicker` through locally persisted opaque selection tokens to applying and removing a `ManagedSettingsStore` shield.
 
 ## Family Controls Current State
 
@@ -55,7 +57,14 @@ Prove the smallest privacy-preserving real-device path from Apple's `FamilyActiv
 - One fixed named `ManagedSettingsStore` applies only the explicit application, category, and web-domain tokens from the saved selection. Apply requires usable authorization and a non-empty selection; Remove clears only this diagnostic store and remains available as the escape path.
 - Authorization, selection, and shield state remain separate. Selection/shield state is reread on mount and foreground, and editing a selection does not silently mutate an active shield until Apply is tapped again.
 - The new module target, full iOS Simulator app, and automatically signed generic iPhoneOS app build succeeded. The build was installed and launched on the connected iPhone; Metro confirmed `approved` authorization plus a successful empty selection/shield bridge read (`none`, zero counts, shield removed).
-- Owner interaction is still required to prove picker save/modify/empty behavior, selection persistence across termination/relaunch, actual shield appearance in a selected app, and removal restoring access.
+- Physical-iPhone validation passed: `FamilyActivityPicker` presented successfully, and the owner created and edited an explicit selection containing 5 application tokens, 1 category token, and 0 web-domain tokens.
+- Selecting an individual app within an Apple category increased the application-token count; selecting the entire category increased the category-token count. This is treated as expected `FamilyActivitySelection` behavior, not a project defect.
+- Apply Shield restricted the selected applications, and opening a selected application displayed Apple's system `Restricted` screen.
+- Remove Shield restored normal access. Repeated Apply → Remove also succeeded.
+- The saved selection remained available after the Debug development relaunch workflow once Metro connectivity was restored.
+- Clearing the picker produced 0 application, 0 category, and 0 web-domain tokens while retaining `Saved selection: yes (empty)`; Apply Shield was disabled.
+- No Family Controls functional error was observed during this validation.
+- Separately, force-quitting and directly reopening the Debug build while Metro was unavailable produced `No script URL provided`. Restoring Metro and relaunching restored the React Native UI and the saved selection. This is currently a Debug/Metro workflow observation, not evidence of authorization, picker, persistence, or shielding failure. Production/TestFlight bundle behavior remains untested.
 - Screen Time extensions, App Groups, scheduling, and production lock UX remain uncreated.
 - The accepted motion-tracking direction is tolerant automatic rep counting with a non-blocking assisted-completion path; tracking failure must not prevent routine completion or app unlock.
 - Movement-agnostic pose architecture and offline/local Vision Checkpoint A is accepted and integrated; Pose Checkpoint B remains outside this Family Controls validation task.
@@ -65,17 +74,15 @@ Prove the smallest privacy-preserving real-device path from Apple's `FamilyActiv
 
 ## Primary Track — Technical Feasibility
 
-Immediate work:
+Phase 03.7 closeout:
 
-1. On the connected iPhone, save and modify a harmless explicit selection through `FamilyActivityPicker`; verify only non-sensitive counts are shown
-2. Apply the named-store shield, confirm a selected app shows Apple's shield, remove it, and confirm the app is usable again
-3. Repeat Apply → Remove and verify selection persistence after complete app termination/relaunch
-4. Record the real-device evidence and any discovered lifecycle limitations without testing denied/revoked authorization unless separately approved
-5. Preserve the locked Bundle ID, approved-state cold-launch path, privacy boundary, and reproducible CNG configuration
-6. Determine the next smallest scheduling/core-loop slice only after this direct selection/shield proof is accepted
-7. Continue the separate accepted pose plan only in its own scoped checkpoint
+1. Preserve the verified authorization → explicit selection → local persistence → Apply Shield → system `Restricted` screen → Remove Shield path.
+2. Keep the Debug/Metro `No script URL provided` observation separate from Family Controls functionality and validate production/TestFlight bundle behavior later.
+3. Do not test denied/revoked authorization without explicit approval and a documented recovery path.
+4. Do not begin DeviceActivity scheduling, recurring Lock Time, extensions, App Groups, production UI, or camera/pose integration as part of this completed checkpoint.
+5. Select and authorize the next technical slice in a new conversation.
 
-The Family Controls Checkpoint 1 implementation is complete and merged. Real-device signing, authorization, and the approved-state cold-launch stabilization path are accepted. Phase 03.7 selection/persistence/shield code now compiles, signs, installs, launches, and reaches its empty native bridge state on the same source branch; the actual picker and shield behavior remain pending owner interaction. Denied/revoked behavior remains untested. Pose Checkpoint A is accepted and integrated. Extensions, App Groups, scheduling, live camera, and movement counting remain future tasks.
+The Family Controls Checkpoint 1 implementation is complete and merged. Real-device signing, authorization, and the approved-state cold-launch stabilization path are accepted. Phase 03.7 app selection, local persistence, shielding, unshielding, repeated apply/remove, and safe empty-selection behavior have now passed physical-iPhone validation on `spike/family-controls-real-device`. Denied/revoked behavior remains untested. Pose Checkpoint A is accepted and integrated. Extensions, App Groups, scheduling, production/TestFlight bundle behavior, live camera, and movement counting remain future tasks. Phase 03 as a whole is not complete.
 
 ## Parallel Track — Business / Apple Account
 

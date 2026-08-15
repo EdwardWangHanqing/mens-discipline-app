@@ -119,7 +119,7 @@ Five consecutive physical-iPhone cold starts fully terminated the previous proce
 
 That Phase 03.6 checkpoint added no FamilyActivityPicker, app selection, shielding, Screen Time extension, App Group, scheduling, unlock logic, camera, pose Checkpoint B, movement logic, assisted-completion UI, production UI, dependency upgrade, or unrelated refactor.
 
-### Family Controls Phase 03.7 — Selection/Shield Code Ready, Owner Interaction Pending
+### Family Controls Phase 03.7 — Real-Device Validation Passed
 
 Apple has assigned Family Controls (Distribution) to the developer account for the main-app path. This closes the account-level main-app request item, but does not prove a distribution archive/TestFlight path. No Screen Time extension exists; every extension introduced later will require its own entitlement request.
 
@@ -145,7 +145,25 @@ Fresh code/build evidence:
 - the automatically signed generic iPhoneOS Debug app built, installed, and launched on the connected iPhone;
 - Metro loaded the React Native bundle, preserved the Phase 03.6 `approved` path, and received a successful native empty-state read: no stored selection, zero opaque counts, and this diagnostic shield store removed.
 
-Still pending owner interaction: picker save/cancel/modify/empty behavior, selection survival across complete termination/relaunch, a selected app actually showing Apple's shield, Remove restoring access, and repeated Apply → Remove behavior. Do not treat compilation, named-store state, or empty bridge reads as proof of those user-visible effects.
+Physical-iPhone validation then demonstrated:
+
+- Family Controls authorization continued to resolve automatically to `approved`;
+- `FamilyActivityPicker` presented successfully, and the owner created and edited an explicit selection;
+- the tested summary contained 5 application tokens, 1 category token, and 0 web-domain tokens;
+- selecting an individual app inside an Apple category increased the application-token count, while selecting the entire category increased the category-token count; this is treated as expected `FamilyActivitySelection` behavior rather than a project defect;
+- Apply Shield restricted the selected applications, and opening one displayed Apple's system `Restricted` screen;
+- Remove Shield restored normal access, and repeated Apply → Remove succeeded;
+- the saved selection remained available after the Debug development relaunch workflow once Metro connectivity was restored;
+- clearing the picker produced 0 application, 0 category, and 0 web-domain tokens, retained `Saved selection: yes (empty)`, and disabled Apply Shield;
+- no Family Controls functional error was observed.
+
+Picker Cancel/interactive-dismiss behavior was implemented but was not included in the reported owner test evidence, so it is not promoted to a verified real-device claim.
+
+### Debug Development-Build / Metro Observation
+
+After the owner force-quit the Debug development build and reopened it directly from the iPhone Home Screen while Metro connectivity was unavailable, React Native displayed `No script URL provided`. Once Metro was restarted and the installed app relaunched, the JavaScript bundle loaded, authorization resolved to `approved`, and the persisted selection was available.
+
+Treat this as a development-build/Metro workflow observation, not as a Family Controls authorization, picker, selection-persistence, or ManagedSettings failure. Production/TestFlight bundle behavior remains untested.
 
 ### Pose Checkpoint A — Owner Accepted and Integrated
 
@@ -192,28 +210,29 @@ The validated checkpoints and acceptance review passed:
 
 Existing third-party Expo / React Native build warnings remain; no project-source build error was observed. Do not convert Simulator evidence into a real-device claim.
 
+Phase 03.7 real-device evidence additionally verifies picker presentation, explicit selection/editing, local selection persistence through the restored development relaunch workflow, ManagedSettings shield application and removal, repeated apply/remove, and safe empty-selection behavior. No new automated code validation was required for the documentation-only closeout.
+
 ## Current Blockers and Explicit Non-Goals
 
-Apple Developer Program enrollment is active, the main-app Family Controls Distribution request is Assigned at the account level, and the individual development-authorization path has been exercised on a physical iPhone. The approved-state cold-launch timing issue is diagnosed and accepted after five consecutive real-device cold starts. Phase 03.7 code builds, signs, installs, launches, and reaches the empty native bridge state, but the actual picker/save/shield/remove/relaunch sequence now requires the owner to interact with the physical iPhone. Denied/revoked lifecycle behavior remains unverified and must not be tested without explicit owner approval.
+Apple Developer Program enrollment is active, the main-app Family Controls Distribution request is Assigned at the account level, and the individual development-authorization path has been exercised on a physical iPhone. The approved-state cold-launch timing issue is diagnosed and accepted after five consecutive real-device cold starts. Phase 03.7 picker, save/edit, local persistence through the restored development relaunch workflow, shield, remove, repeated apply/remove, and empty-selection behavior are now verified on the physical iPhone. Denied/revoked lifecycle behavior remains unverified and must not be tested without explicit owner approval.
 
 Until the applicable real-device checkpoint and release review, do not add or claim:
 
 - live camera permission/capture or physical-device pose performance;
 - movement-specific thresholds, repetition counting, or assisted-completion implementation;
 - denied/revoked cold-launch behavior or a complete authorization-state reliability claim;
-- verified real-device picker/persistence/shield behavior until the owner completes the pending interaction;
 - extensions, App Groups, scheduling, or reliable unlock integration;
+- production/TestFlight bundle behavior or Metro-independent release launching;
 - production training UI, TestFlight readiness, or App Store readiness.
 
 ## Authorized Integration and Next Safe Sequence
 
 1. The owner accepted the limited Checkpoint A scope and authorized fast-forward-only integration into `main`, pushing `origin/main`, and retaining the source branch.
-2. On the connected iPhone, choose one or two harmless apps, save the picker, confirm non-sensitive counts, apply the shield, verify a selected app is shielded, remove the shield, and verify access returns.
-3. Repeat Apply → Remove, modify/empty the selection, and completely terminate/relaunch the app to verify persistence without revoking authorization.
-4. Record the real-device evidence and fix any discovered picker, persistence, or shield lifecycle defect on `spike/family-controls-real-device`.
-5. Decide whether and when to test denied/revoked lifecycle behavior; changing the current device authorization requires explicit owner approval and a documented recovery path.
-6. Investigate the valid-local-PNG Vision failure and perform Pose Checkpoint B live-camera feasibility only after camera-permission and release-impact review.
-7. Build the smallest scheduled/core-loop slice only after the direct Phase 03.7 selection/shield path is proven.
+2. Phase 03.7 is complete on `spike/family-controls-real-device`; close it with the documentation-only verification commit and do not merge to `main` without explicit owner acceptance.
+3. Keep the Debug/Metro `No script URL provided` observation separate from Family Controls and validate production/TestFlight bundle behavior in the applicable release checkpoint.
+4. Decide whether and when to test denied/revoked lifecycle behavior; changing the current device authorization requires explicit owner approval and a documented recovery path.
+5. Do not begin DeviceActivity scheduling, recurring Lock Time, extensions, App Groups, camera/live pose work, or production UI in this closeout.
+6. Select and authorize the next technical slice in a new conversation.
 
 Do not fill the Apple/device gate with production UI or invented thresholds.
 
@@ -229,4 +248,4 @@ Safe comparison/rollback points:
 
 ## New-Chat Startup Instruction
 
-> Open `/Users/hanqingwang/Developer/mens-discipline-app`. First run `git status --short --branch`, then completely read `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PHASE.md`, `docs/product/MVP_SCOPE.md`, and `docs/DECISIONS.md`; read the relevant release documents before capability/privacy/release work. Preserve all existing work. Family Controls Checkpoint 1 and Pose Checkpoint A are integrated into `main`; the active source branch is `spike/family-controls-real-device`. Phase 03.6's publisher/lifecycle stabilization is accepted after five approved-state cold launches. The main-app Family Controls Distribution request is Assigned at the account level. Phase 03.7 now presents Apple's picker, persists only opaque `FamilyActivitySelection` encoding, exposes only non-sensitive counts, and applies/removes a single named diagnostic `ManagedSettingsStore`; it builds, signs, installs, launches, and reads the empty native state on the connected iPhone. Owner interaction is still required to prove save/modify/empty/relaunch persistence and actual shield/remove effects. Continue debugging after those observations. Do not revoke authorization without explicit approval. Do not add extensions, App Groups, scheduling, production UI, camera/live pose work, dependencies, or unrelated scope in this checkpoint. Do not use Superpowers. Explain important decisions and final status in Chinese.
+> Open `/Users/hanqingwang/Developer/mens-discipline-app`. First run `git status --short --branch`, then completely read `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PHASE.md`, `docs/product/MVP_SCOPE.md`, and `docs/DECISIONS.md`; read the relevant release documents before capability/privacy/release work. Preserve all existing work. Family Controls Checkpoint 1 and Pose Checkpoint A are integrated into `main`; the retained Phase 03.7 source branch is `spike/family-controls-real-device`. Phase 03.6's approved authorization stabilization is accepted. The main-app Family Controls Distribution request is Assigned at the account level. Phase 03.7 is verified on a physical iPhone: Apple's picker presented, the owner created/edited an explicit selection, opaque selection counts persisted through the restored development relaunch workflow, Apply displayed Apple's `Restricted` screen for selected apps, Remove restored access, repeated apply/remove succeeded, and clearing produced a saved empty selection with Apply disabled. The Debug build separately showed `No script URL provided` when reopened without Metro; restoring Metro fixed the development launch, so production/TestFlight bundle behavior remains untested. Denied/revoked authorization, DeviceActivity scheduling, recurring Lock Time, extensions and their entitlements, reboot/timezone/DST behavior, production UI, and camera/live pose integration remain open. Start the next technical slice only with explicit scope in a new conversation. Do not use Superpowers. Explain important decisions and final status in Chinese.
