@@ -1,6 +1,7 @@
 {
   "platforms": ["apple"],
   "apple": {
-    "modules": ["ExpoFamilyControlsModule"]
+    "modules": ["ExpoFamilyControlsModule"],
+    "appDelegateSubscribers": ["ExpoFamilyControlsAppDelegateSubscriber"]
   }
 }

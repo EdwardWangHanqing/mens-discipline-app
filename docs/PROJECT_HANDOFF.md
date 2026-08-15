@@ -90,7 +90,7 @@ Key commits:
 
 Not yet implemented: FamilyActivityPicker, shielding, Screen Time extensions, App Groups, scheduling, and the complete lock → routine → unlock prototype.
 
-### Family Controls Real-Device Authorization — Partial Pass, Pending Review
+### Family Controls Real-Device Authorization — Approved Cold-Launch Path Fixed, Pending Owner Review
 
 On 2026-08-14, the development authorization path was validated on an iPhone 13 running iOS 26. Account, certificate, device, profile, and other private identifiers were intentionally not recorded.
 
@@ -103,7 +103,19 @@ On 2026-08-14, the development authorization path was validated on an iPhone 13 
 - `AuthorizationCenter.shared.requestAuthorization(for: .individual)` presented the real Apple system authorization UI. The owner selected Allow, and the post-request status read was `approved`.
 - Authorization persisted across complete app termination: on two cold-launch repetitions, the immediate startup read showed `notDetermined`, then a status refresh after several seconds returned `approved`.
 
-The checkpoint is therefore a partial pass rather than a full pass. Development signing, provisioning, installation, bridge loading, real system authorization, approval, and persisted authorization were demonstrated. However, the repeatable transient `notDetermined` value on immediate cold-launch reads must be understood and handled before authorization status is trusted for product decisions.
+The initial validation checkpoint was a partial pass rather than a full pass. Development signing, provisioning, installation, bridge loading, real system authorization, approval, and persisted authorization were demonstrated, while the repeatable transient `notDetermined` value on immediate cold-launch reads remained unresolved.
+
+Follow-up diagnosis confirmed that the transient value is the real initial value of Apple's `AuthorizationCenter.authorizationStatus`, not a JavaScript default. Apple exposes the property as `@Published`; observing `$authorizationStatus` caused the persisted `approved` state to arrive automatically after the initial value. The issue still reproduced with Metro already running, so Debug/Metro startup order was not the root cause.
+
+The branch now contains a minimal lifecycle-aware stabilization path:
+
+- the UI starts in `checking` rather than displaying the initial native value as final;
+- the native module records module initialization, app-active, raw-read, publisher, and resolution timestamps;
+- the app subscribes to the official authorization-status publisher;
+- status resolution begins after the app is active and uses bounded incremental retries as a fallback;
+- no automatic authorization request is made, and an already-approved state disables the request action.
+
+Five consecutive physical-iPhone cold starts fully terminated the previous process and relaunched the app. All five showed `checking` and automatically resolved to `approved` without manual refresh, without displaying `notDetermined` as a final/user-actionable state, and without presenting another authorization request. Native stabilization took approximately 0.12–0.55 ms in these runs; JavaScript resolved the approved state in approximately 0.61–0.71 seconds. The owner visually confirmed the user-visible behavior. Denied and revoked states were intentionally not tested because they would change the device's current authorization and require separate approval.
 
 No FamilyActivityPicker, app selection, shielding, Screen Time extension, App Group, scheduling, unlock logic, camera, pose Checkpoint B, movement logic, assisted-completion UI, production UI, dependency upgrade, or unrelated refactor was added.
 
@@ -154,22 +166,22 @@ Existing third-party Expo / React Native build warnings remain; no project-sourc
 
 ## Current Blockers and Explicit Non-Goals
 
-Apple Developer Program enrollment is active and the Family Controls individual development-authorization path has now been exercised on a physical iPhone. The remaining immediate Family Controls blocker is the repeatable cold-launch timing issue: the first status read returned `notDetermined`, while a refresh after several seconds returned the persisted `approved` state.
+Apple Developer Program enrollment is active and the Family Controls individual development-authorization path has been exercised on a physical iPhone. The approved-state cold-launch timing issue is diagnosed and has passed five consecutive real-device cold starts on the current branch. The implementation and evidence remain at owner review; denied/revoked lifecycle behavior is still unverified and must not be tested without explicit owner approval.
 
 Until the applicable real-device checkpoint and release review, do not add or claim:
 
 - live camera permission/capture or physical-device pose performance;
 - movement-specific thresholds, repetition counting, or assisted-completion implementation;
-- treating the first cold-launch Family Controls status read as authoritative without recovery/observation;
+- denied/revoked cold-launch behavior or a complete authorization-state reliability claim;
 - app selection, shielding, extensions, App Groups, scheduling, or reliable unlock integration;
 - production training UI, TestFlight readiness, or App Store readiness.
 
 ## Authorized Integration and Next Safe Sequence
 
 1. The owner accepted the limited Checkpoint A scope and authorized fast-forward-only integration into `main`, pushing `origin/main`, and retaining the source branch.
-2. Review and accept or revise the Family Controls real-device partial-pass evidence on `spike/family-controls-real-device`.
-3. Investigate the immediate cold-launch `notDetermined` result and establish a reliable status-observation/retry strategy before using authorization state for product decisions.
-4. Add FamilyActivityPicker only after the authorization checkpoint and cold-launch behavior are accepted.
+2. Review the Family Controls publisher/lifecycle stabilization implementation and five-run real-device evidence on `spike/family-controls-real-device`.
+3. Decide whether and when to test denied/revoked lifecycle behavior; changing the current device authorization requires explicit owner approval and a documented recovery path.
+4. Add FamilyActivityPicker only after this authorization checkpoint is accepted.
 5. Investigate the valid-local-PNG Vision failure and perform Pose Checkpoint B live-camera feasibility only after camera-permission and release-impact review.
 6. Select one representative MVP movement before Checkpoint C tolerant counting, recovery, and assisted completion work.
 7. Build the smallest App Selection → Lock/Shield → Routine → Completion → Unlock prototype only after the underlying real-device paths are proven.
@@ -188,4 +200,4 @@ Safe comparison/rollback points:
 
 ## New-Chat Startup Instruction
 
-> Open `/Users/hanqingwang/Developer/mens-discipline-app`. First run `git status --short --branch`, then completely read `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PHASE.md`, `docs/product/MVP_SCOPE.md`, `docs/DECISIONS.md`, and `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md`. Read the relevant release documents before permission, capability, account, privacy, subscription, TestFlight, or App Store work. Preserve all existing work. Family Controls Checkpoint 1 and the owner-accepted Pose Checkpoint A are integrated into `main`; retain `spike/vision-pose-foundation`. The paid Individual developer account, Automatic Signing, physical-device provisioning, signed Family Controls development entitlement, installation, bridge loading, real `.individual` system authorization, owner approval, and persisted `approved` state have been demonstrated on `spike/family-controls-real-device`. On two cold launches, however, the immediate startup read returned transient `notDetermined` before a later manual refresh returned `approved`; do not treat the checkpoint as fully passed until this timing behavior is understood and handled. Do not start FamilyActivityPicker, shielding, extensions, App Groups, scheduling, camera permission/live capture, movement thresholds, automatic counting, assisted-completion UI, or production UI without the next approved checkpoint. Do not use Superpowers. Explain important decisions and final status in Chinese.
+> Open `/Users/hanqingwang/Developer/mens-discipline-app`. First run `git status --short --branch`, then completely read `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PHASE.md`, `docs/product/MVP_SCOPE.md`, `docs/DECISIONS.md`, and `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md`. Read the relevant release documents before permission, capability, account, privacy, subscription, TestFlight, or App Store work. Preserve all existing work. Family Controls Checkpoint 1 and the owner-accepted Pose Checkpoint A are integrated into `main`; retain `spike/vision-pose-foundation`. The paid Individual developer account, Automatic Signing, physical-device provisioning, signed Family Controls development entitlement, installation, bridge loading, real `.individual` system authorization, owner approval, and persisted `approved` state have been demonstrated on `spike/family-controls-real-device`. The initial cold-launch `notDetermined` result is the real initial value of Apple's published authorization property. The current branch observes the publisher, waits in `checking`, reads after active, and uses bounded fallback retries; five consecutive real-device cold starts automatically resolved to `approved` without manual refresh or another authorization request. The implementation is pending owner review. Do not test denied/revoked behavior without explicit owner approval and a recovery plan. Do not start FamilyActivityPicker, shielding, extensions, App Groups, scheduling, camera permission/live capture, movement thresholds, automatic counting, assisted-completion UI, or production UI without the next approved checkpoint. Do not use Superpowers. Explain important decisions and final status in Chinese.

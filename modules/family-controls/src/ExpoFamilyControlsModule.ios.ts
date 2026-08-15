@@ -1,10 +1,15 @@
 import { NativeModule, requireNativeModule } from 'expo';
 
-import type { FamilyControlsAuthorizationStatus } from './ExpoFamilyControls.types';
+import type {
+  ExpoFamilyControlsEvents,
+  FamilyControlsAuthorizationSample,
+  FamilyControlsAuthorizationStatus,
+} from './ExpoFamilyControls.types';
 
-declare class ExpoFamilyControlsModule extends NativeModule {
+declare class ExpoFamilyControlsModule extends NativeModule<ExpoFamilyControlsEvents> {
   getAuthorizationStatus(): FamilyControlsAuthorizationStatus;
-  requestAuthorization(): Promise<void>;
+  getAuthorizationStatusDiagnostic(): FamilyControlsAuthorizationSample;
+  requestAuthorization(): Promise<FamilyControlsAuthorizationSample>;
 }
 
 export default requireNativeModule<ExpoFamilyControlsModule>(

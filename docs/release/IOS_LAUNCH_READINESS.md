@@ -26,7 +26,7 @@
 - [x] Enroll in Apple Developer Program early enough to test Family Controls on a real iPhone.
 - [x] Validate paid Individual-team Automatic Signing, physical-device registration, development provisioning, and the signed main-app Family Controls development entitlement.
 - [x] Present the real `.individual` system authorization flow on a physical iPhone and read `approved` after the owner allows access.
-- [ ] Resolve or safely handle the repeatable transient `notDetermined` result on the first cold-launch status read; a later refresh returned the persisted `approved` state in both observed repetitions.
+- [x] Safely handle the initial `notDetermined` value for the approved cold-launch path by observing Apple's publisher, displaying `checking`, reading after App active, and using bounded retries; five consecutive real-device cold starts automatically resolved to `approved` without manual refresh or another authorization prompt.
 - [ ] Build the smallest possible App Selection → Shield/Lock → Unlock prototype.
 - [ ] Verify user-selected apps can be shielded and restored reliably.
 - [ ] Verify authorization denied/revoked behavior.

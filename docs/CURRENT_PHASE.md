@@ -41,7 +41,10 @@ Validate the existing Family Controls development-signing and individual-authori
 - The physical-device app build, installation, and launch succeeded. The signed app and embedded development profile both contained the Family Controls development entitlement.
 - The React Native bundle loaded and the application-local Swift module registered on the physical device.
 - The pre-request status was `notDetermined`; the real system authorization UI appeared for `.individual`; the owner allowed access; and the post-request status was `approved`.
-- On two complete termination/relaunch repetitions, the immediate startup read was transiently `notDetermined`; a status refresh after several seconds returned the persisted `approved` state. This timing/reliability issue remains unresolved, so the real-device checkpoint is a partial pass pending review.
+- On two complete termination/relaunch repetitions, the old implementation's immediate startup read was transiently `notDetermined`; a status refresh after several seconds returned the persisted `approved` state.
+- Follow-up diagnosis confirmed that Apple's published authorization property itself begins at `notDetermined` and then updates to the persisted value. The old UI synchronously exposed that initial native value; it was not a JavaScript default-value race, and the behavior still reproduced with Metro already ready.
+- The current branch observes the native publisher, begins in `checking`, reads after App active, and uses bounded incremental retries without automatically requesting authorization.
+- Five consecutive physical-iPhone cold starts automatically resolved from `checking` to `approved` without manual refresh, without presenting `notDetermined` as a final/user-actionable state, and without another authorization prompt. The owner visually confirmed the result. Denied/revoked behavior remains untested pending explicit approval.
 - The iOS Simulator can load the bridge and return `notDetermined`, but its system log reports that the `FamilyControlsAgent` service is unavailable; this is not evidence of real-device authorization behavior.
 - The Technical Baseline screen is only a temporary engineering test surface; it is not production UI.
 - FamilyActivityPicker, ManagedSettings shielding, Screen Time extensions, App Groups, and scheduling have not started.
@@ -57,14 +60,14 @@ Immediate work:
 
 1. Review the physical-iPhone development-signing, entitlement, bridge, and individual-authorization evidence
 2. Preserve the locked iOS Bundle ID and reproducible CNG configuration
-3. Resolve or safely handle the repeatable transient `notDetermined` result on immediate cold-launch status reads
+3. Review and accept the publisher/lifecycle stabilization implementation and five-run approved-state cold-launch evidence
 4. Add FamilyActivityPicker only after this real-device authorization checkpoint is accepted
 5. Validate CNG and native integration against the required Family Controls / Screen Time extension architecture
 6. Build the smallest App Selection → Lock/Shield → Unlock prototype
 7. Review and accept the implemented movement-agnostic pose data contract and offline/local Vision Checkpoint A
 8. Validate live camera framing, latency, partial-body behavior, tolerant counting, and assisted completion on a physical iPhone
 
-The Family Controls Checkpoint 1 implementation is complete, accepted, and merged. Real-device development signing and authorization are a partial pass pending review because persisted approval is available after refresh but the immediate cold-launch read is transiently incorrect. Pose Checkpoint A is accepted and integrated. App selection, shielding, extensions, App Groups, scheduling, live camera, and movement counting remain future tasks.
+The Family Controls Checkpoint 1 implementation is complete, accepted, and merged. Real-device development signing, authorization, and the approved-state cold-launch stabilization path have passed their current validation criteria on `spike/family-controls-real-device` and are pending owner code review. Denied/revoked behavior has not been tested. Pose Checkpoint A is accepted and integrated. App selection, shielding, extensions, App Groups, scheduling, live camera, and movement counting remain future tasks.
 
 ## Parallel Track — Business / Apple Account
 
