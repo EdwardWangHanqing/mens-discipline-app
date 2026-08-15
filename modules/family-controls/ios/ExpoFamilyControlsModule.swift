@@ -101,6 +101,7 @@ public class ExpoFamilyControlsModule: Module {
   private var authorizationStatusCancellable: AnyCancellable?
   private let selectionStore = FamilyControlsSelectionStore()
   private let shieldStore = FamilyControlsShieldStore()
+  private let scheduleStore = FamilyControlsScheduleStore()
   private var activityPickerPresentation: FamilyActivityPickerPresentation?
 
   public func definition() -> ModuleDefinition {
@@ -271,6 +272,95 @@ public class ExpoFamilyControlsModule: Module {
 
     AsyncFunction("removeShield") { (promise: Promise) in
       promise.resolve(self.shieldStore.remove())
+    }
+    .runOnQueue(.main)
+
+    AsyncFunction("getScheduledLockState") { (promise: Promise) in
+      promise.resolve(self.scheduleStore.state())
+    }
+    .runOnQueue(.main)
+
+    AsyncFunction("scheduleDailyLock") {
+      (hour: Int, minute: Int, promise: Promise) in
+      guard Self.isAuthorizationUsable(
+        AuthorizationCenter.shared.authorizationStatus
+      ) else {
+        promise.reject(
+          "ERR_FAMILY_CONTROLS_AUTHORIZATION_REQUIRED",
+          "Family Controls authorization must be approved before scheduling a lock."
+        )
+        return
+      }
+
+      do {
+        promise.resolve(
+          try self.scheduleStore.scheduleDaily(hour: hour, minute: minute)
+        )
+      } catch {
+        promise.reject(
+          "ERR_DEVICE_ACTIVITY_SCHEDULE",
+          error.localizedDescription
+        )
+      }
+    }
+    .runOnQueue(.main)
+
+    AsyncFunction("scheduleDiagnosticLock") {
+      (minutesFromNow: Int, promise: Promise) in
+      guard Self.isAuthorizationUsable(
+        AuthorizationCenter.shared.authorizationStatus
+      ) else {
+        promise.reject(
+          "ERR_FAMILY_CONTROLS_AUTHORIZATION_REQUIRED",
+          "Family Controls authorization must be approved before scheduling a lock."
+        )
+        return
+      }
+
+      do {
+        promise.resolve(
+          try self.scheduleStore.scheduleDiagnostic(
+            minutesFromNow: minutesFromNow
+          )
+        )
+      } catch {
+        promise.reject(
+          "ERR_DEVICE_ACTIVITY_SCHEDULE",
+          error.localizedDescription
+        )
+      }
+    }
+    .runOnQueue(.main)
+
+    AsyncFunction("setDiagnosticAccountabilityCompleted") {
+      (completed: Bool, promise: Promise) in
+      do {
+        promise.resolve(
+          try self.scheduleStore.setAccountabilityCompletedToday(completed)
+        )
+      } catch {
+        promise.reject(
+          "ERR_SCHEDULED_LOCK_SHARED_STATE",
+          error.localizedDescription
+        )
+      }
+    }
+    .runOnQueue(.main)
+
+    AsyncFunction("cancelScheduledLocks") { (promise: Promise) in
+      promise.resolve(self.scheduleStore.cancelSchedulesAndRemoveShield())
+    }
+    .runOnQueue(.main)
+
+    AsyncFunction("resetScheduledLockDiagnostics") { (promise: Promise) in
+      do {
+        promise.resolve(try self.scheduleStore.resetDiagnostics())
+      } catch {
+        promise.reject(
+          "ERR_SCHEDULED_LOCK_SHARED_STATE",
+          error.localizedDescription
+        )
+      }
     }
     .runOnQueue(.main)
   }

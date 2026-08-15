@@ -5,6 +5,7 @@ import type {
   FamilyControlsAuthorizationStatus,
   FamilyControlsSelectionSummary,
   FamilyControlsShieldState,
+  ScheduledLockState,
 } from './ExpoFamilyControls.types';
 
 const unsupportedPlatformMessage =
@@ -12,6 +13,8 @@ const unsupportedPlatformMessage =
 
 const unsupportedSelectionSummary: FamilyControlsSelectionSummary = {
   storageStatus: 'none',
+  storageScope: 'unavailable',
+  sharedStorageAvailable: false,
   hasStoredSelection: false,
   hasSelection: false,
   isEmpty: true,
@@ -20,6 +23,35 @@ const unsupportedSelectionSummary: FamilyControlsSelectionSummary = {
   webDomainCount: 0,
   persistedAtMs: null,
   errorMessage: null,
+};
+
+const unsupportedMonitoringState = {
+  activityName: '',
+  kind: 'oneOffDiagnostic' as const,
+  isMonitoring: false,
+  repeats: false,
+  configuredStartHour: null,
+  configuredStartMinute: null,
+  nextIntervalStartMs: null,
+  nextIntervalEndMs: null,
+};
+
+const unsupportedScheduledLockState: ScheduledLockState = {
+  sharedStorageAvailable: false,
+  accountability: {
+    dateKey: '',
+    completedToday: false,
+    completedDateKey: null,
+    updatedAtMs: null,
+    source: 'diagnosticAppGroupState',
+  },
+  daily: {
+    ...unsupportedMonitoringState,
+    kind: 'dailyRecurring',
+  },
+  diagnostic: unsupportedMonitoringState,
+  lastCallback: null,
+  lastScheduleConfiguredAtMs: null,
 };
 
 const unsupportedShieldState: FamilyControlsShieldState = {
@@ -73,5 +105,30 @@ export default {
   },
   async removeShield(): Promise<FamilyControlsShieldState> {
     return unsupportedShieldState;
+  },
+  async getScheduledLockState(): Promise<ScheduledLockState> {
+    return unsupportedScheduledLockState;
+  },
+  async scheduleDailyLock(
+    _hour: number,
+    _minute: number
+  ): Promise<ScheduledLockState> {
+    throw new Error(unsupportedPlatformMessage);
+  },
+  async scheduleDiagnosticLock(
+    _minutesFromNow: number
+  ): Promise<ScheduledLockState> {
+    throw new Error(unsupportedPlatformMessage);
+  },
+  async setDiagnosticAccountabilityCompleted(
+    _completed: boolean
+  ): Promise<ScheduledLockState> {
+    throw new Error(unsupportedPlatformMessage);
+  },
+  async cancelScheduledLocks(): Promise<ScheduledLockState> {
+    return unsupportedScheduledLockState;
+  },
+  async resetScheduledLockDiagnostics(): Promise<ScheduledLockState> {
+    return unsupportedScheduledLockState;
   },
 };

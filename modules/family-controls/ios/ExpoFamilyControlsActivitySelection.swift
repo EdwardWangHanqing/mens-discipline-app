@@ -1,103 +1,28 @@
 import ExpoModulesCore
 import FamilyControls
 import Foundation
-import ManagedSettings
 import SwiftUI
 import UIKit
 
-private let selectionDataKey =
-  "com.temperline.mensdiscipline.family-controls.diagnostic-selection"
-private let selectionPersistedAtKey =
-  "com.temperline.mensdiscipline.family-controls.diagnostic-selection-persisted-at"
-
-struct FamilyControlsStoredSelection {
-  let selection: FamilyActivitySelection?
-  let storageStatus: String
-  let persistedAtMs: Double?
-  let errorMessage: String?
-
-  var summary: [String: Any?] {
-    let applicationCount = selection?.applicationTokens.count ?? 0
-    let categoryCount = selection?.categoryTokens.count ?? 0
-    let webDomainCount = selection?.webDomainTokens.count ?? 0
-    let hasStoredSelection = selection != nil
-    let isEmpty = applicationCount == 0 && categoryCount == 0 && webDomainCount == 0
-
-    return [
-      "storageStatus": storageStatus,
-      "hasStoredSelection": hasStoredSelection,
-      "hasSelection": hasStoredSelection && !isEmpty,
-      "isEmpty": isEmpty,
-      "applicationCount": applicationCount,
-      "categoryCount": categoryCount,
-      "webDomainCount": webDomainCount,
-      "persistedAtMs": persistedAtMs,
-      "errorMessage": errorMessage,
-    ]
-  }
-}
-
 final class FamilyControlsSelectionStore {
-  private let userDefaults: UserDefaults
+  private let sharedStateStore: FamilyControlsSharedStateStore
 
-  init(userDefaults: UserDefaults = .standard) {
-    self.userDefaults = userDefaults
+  init(sharedStateStore: FamilyControlsSharedStateStore = .init()) {
+    self.sharedStateStore = sharedStateStore
   }
 
   func load() -> FamilyControlsStoredSelection {
-    guard let data = userDefaults.data(forKey: selectionDataKey) else {
-      return FamilyControlsStoredSelection(
-        selection: nil,
-        storageStatus: "none",
-        persistedAtMs: nil,
-        errorMessage: nil
-      )
-    }
-
-    let persistedAtMs = userDefaults.object(forKey: selectionPersistedAtKey)
-      as? Double
-
-    do {
-      let selection = try JSONDecoder().decode(
-        FamilyActivitySelection.self,
-        from: data
-      )
-      return FamilyControlsStoredSelection(
-        selection: selection,
-        storageStatus: "available",
-        persistedAtMs: persistedAtMs,
-        errorMessage: nil
-      )
-    } catch {
-      let errorMessage = "Stored selection could not be decoded. " +
-        "Choose apps again to replace it."
-      print(
-        "[FamilyControlsSelection] restore failed: " +
-          error.localizedDescription
-      )
-      return FamilyControlsStoredSelection(
-        selection: nil,
-        storageStatus: "corrupt",
-        persistedAtMs: persistedAtMs,
-        errorMessage: errorMessage
-      )
-    }
+    sharedStateStore.loadSelection()
   }
 
   func save(
     _ selection: FamilyActivitySelection
   ) throws -> FamilyControlsStoredSelection {
-    let encodedSelection = try JSONEncoder().encode(selection)
-    let persistedAtMs = Date().timeIntervalSince1970 * 1_000
-    userDefaults.set(encodedSelection, forKey: selectionDataKey)
-    userDefaults.set(persistedAtMs, forKey: selectionPersistedAtKey)
-
-    return FamilyControlsStoredSelection(
-      selection: selection,
-      storageStatus: "available",
-      persistedAtMs: persistedAtMs,
-      errorMessage: nil
-    )
+    let storedSelection = try sharedStateStore.saveSelection(selection)
+    if storedSelection.isEmpty {
+      _ = FamilyControlsShieldStore().remove()
+    }
+    return storedSelection
   }
 }
 
@@ -265,86 +190,5 @@ final class FamilyActivityPickerPresentation:
       "selection": selectionStore.load().summary,
     ])
     onFinished()
-  }
-}
-
-final class FamilyControlsShieldStore {
-  private let store = ManagedSettingsStore(
-    named: ManagedSettingsStore.Name(
-      "com.temperline.mensdiscipline.diagnostic-shield"
-    )
-  )
-
-  func apply(_ selection: FamilyActivitySelection) -> [String: Any?] {
-    store.shield.applications = selection.applicationTokens.isEmpty
-      ? nil
-      : selection.applicationTokens
-    store.shield.webDomains = selection.webDomainTokens.isEmpty
-      ? nil
-      : selection.webDomainTokens
-
-    if selection.categoryTokens.isEmpty {
-      store.shield.applicationCategories = nil
-      store.shield.webDomainCategories = nil
-    } else {
-      store.shield.applicationCategories = .specific(selection.categoryTokens)
-      store.shield.webDomainCategories = .specific(selection.categoryTokens)
-    }
-
-    return state()
-  }
-
-  func remove() -> [String: Any?] {
-    store.clearAllSettings()
-    return state()
-  }
-
-  func state() -> [String: Any?] {
-    let applicationCount = store.shield.applications?.count ?? 0
-    let webDomainCount = store.shield.webDomains?.count ?? 0
-    let applicationCategoryState = categoryPolicyState(
-      store.shield.applicationCategories
-    )
-    let webDomainCategoryState = categoryPolicyState(
-      store.shield.webDomainCategories
-    )
-    let categoryCount = max(
-      applicationCategoryState.count,
-      webDomainCategoryState.count
-    )
-    let usesAllCategories = applicationCategoryState.usesAllCategories ||
-      webDomainCategoryState.usesAllCategories
-    let isApplied = applicationCount > 0 ||
-      webDomainCount > 0 ||
-      categoryCount > 0 ||
-      usesAllCategories
-
-    return [
-      "isApplied": isApplied,
-      "applicationCount": applicationCount,
-      "categoryCount": categoryCount,
-      "webDomainCount": webDomainCount,
-      "usesAllCategories": usesAllCategories,
-      "source": "namedManagedSettingsStore",
-    ]
-  }
-
-  private func categoryPolicyState<Activity>(
-    _ policy: ShieldSettings.ActivityCategoryPolicy<Activity>?
-  ) -> (count: Int, usesAllCategories: Bool) {
-    guard let policy else {
-      return (0, false)
-    }
-
-    switch policy {
-    case .none:
-      return (0, false)
-    case .specific(let tokens, except: _):
-      return (tokens.count, false)
-    case .all:
-      return (0, true)
-    @unknown default:
-      return (0, true)
-    }
   }
 }

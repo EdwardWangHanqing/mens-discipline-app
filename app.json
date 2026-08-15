@@ -7,7 +7,8 @@
     "scheme": "mensdiscipline",
     "userInterfaceStyle": "automatic",
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "./plugins/with-device-activity-monitor"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -16,7 +17,32 @@
     "ios": {
       "bundleIdentifier": "com.temperline.mensdiscipline",
       "entitlements": {
-        "com.apple.developer.family-controls": true
+        "com.apple.developer.family-controls": true,
+        "com.apple.security.application-groups": [
+          "group.com.temperline.mensdiscipline"
+        ]
+      }
+    },
+    "extra": {
+      "eas": {
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "MensDisciplineDeviceActivityMonitor",
+                  "bundleIdentifier": "com.temperline.mensdiscipline.deviceactivitymonitor",
+                  "entitlements": {
+                    "com.apple.developer.family-controls": true,
+                    "com.apple.security.application-groups": [
+                      "group.com.temperline.mensdiscipline"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
       }
     }
   }

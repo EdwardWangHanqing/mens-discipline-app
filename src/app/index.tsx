@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 
@@ -15,6 +16,7 @@ import FamilyControls, {
   type FamilyControlsAuthorizationStatus,
   type FamilyControlsSelectionSummary,
   type FamilyControlsShieldState,
+  type ScheduledLockState,
 } from '../../modules/family-controls';
 import VisionPose, {
   type PoseDetectionResult,
@@ -82,6 +84,14 @@ export default function HomeScreen() {
     useState(true);
   const [isPresentingPicker, setIsPresentingPicker] = useState(false);
   const [isRunningShieldAction, setIsRunningShieldAction] = useState(false);
+  const [scheduledLockState, setScheduledLockState] =
+    useState<ScheduledLockState | null>(null);
+  const [dailyLockHour, setDailyLockHour] = useState('21');
+  const [dailyLockMinute, setDailyLockMinute] = useState('00');
+  const [isRunningScheduledLockAction, setIsRunningScheduledLockAction] =
+    useState(false);
+  const [scheduledLockErrorMessage, setScheduledLockErrorMessage] =
+    useState<string | null>(null);
   const [lastPickerOutcome, setLastPickerOutcome] = useState<
     'saved' | 'cancelled' | null
   >(null);
@@ -260,9 +270,11 @@ export default function HomeScreen() {
     setIsLoadingFamilyActivityState(true);
 
     try {
-      const [nextSelectionSummary, nextShieldState] = await Promise.all([
+      const [nextSelectionSummary, nextShieldState, nextScheduledLockState] =
+        await Promise.all([
         FamilyControls.getSelectionSummary(),
         FamilyControls.getShieldState(),
+        FamilyControls.getScheduledLockState(),
       ]);
       console.info(
         '[FamilyControlsSelectionDiagnostic] ' +
@@ -274,6 +286,7 @@ export default function HomeScreen() {
       );
       setSelectionSummary(nextSelectionSummary);
       setShieldState(nextShieldState);
+      setScheduledLockState(nextScheduledLockState);
       setFamilyActivityErrorMessage(
         nextSelectionSummary.errorMessage ??
           (nextShieldState.usesAllCategories
@@ -345,6 +358,57 @@ export default function HomeScreen() {
       setIsRunningShieldAction(false);
     }
   }, []);
+
+  const runScheduledLockAction = useCallback(
+    async (action: () => Promise<ScheduledLockState>) => {
+      setIsRunningScheduledLockAction(true);
+      setScheduledLockErrorMessage(null);
+
+      try {
+        const nextScheduledLockState = await action();
+        setScheduledLockState(nextScheduledLockState);
+        setShieldState(await FamilyControls.getShieldState());
+      } catch (error) {
+        setScheduledLockErrorMessage(formatError(error));
+      } finally {
+        setIsRunningScheduledLockAction(false);
+      }
+    },
+    []
+  );
+
+  const scheduleDailyLock = useCallback(() => {
+    const hour = Number.parseInt(dailyLockHour, 10);
+    const minute = Number.parseInt(dailyLockMinute, 10);
+    void runScheduledLockAction(() =>
+      FamilyControls.scheduleDailyLock(hour, minute)
+    );
+  }, [dailyLockHour, dailyLockMinute, runScheduledLockAction]);
+
+  const scheduleDiagnosticLock = useCallback(() => {
+    void runScheduledLockAction(() =>
+      FamilyControls.scheduleDiagnosticLock(2)
+    );
+  }, [runScheduledLockAction]);
+
+  const setAccountabilityCompleted = useCallback(
+    (completed: boolean) => {
+      void runScheduledLockAction(() =>
+        FamilyControls.setDiagnosticAccountabilityCompleted(completed)
+      );
+    },
+    [runScheduledLockAction]
+  );
+
+  const cancelScheduledLocks = useCallback(() => {
+    void runScheduledLockAction(() => FamilyControls.cancelScheduledLocks());
+  }, [runScheduledLockAction]);
+
+  const resetScheduledLockDiagnostics = useCallback(() => {
+    void runScheduledLockAction(() =>
+      FamilyControls.resetScheduledLockDiagnostics()
+    );
+  }, [runScheduledLockAction]);
 
   const runPoseBridgeDiagnostic = useCallback(async () => {
     setIsRunningPoseDiagnostic(true);
@@ -466,6 +530,11 @@ export default function HomeScreen() {
     isAuthorizationApproved &&
     selectionSummary?.hasSelection === true &&
     !isRunningShieldAction;
+  const canScheduleLock =
+    isAuthorizationApproved &&
+    selectionSummary?.hasSelection === true &&
+    scheduledLockState?.sharedStorageAvailable === true &&
+    !isRunningScheduledLockAction;
 
   return (
     <ScrollView
@@ -627,9 +696,13 @@ export default function HomeScreen() {
         </View>
 
         <Text style={styles.caption}>
-          Tokens stay opaque in native storage. Editing the saved selection does
-          not change an active shield until Apply Shield is tapped again. Remove
-          Shield always clears this diagnostic store.
+          Tokens stay opaque in native storage. Editing to another non-empty
+          selection does not change an active shield until Apply Shield is
+          tapped again. Saving an empty selection or tapping Remove Shield
+          clears all diagnostic shield stores.
+          {'\n'}Storage: {selectionSummary?.storageScope ?? 'unknown'} · App
+          Group available:{' '}
+          {selectionSummary?.sharedStorageAvailable ? 'yes' : 'no'}
           {'\n'}Saved at:{' '}
           {formatTimestamp(selectionSummary?.persistedAtMs ?? null)}
           {lastPickerOutcome ? `\nLast picker outcome: ${lastPickerOutcome}` : ''}
@@ -638,6 +711,144 @@ export default function HomeScreen() {
         {familyActivityErrorMessage ? (
           <Text selectable style={styles.error}>
             {familyActivityErrorMessage}
+          </Text>
+        ) : null}
+      </View>
+
+      <View style={styles.diagnosticSection}>
+        <Text style={styles.diagnosticTitle}>
+          Scheduled Lock Time diagnostic
+        </Text>
+        <Text style={styles.status}>
+          Accountability today:{' '}
+          {scheduledLockState?.accountability.completedToday
+            ? 'Completed'
+            : 'Incomplete'}
+        </Text>
+        <Text style={styles.status}>
+          Daily recurring schedule:{' '}
+          {scheduledLockState?.daily.isMonitoring ? 'active' : 'inactive'}
+        </Text>
+        <Text style={styles.caption}>
+          Daily next start:{' '}
+          {formatTimestamp(
+            scheduledLockState?.daily.nextIntervalStartMs ?? null
+          )}
+          {'\n'}One-off diagnostic:{' '}
+          {scheduledLockState?.diagnostic.isMonitoring
+            ? 'active'
+            : 'inactive'}
+          {'\n'}Diagnostic next start:{' '}
+          {formatTimestamp(
+            scheduledLockState?.diagnostic.nextIntervalStartMs ?? null
+          )}
+          {'\n'}Last monitor callback:{' '}
+          {scheduledLockState?.lastCallback
+            ? `${scheduledLockState.lastCallback.callback} / ${scheduledLockState.lastCallback.outcome}`
+            : 'none'}
+          {'\n'}Callback time:{' '}
+          {formatTimestamp(
+            scheduledLockState?.lastCallback?.occurredAtMs ?? null
+          )}
+        </Text>
+
+        <View style={styles.timeInputs}>
+          <TextInput
+            accessibilityLabel="Daily lock hour"
+            keyboardType="number-pad"
+            maxLength={2}
+            onChangeText={setDailyLockHour}
+            placeholder="21"
+            placeholderTextColor="#666762"
+            style={styles.timeInput}
+            value={dailyLockHour}
+          />
+          <Text style={styles.timeSeparator}>:</Text>
+          <TextInput
+            accessibilityLabel="Daily lock minute"
+            keyboardType="number-pad"
+            maxLength={2}
+            onChangeText={setDailyLockMinute}
+            placeholder="00"
+            placeholderTextColor="#666762"
+            style={styles.timeInput}
+            value={dailyLockMinute}
+          />
+        </View>
+
+        <View style={styles.actions}>
+          <Pressable
+            accessibilityRole="button"
+            disabled={!canScheduleLock}
+            onPress={scheduleDailyLock}
+            style={[styles.button, !canScheduleLock && styles.buttonDisabled]}
+          >
+            <Text style={styles.buttonText}>Schedule recurring daily lock</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            disabled={!canScheduleLock}
+            onPress={scheduleDiagnosticLock}
+            style={[styles.button, !canScheduleLock && styles.buttonDisabled]}
+          >
+            <Text style={styles.buttonText}>Schedule one-off test (+2 min)</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            disabled={isRunningScheduledLockAction}
+            onPress={() => setAccountabilityCompleted(false)}
+            style={[
+              styles.button,
+              isRunningScheduledLockAction && styles.buttonDisabled,
+            ]}
+          >
+            <Text style={styles.buttonText}>Set Incomplete today</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            disabled={isRunningScheduledLockAction}
+            onPress={() => setAccountabilityCompleted(true)}
+            style={[
+              styles.button,
+              isRunningScheduledLockAction && styles.buttonDisabled,
+            ]}
+          >
+            <Text style={styles.buttonText}>Set Completed today</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            disabled={isRunningScheduledLockAction}
+            onPress={cancelScheduledLocks}
+            style={[
+              styles.button,
+              isRunningScheduledLockAction && styles.buttonDisabled,
+            ]}
+          >
+            <Text style={styles.buttonText}>Cancel schedules + remove shield</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            disabled={isRunningScheduledLockAction}
+            onPress={resetScheduledLockDiagnostics}
+            style={[
+              styles.button,
+              isRunningScheduledLockAction && styles.buttonDisabled,
+            ]}
+          >
+            <Text style={styles.buttonText}>Reset scheduled-lock diagnostic</Text>
+          </Pressable>
+        </View>
+
+        <Text style={styles.caption}>
+          Production concept: the daily schedule repeats from Lock Time until
+          23:59. The +2 minute button is a separate one-off Device Activity test
+          with a 16-minute interval, satisfying Apple&apos;s 15-minute minimum.
+          System callbacks occur when the device is used within the interval.
+        </Text>
+
+        {scheduledLockErrorMessage ? (
+          <Text selectable style={styles.error}>
+            {scheduledLockErrorMessage}
           </Text>
         ) : null}
       </View>
@@ -729,6 +940,27 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: 10,
+  },
+  timeInputs: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  timeInput: {
+    minWidth: 64,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderColor: '#7F807B',
+    borderRadius: 6,
+    borderWidth: 1,
+    color: '#F2F0EA',
+    fontFamily: 'Menlo',
+    fontSize: 18,
+    textAlign: 'center',
+  },
+  timeSeparator: {
+    color: '#A8A8A2',
+    fontSize: 20,
   },
   button: {
     alignItems: 'center',

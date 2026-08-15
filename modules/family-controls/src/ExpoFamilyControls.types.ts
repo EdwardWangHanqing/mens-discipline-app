@@ -40,8 +40,15 @@ export type FamilyControlsSelectionStorageStatus =
   | 'available'
   | 'corrupt';
 
+export type FamilyControlsSelectionStorageScope =
+  | 'appGroup'
+  | 'legacyApp'
+  | 'unavailable';
+
 export type FamilyControlsSelectionSummary = {
   storageStatus: FamilyControlsSelectionStorageStatus;
+  storageScope: FamilyControlsSelectionStorageScope;
+  sharedStorageAvailable: boolean;
   hasStoredSelection: boolean;
   hasSelection: boolean;
   isEmpty: boolean;
@@ -66,4 +73,48 @@ export type FamilyControlsShieldState = {
   webDomainCount: number;
   usesAllCategories: boolean;
   source: 'namedManagedSettingsStore' | 'unsupportedPlatform';
+};
+
+export type ScheduledLockMonitoringState = {
+  activityName: string;
+  kind: 'dailyRecurring' | 'oneOffDiagnostic';
+  isMonitoring: boolean;
+  repeats: boolean;
+  configuredStartHour: number | null;
+  configuredStartMinute: number | null;
+  nextIntervalStartMs: number | null;
+  nextIntervalEndMs: number | null;
+};
+
+export type DiagnosticAccountabilityState = {
+  dateKey: string;
+  completedToday: boolean;
+  completedDateKey: string | null;
+  updatedAtMs: number | null;
+  source: 'diagnosticAppGroupState';
+};
+
+export type ScheduledLockCallbackRecord = {
+  activityName: string;
+  callback: 'intervalDidStart' | 'intervalDidEnd';
+  outcome:
+    | 'appliedShield'
+    | 'skippedCompletedToday'
+    | 'skippedCorruptSelection'
+    | 'skippedNoSelection'
+    | 'removedShieldAtIntervalEnd';
+  occurredAtMs: number;
+  completedToday: boolean;
+  applicationCount: number;
+  categoryCount: number;
+  webDomainCount: number;
+};
+
+export type ScheduledLockState = {
+  sharedStorageAvailable: boolean;
+  accountability: DiagnosticAccountabilityState;
+  daily: ScheduledLockMonitoringState;
+  diagnostic: ScheduledLockMonitoringState;
+  lastCallback: ScheduledLockCallbackRecord | null;
+  lastScheduleConfiguredAtMs: number | null;
 };
