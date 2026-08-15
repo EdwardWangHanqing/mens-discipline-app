@@ -22,11 +22,11 @@ Men's Discipline App
 
 **03.8 — Device Activity Scheduled Lock**
 
-**Status:** In progress — implementation and unsigned builds pass; real-device signing/runtime proof is blocked on refreshing the Apple team login/provisioning configuration
+**Status:** Complete for the bounded development-feasibility checkpoint — signed real-device Incomplete, Completed, replacement, and recovery paths pass; release/system-edge validation remains open
 
-## Current Objective
+## Objective Result
 
-Prove on a physical iPhone that a recurring `DeviceActivitySchedule` can trigger a `DeviceActivityMonitor` extension while the main app is inactive, read today's shared accountability state, and automatically shield only the saved explicit selection. Prove both incomplete and completed-today branches, plus recovery/reset.
+Prove on a physical iPhone that `DeviceActivityCenter` scheduling can trigger a `DeviceActivityMonitor` extension while the main app is inactive, read today's shared accountability state, and automatically shield only the saved explicit selection. The one-off diagnostic proved both incomplete and completed-today branches plus replacement and recovery; production-shaped recurring scheduling remains implemented but its long-running/system-edge reliability is a later checkpoint.
 
 ## Family Controls Current State
 
@@ -75,9 +75,13 @@ Prove on a physical iPhone that a recurring `DeviceActivitySchedule` can trigger
 - Official architecture references: [DeviceActivityCenter](https://developer.apple.com/documentation/deviceactivity/deviceactivitycenter), [DeviceActivityMonitor](https://developer.apple.com/documentation/deviceactivity/deviceactivitymonitor), [Family Controls capability configuration](https://developer.apple.com/help/account/capabilities/configure-app-capabilities/configuring-family-controls/), and [App Groups](https://developer.apple.com/documentation/xcode/configuring-app-groups).
 - Fresh CNG, CocoaPods install, Expo config inspection, lint, TypeScript, diff checks, Device Activity Monitor target build, `ExpoFamilyControls` target build, and full unsigned Debug builds for iOS Simulator and generic iPhoneOS pass. The built Simulator app contains the monitor `.appex` with the correct extension point and matching `1.0.0` version.
 - Fresh `npx expo-doctor` passes 20/21 checks; its only failure is the pre-existing Expo SDK 57 patch-version mismatch across six Expo packages. No package was upgraded during this scoped native-capability phase.
-- The connected iPhone remains paired and visible. Signed build/install did not begin because Xcode currently has no logged-in account for the existing development team; the existing main-app development profile is valid but predates Phase 03.8 and does not contain the required App Group. Updated main-app provisioning and a new extension development profile must be created after the team login is refreshed.
+- After the owner restored the Apple team login, Xcode Automatic Signing created updated development profiles for both targets. A fresh signed Debug build for the paired iPhone 13 passed; the host and embedded monitor `.appex` signatures were valid, and both signed entitlements/profiles contained Family Controls plus `group.com.temperline.mensdiscipline`.
+- The signed build installed and launched on the physical iPhone. Authorization resolved to `approved`, the saved opaque selection read from verified App Group storage (`available`, one category token), and the manual diagnostic shield was initially inactive.
+- Incomplete one-off proof passed with the host app inactive: the native `+2 minute` schedule remained active in `DeviceActivityCenter`, the extension recorded `intervalDidStart / appliedShield` with `completedToday=false`, and YouTube displayed Apple's system `Restricted` screen without any manual Apply Shield action. Instagram remained usable, consistent with shielding only the saved category rather than creating a broad policy.
+- Reset removed the scheduled shield and immediately restored YouTube access. The Completed one-off then recorded `intervalDidStart / skippedCompletedToday` with `completedToday=true`; YouTube remained usable and the aggregate diagnostic shield state stayed inactive.
+- Re-registering the same one-off activity replaced its pending start without error. Final Cancel stopped both daily and diagnostic monitoring and left all diagnostic shield counts at zero; `intervalDidEnd / removedShieldAtIntervalEnd` was recorded during recovery.
 - Main-app Family Controls (Distribution) remains Assigned. The new Device Activity Monitor extension's separate Distribution entitlement is not requested or Assigned; it is not required for the development proof but is required before TestFlight/App Store distribution.
-- No real-device schedule, extension callback, incomplete automatic shield, completed suppression, background/force-quit behavior, or repeated diagnostic schedule behavior is claimed yet.
+- The validated scope is a development build with the main app inactive during the interval. Force-quit/reboot, midnight rollover, timezone/DST, production/TestFlight bundle behavior, and long-running daily reliability are not yet claimed.
 - Final production Lock Time UX remains uncreated.
 - The accepted motion-tracking direction is tolerant automatic rep counting with a non-blocking assisted-completion path; tracking failure must not prevent routine completion or app unlock.
 - Movement-agnostic pose architecture and offline/local Vision Checkpoint A is accepted and integrated; Pose Checkpoint B remains outside this Family Controls validation task.
@@ -87,16 +91,15 @@ Prove on a physical iPhone that a recurring `DeviceActivitySchedule` can trigger
 
 ## Primary Track — Technical Feasibility
 
-Phase 03.8 next gate:
+Phase 03.8 accepted evidence:
 
-1. Refresh the Apple developer-team login in Xcode so Automatic Signing can update the main-app development profile for App Groups and create the new extension development profile.
-2. Build, install, and launch the current branch on the connected iPhone without changing Bundle IDs, signing identity, or product scope.
-3. Preserve/reconfirm the saved explicit selection after its one-time opaque migration into the App Group.
-4. Run the one-off `+2 minute` test while Incomplete, leave the main app, confirm `intervalDidStart / appliedShield`, and verify Apple's `Restricted` UI on a selected app without tapping Apply Shield.
-5. Reset/remove safely, repeat while Completed, and confirm the callback records `skippedCompletedToday` while the selected app remains usable.
-6. Repeat schedule replacement once and confirm Cancel/Reset leaves no diagnostic shield active. Keep longer reboot/timezone/DST reliability work in a later controlled slice.
+1. Automatic Signing, host/extension development profiles, signed build, installation, and launch pass on the paired iPhone 13.
+2. The saved Apple-opaque selection is available from the shared App Group, and the extension callback reads it outside the main-app process.
+3. Incomplete `+2 minute` proof records `intervalDidStart / appliedShield` and displays Apple's `Restricted` UI on the saved category without a manual Apply Shield action.
+4. Reset restores access; Completed `+2 minute` proof records `intervalDidStart / skippedCompletedToday` while the same selected app remains usable.
+5. Same-activity replacement succeeds, and final Cancel leaves daily/diagnostic monitoring inactive with no diagnostic shield active.
 
-The Family Controls authorization and Phase 03.7 selection/manual-shield path remain accepted real-device baselines. Phase 03.8's repository architecture and unsigned build proof are complete, but the physical-iPhone scheduling verdict is still pending. Denied/revoked authorization, production/TestFlight bundle behavior, extension distribution entitlement, reboot/timezone/DST reliability, live camera, and movement counting remain open. Phase 03 as a whole is not complete.
+The Family Controls authorization, Phase 03.7 selection/manual-shield path, and Phase 03.8 bounded scheduled-lock proof are accepted real-device baselines. Denied/revoked authorization, production/TestFlight bundle behavior, the extension Distribution entitlement, force-quit/reboot/midnight/timezone/DST reliability, live camera, and movement counting remain open. Phase 03 as a whole is not complete.
 
 ## Parallel Track — Business / Apple Account
 

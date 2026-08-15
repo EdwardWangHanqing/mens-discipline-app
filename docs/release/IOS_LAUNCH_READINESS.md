@@ -34,10 +34,10 @@
 - [x] Verify user-selected apps display Apple's `Restricted` screen when shielded and return to normal access after removal.
 - [x] Implement the repository-side Device Activity architecture with one embedded Device Activity Monitor extension, App Group shared state, production-shaped recurring schedule, separate one-off diagnostic schedule, incomplete/completed branches, and visible recovery/reset controls.
 - [x] Pass CNG, standalone extension/native-module builds, and full unsigned Simulator/generic-iPhoneOS Debug builds; inspect the embedded monitor extension point and host/extension version match.
-- [ ] Refresh the development-team login in Xcode, register/attach the App Group and extension App ID through Automatic Signing or the Developer Portal, and produce updated development profiles for both targets.
-- [ ] On a physical iPhone, prove one-off schedule → system callback → automatic shield while Incomplete with the main app inactive; no manual Apply Shield tap.
-- [ ] On a physical iPhone, prove the same callback suppresses shielding while Completed and record the non-sensitive callback outcome.
-- [ ] Validate schedule replacement/repetition plus Cancel/Reset/empty-selection recovery without a stranded restriction.
+- [x] Refresh the development-team login in Xcode and produce Xcode-managed development profiles for both targets containing Family Controls and the shared App Group.
+- [x] On a physical iPhone, prove one-off schedule → system callback → automatic shield while Incomplete with the main app inactive; no manual Apply Shield tap.
+- [x] On a physical iPhone, prove the same callback suppresses shielding while Completed and record the non-sensitive callback outcome.
+- [x] Validate same-activity schedule replacement plus Cancel/Reset recovery without a stranded restriction. Empty-selection recovery remains covered by the Phase 03.7 manual path; scheduled empty/corrupt callback branches remain separate negative tests.
 - [ ] Verify authorization denied/revoked behavior.
 - [x] Verify the saved selection remains available after the Debug development relaunch workflow once Metro connectivity is restored.
 - [ ] Verify production/TestFlight bundle behavior after full app termination and direct relaunch without Metro.
@@ -47,11 +47,11 @@
 
 Phase 03.7 Debug-build observation: force-quitting and reopening the installed Debug build while Metro was unavailable displayed `No script URL provided`. Restoring Metro and relaunching restored the React Native UI and persisted selection. This is currently a development-bundle workflow observation, not a Family Controls failure; production/TestFlight bundle behavior remains untested.
 
-Phase 03.8 provisioning status: the repository now defines App Group `group.com.temperline.mensdiscipline` for the host and `com.temperline.mensdiscipline.deviceactivitymonitor` extension. The connected device is available and unsigned builds pass, but the current Xcode installation has no logged-in account for the development team. The prior valid main-app profile contains Family Controls but not the new App Group; an updated main profile and a new extension development profile are required before installation/runtime validation.
+Phase 03.8 development status: the repository defines App Group `group.com.temperline.mensdiscipline` for the host and `com.temperline.mensdiscipline.deviceactivitymonitor` extension. After the team login was restored, Automatic Signing produced valid development profiles for both targets containing Family Controls and the App Group. The signed build installed on the paired iPhone 13. Incomplete produced `intervalDidStart / appliedShield` plus Apple's `Restricted` UI with the host inactive; Completed produced `intervalDidStart / skippedCompletedToday` while the same selected app stayed usable. Replacement and final Cancel left both schedules inactive and no diagnostic shield active. This does not validate the extension's separate Distribution entitlement, Release/TestFlight behavior, force-quit/reboot, midnight, timezone, or DST reliability.
 
 ## 1.2 Family Controls distribution entitlement
 - [x] Preserve the explicit main-app identifier `com.temperline.mensdiscipline`.
-- [ ] Register/confirm the explicit Device Activity Monitor App ID `com.temperline.mensdiscipline.deviceactivitymonitor`; this is the only Screen Time extension introduced in Phase 03.8.
+- [x] Register/confirm the explicit Device Activity Monitor App ID `com.temperline.mensdiscipline.deviceactivitymonitor`; Automatic Signing produced its valid development profile. This is the only Screen Time extension introduced in Phase 03.8.
 - [x] Request Family Controls **Distribution** entitlement for the main-app path.
 - [x] Confirm Apple assigned Family Controls (Distribution) to the developer account for the main-app path.
 - [ ] Submit a separate Family Controls **Distribution** entitlement request for `com.temperline.mensdiscipline.deviceactivitymonitor`. No request is needed for unused Report / Shield Action / Shield Configuration extensions because those targets do not exist.
