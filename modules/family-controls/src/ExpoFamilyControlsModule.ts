@@ -1,11 +1,35 @@
 import type {
   ExpoFamilyControlsEvents,
+  FamilyActivityPickerResult,
   FamilyControlsAuthorizationSample,
   FamilyControlsAuthorizationStatus,
+  FamilyControlsSelectionSummary,
+  FamilyControlsShieldState,
 } from './ExpoFamilyControls.types';
 
 const unsupportedPlatformMessage =
-  'Family Controls authorization is only available in the iOS app.';
+  'Family Controls is only available in the iOS app.';
+
+const unsupportedSelectionSummary: FamilyControlsSelectionSummary = {
+  storageStatus: 'none',
+  hasStoredSelection: false,
+  hasSelection: false,
+  isEmpty: true,
+  applicationCount: 0,
+  categoryCount: 0,
+  webDomainCount: 0,
+  persistedAtMs: null,
+  errorMessage: null,
+};
+
+const unsupportedShieldState: FamilyControlsShieldState = {
+  isApplied: false,
+  applicationCount: 0,
+  categoryCount: 0,
+  webDomainCount: 0,
+  usesAllCategories: false,
+  source: 'unsupportedPlatform',
+};
 
 export default {
   getAuthorizationStatus(): FamilyControlsAuthorizationStatus {
@@ -34,5 +58,20 @@ export default {
   },
   async requestAuthorization(): Promise<FamilyControlsAuthorizationSample> {
     throw new Error(unsupportedPlatformMessage);
+  },
+  async getSelectionSummary(): Promise<FamilyControlsSelectionSummary> {
+    return unsupportedSelectionSummary;
+  },
+  async presentActivityPicker(): Promise<FamilyActivityPickerResult> {
+    throw new Error(unsupportedPlatformMessage);
+  },
+  async getShieldState(): Promise<FamilyControlsShieldState> {
+    return unsupportedShieldState;
+  },
+  async applyShield(): Promise<FamilyControlsShieldState> {
+    throw new Error(unsupportedPlatformMessage);
+  },
+  async removeShield(): Promise<FamilyControlsShieldState> {
+    return unsupportedShieldState;
   },
 };

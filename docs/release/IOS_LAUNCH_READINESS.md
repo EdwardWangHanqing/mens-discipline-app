@@ -27,6 +27,8 @@
 - [x] Validate paid Individual-team Automatic Signing, physical-device registration, development provisioning, and the signed main-app Family Controls development entitlement.
 - [x] Present the real `.individual` system authorization flow on a physical iPhone and read `approved` after the owner allows access.
 - [x] Safely handle the initial `notDetermined` value for the approved cold-launch path by observing Apple's publisher, displaying `checking`, reading after App active, and using bounded retries; five consecutive real-device cold starts automatically resolved to `approved` without manual refresh or another authorization prompt.
+- [ ] Validate the implemented `FamilyActivityPicker` save/modify/empty/cancel paths and local opaque-selection persistence on the physical iPhone.
+- [ ] Validate the implemented named-store Apply Shield → Remove Shield path on explicitly selected harmless apps, including repeated apply/remove and relaunch.
 - [ ] Build the smallest possible App Selection → Shield/Lock → Unlock prototype.
 - [ ] Verify user-selected apps can be shielded and restored reliably.
 - [ ] Verify authorization denied/revoked behavior.
@@ -35,10 +37,13 @@
 - [ ] Test on the current shipping iOS release before considering the technical risk closed.
 
 ## 1.2 Family Controls distribution entitlement
-- [ ] Create explicit App IDs for the main app and every Screen Time extension actually used.
-- [ ] Request Family Controls **Distribution** entitlement for the main app.
+- [x] Preserve the explicit main-app identifier `com.temperline.mensdiscipline`.
+- [ ] Create explicit App IDs for every Screen Time extension actually introduced; no extension exists yet.
+- [x] Request Family Controls **Distribution** entitlement for the main-app path.
+- [x] Confirm Apple assigned Family Controls (Distribution) to the developer account for the main-app path.
 - [ ] Submit the same entitlement request separately for every applicable Screen Time extension (Device Activity Monitor / Report / Shield Action / Shield Configuration).
-- [ ] Confirm Assigned status and required distribution methods before TestFlight/App Store submission.
+- [ ] Validate the main-app distribution entitlement in the eventual distribution provisioning/archive/TestFlight path before submission.
+- [ ] Confirm Assigned status and required distribution methods for every extension actually used before TestFlight/App Store submission.
 - [ ] Keep entitlement request explanation consistent with App Store positioning: accountability / focus / wellness, not covert surveillance.
 
 ## 1.3 Monetization-policy review — Guideline 4.10 (P1 review watch item, not a technical blocker)
@@ -202,6 +207,8 @@ Maintain a simple table for every data type:
 
 At minimum audit: account identifiers, email, routine history, streak/momentum, selected-app tokens, camera frames/pose landmarks, analytics events, subscription identifiers, crash diagnostics.
 
+Current Phase 03.7 evidence: `FamilyActivitySelection` is encoded only in local app storage through Apple's `Codable` conformance. JavaScript receives storage state and aggregate token counts only; token contents are not logged, uploaded, reverse-engineered, or exposed through the bridge. Final retention/deletion behavior must still be defined before release.
+
 ## 5.2 Privacy Policy
 - [ ] Explains what is collected and what is not collected.
 - [ ] Explicitly explains camera processing and whether raw video is stored/uploaded.
@@ -331,7 +338,8 @@ Each permission must have a specific user-facing reason and a denial path.
 
 # 10. App Review package
 
-- [ ] Family Controls distribution entitlement Assigned for app + required extensions.
+- [x] Family Controls distribution entitlement Assigned at the developer-account level for the main-app path.
+- [ ] Validate the entitlement in the distribution provisioning/archive/TestFlight path and obtain Assigned status for every extension actually introduced.
 - [ ] Review Notes explain the exact core loop: selected apps → scheduled accountability lock → routine → on-device verification → unlock.
 - [ ] Explain that camera analysis is local and raw video is not uploaded/stored in MVP.
 - [ ] Explain subscription value and avoid wording that suggests charging for Screen Time API/camera capability itself.

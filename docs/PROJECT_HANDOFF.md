@@ -88,9 +88,9 @@ Key commits:
 - Simulator build, launch, module load, and `notDetermined` status read succeeded.
 - The iOS Simulator reports `FamilyControlsAgent` unavailable; this is not real-device authorization, signing, provisioning, or distribution-entitlement evidence.
 
-Not yet implemented: FamilyActivityPicker, shielding, Screen Time extensions, App Groups, scheduling, and the complete lock → routine → unlock prototype.
+At that checkpoint, FamilyActivityPicker, shielding, Screen Time extensions, App Groups, scheduling, and the complete lock → routine → unlock prototype were not yet implemented.
 
-### Family Controls Real-Device Authorization — Approved Cold-Launch Path Fixed, Pending Owner Review
+### Family Controls Real-Device Authorization — Approved Cold-Launch Path Accepted
 
 On 2026-08-14, the development authorization path was validated on an iPhone 13 running iOS 26. Account, certificate, device, profile, and other private identifiers were intentionally not recorded.
 
@@ -117,7 +117,35 @@ The branch now contains a minimal lifecycle-aware stabilization path:
 
 Five consecutive physical-iPhone cold starts fully terminated the previous process and relaunched the app. All five showed `checking` and automatically resolved to `approved` without manual refresh, without displaying `notDetermined` as a final/user-actionable state, and without presenting another authorization request. Native stabilization took approximately 0.12–0.55 ms in these runs; JavaScript resolved the approved state in approximately 0.61–0.71 seconds. The owner visually confirmed the user-visible behavior. Denied and revoked states were intentionally not tested because they would change the device's current authorization and require separate approval.
 
-No FamilyActivityPicker, app selection, shielding, Screen Time extension, App Group, scheduling, unlock logic, camera, pose Checkpoint B, movement logic, assisted-completion UI, production UI, dependency upgrade, or unrelated refactor was added.
+That Phase 03.6 checkpoint added no FamilyActivityPicker, app selection, shielding, Screen Time extension, App Group, scheduling, unlock logic, camera, pose Checkpoint B, movement logic, assisted-completion UI, production UI, dependency upgrade, or unrelated refactor.
+
+### Family Controls Phase 03.7 — Selection/Shield Code Ready, Owner Interaction Pending
+
+Apple has assigned Family Controls (Distribution) to the developer account for the main-app path. This closes the account-level main-app request item, but does not prove a distribution archive/TestFlight path. No Screen Time extension exists; every extension introduced later will require its own entitlement request.
+
+The current branch now contains the next diagnostic slice:
+
+- Apple's SwiftUI `FamilyActivityPicker` is presented from the existing local Expo module and receives a draft initialized from the prior saved `FamilyActivitySelection`;
+- Cancel and interactive dismissal leave the prior saved selection unchanged; Done persists the draft locally using `FamilyActivitySelection`'s Apple-provided `Codable` conformance;
+- React Native receives only storage status, opaque selection counts, saved time, and non-sensitive errors—never token contents or reverse-engineered identifiers;
+- absent, legitimately empty, replacement, and corrupt/unreadable stored-state paths are represented without crashing;
+- one fixed named `ManagedSettingsStore` applies `.specific` policies only for the explicit saved app/category/web-domain tokens;
+- Apply requires usable authorization and a non-empty selection; Remove clears only this diagnostic store and remains the owner escape path;
+- selection edits do not silently alter an already-active shield; Apply must be invoked again;
+- authorization, selection, and shield state are separate and selection/shield state is reread on component mount and app foreground;
+- no extension, App Group, DeviceActivity schedule, production lock UX, third-party SDK, cloud sync, new permission, or Bundle ID/signing change was added.
+
+Fresh code/build evidence:
+
+- `git diff --check`, Expo lint, and TypeScript checks passed during the current implementation;
+- fresh `npx expo-doctor` completed 20/21 checks; its only failure is the known Expo patch-version mismatch, and no dependency was upgraded during this scoped phase;
+- CocoaPods integration succeeded;
+- the `ExpoFamilyControls` iOS Simulator target built successfully;
+- the full Debug iOS Simulator app built successfully;
+- the automatically signed generic iPhoneOS Debug app built, installed, and launched on the connected iPhone;
+- Metro loaded the React Native bundle, preserved the Phase 03.6 `approved` path, and received a successful native empty-state read: no stored selection, zero opaque counts, and this diagnostic shield store removed.
+
+Still pending owner interaction: picker save/cancel/modify/empty behavior, selection survival across complete termination/relaunch, a selected app actually showing Apple's shield, Remove restoring access, and repeated Apply → Remove behavior. Do not treat compilation, named-store state, or empty bridge reads as proof of those user-visible effects.
 
 ### Pose Checkpoint A — Owner Accepted and Integrated
 
@@ -166,31 +194,32 @@ Existing third-party Expo / React Native build warnings remain; no project-sourc
 
 ## Current Blockers and Explicit Non-Goals
 
-Apple Developer Program enrollment is active and the Family Controls individual development-authorization path has been exercised on a physical iPhone. The approved-state cold-launch timing issue is diagnosed and has passed five consecutive real-device cold starts on the current branch. The implementation and evidence remain at owner review; denied/revoked lifecycle behavior is still unverified and must not be tested without explicit owner approval.
+Apple Developer Program enrollment is active, the main-app Family Controls Distribution request is Assigned at the account level, and the individual development-authorization path has been exercised on a physical iPhone. The approved-state cold-launch timing issue is diagnosed and accepted after five consecutive real-device cold starts. Phase 03.7 code builds, signs, installs, launches, and reaches the empty native bridge state, but the actual picker/save/shield/remove/relaunch sequence now requires the owner to interact with the physical iPhone. Denied/revoked lifecycle behavior remains unverified and must not be tested without explicit owner approval.
 
 Until the applicable real-device checkpoint and release review, do not add or claim:
 
 - live camera permission/capture or physical-device pose performance;
 - movement-specific thresholds, repetition counting, or assisted-completion implementation;
 - denied/revoked cold-launch behavior or a complete authorization-state reliability claim;
-- app selection, shielding, extensions, App Groups, scheduling, or reliable unlock integration;
+- verified real-device picker/persistence/shield behavior until the owner completes the pending interaction;
+- extensions, App Groups, scheduling, or reliable unlock integration;
 - production training UI, TestFlight readiness, or App Store readiness.
 
 ## Authorized Integration and Next Safe Sequence
 
 1. The owner accepted the limited Checkpoint A scope and authorized fast-forward-only integration into `main`, pushing `origin/main`, and retaining the source branch.
-2. Review the Family Controls publisher/lifecycle stabilization implementation and five-run real-device evidence on `spike/family-controls-real-device`.
-3. Decide whether and when to test denied/revoked lifecycle behavior; changing the current device authorization requires explicit owner approval and a documented recovery path.
-4. Add FamilyActivityPicker only after this authorization checkpoint is accepted.
-5. Investigate the valid-local-PNG Vision failure and perform Pose Checkpoint B live-camera feasibility only after camera-permission and release-impact review.
-6. Select one representative MVP movement before Checkpoint C tolerant counting, recovery, and assisted completion work.
-7. Build the smallest App Selection → Lock/Shield → Routine → Completion → Unlock prototype only after the underlying real-device paths are proven.
+2. On the connected iPhone, choose one or two harmless apps, save the picker, confirm non-sensitive counts, apply the shield, verify a selected app is shielded, remove the shield, and verify access returns.
+3. Repeat Apply → Remove, modify/empty the selection, and completely terminate/relaunch the app to verify persistence without revoking authorization.
+4. Record the real-device evidence and fix any discovered picker, persistence, or shield lifecycle defect on `spike/family-controls-real-device`.
+5. Decide whether and when to test denied/revoked lifecycle behavior; changing the current device authorization requires explicit owner approval and a documented recovery path.
+6. Investigate the valid-local-PNG Vision failure and perform Pose Checkpoint B live-camera feasibility only after camera-permission and release-impact review.
+7. Build the smallest scheduled/core-loop slice only after the direct Phase 03.7 selection/shield path is proven.
 
 Do not fill the Apple/device gate with production UI or invented thresholds.
 
 ## Release, Privacy, and Rollback
 
-Family Controls creates a real Apple capability, provisioning, distribution-entitlement, and App Review dependency. Pose Checkpoint A uses Apple system Vision/ImageIO only and added no entitlement, permission, third-party SDK, networking, storage, account, subscription, or App Privacy collection change.
+Family Controls creates a real Apple capability, provisioning, distribution-entitlement, selected-app-token privacy, and App Review dependency. The main-app account-level Distribution request is Assigned; distribution signing/TestFlight and any future extension entitlement remain open. Phase 03.7 persists only Apple's opaque selection encoding locally and adds no third-party SDK, server sharing, account/subscription behavior, extension, App Group, new permission, or Bundle ID/signing change. Pose Checkpoint A uses Apple system Vision/ImageIO only and added no entitlement, permission, third-party SDK, networking, storage, account, subscription, or App Privacy collection change.
 
 Safe comparison/rollback points:
 
@@ -200,4 +229,4 @@ Safe comparison/rollback points:
 
 ## New-Chat Startup Instruction
 
-> Open `/Users/hanqingwang/Developer/mens-discipline-app`. First run `git status --short --branch`, then completely read `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PHASE.md`, `docs/product/MVP_SCOPE.md`, `docs/DECISIONS.md`, and `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md`. Read the relevant release documents before permission, capability, account, privacy, subscription, TestFlight, or App Store work. Preserve all existing work. Family Controls Checkpoint 1 and the owner-accepted Pose Checkpoint A are integrated into `main`; retain `spike/vision-pose-foundation`. The paid Individual developer account, Automatic Signing, physical-device provisioning, signed Family Controls development entitlement, installation, bridge loading, real `.individual` system authorization, owner approval, and persisted `approved` state have been demonstrated on `spike/family-controls-real-device`. The initial cold-launch `notDetermined` result is the real initial value of Apple's published authorization property. The current branch observes the publisher, waits in `checking`, reads after active, and uses bounded fallback retries; five consecutive real-device cold starts automatically resolved to `approved` without manual refresh or another authorization request. The implementation is pending owner review. Do not test denied/revoked behavior without explicit owner approval and a recovery plan. Do not start FamilyActivityPicker, shielding, extensions, App Groups, scheduling, camera permission/live capture, movement thresholds, automatic counting, assisted-completion UI, or production UI without the next approved checkpoint. Do not use Superpowers. Explain important decisions and final status in Chinese.
+> Open `/Users/hanqingwang/Developer/mens-discipline-app`. First run `git status --short --branch`, then completely read `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PHASE.md`, `docs/product/MVP_SCOPE.md`, and `docs/DECISIONS.md`; read the relevant release documents before capability/privacy/release work. Preserve all existing work. Family Controls Checkpoint 1 and Pose Checkpoint A are integrated into `main`; the active source branch is `spike/family-controls-real-device`. Phase 03.6's publisher/lifecycle stabilization is accepted after five approved-state cold launches. The main-app Family Controls Distribution request is Assigned at the account level. Phase 03.7 now presents Apple's picker, persists only opaque `FamilyActivitySelection` encoding, exposes only non-sensitive counts, and applies/removes a single named diagnostic `ManagedSettingsStore`; it builds, signs, installs, launches, and reads the empty native state on the connected iPhone. Owner interaction is still required to prove save/modify/empty/relaunch persistence and actual shield/remove effects. Continue debugging after those observations. Do not revoke authorization without explicit approval. Do not add extensions, App Groups, scheduling, production UI, camera/live pose work, dependencies, or unrelated scope in this checkpoint. Do not use Superpowers. Explain important decisions and final status in Chinese.

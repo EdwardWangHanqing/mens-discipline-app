@@ -34,3 +34,36 @@ export type ExpoFamilyControlsEvents = {
     sample: FamilyControlsAuthorizationSample
   ) => void;
 };
+
+export type FamilyControlsSelectionStorageStatus =
+  | 'none'
+  | 'available'
+  | 'corrupt';
+
+export type FamilyControlsSelectionSummary = {
+  storageStatus: FamilyControlsSelectionStorageStatus;
+  hasStoredSelection: boolean;
+  hasSelection: boolean;
+  isEmpty: boolean;
+  applicationCount: number;
+  categoryCount: number;
+  webDomainCount: number;
+  persistedAtMs: number | null;
+  errorMessage: string | null;
+};
+
+export type FamilyActivityPickerOutcome = 'saved' | 'cancelled';
+
+export type FamilyActivityPickerResult = {
+  outcome: FamilyActivityPickerOutcome;
+  selection: FamilyControlsSelectionSummary;
+};
+
+export type FamilyControlsShieldState = {
+  isApplied: boolean;
+  applicationCount: number;
+  categoryCount: number;
+  webDomainCount: number;
+  usesAllCategories: boolean;
+  source: 'namedManagedSettingsStore' | 'unsupportedPlatform';
+};

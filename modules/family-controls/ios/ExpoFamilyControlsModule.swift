@@ -2,6 +2,7 @@ import Combine
 import ExpoModulesCore
 import FamilyControls
 import Foundation
+import ManagedSettings
 import UIKit
 
 private let authorizationStatusChangedEvent = "onAuthorizationStatusChanged"
@@ -98,6 +99,9 @@ private extension NSLock {
 
 public class ExpoFamilyControlsModule: Module {
   private var authorizationStatusCancellable: AnyCancellable?
+  private let selectionStore = FamilyControlsSelectionStore()
+  private let shieldStore = FamilyControlsShieldStore()
+  private var activityPickerPresentation: FamilyActivityPickerPresentation?
 
   public func definition() -> ModuleDefinition {
     Name("ExpoFamilyControls")
@@ -135,6 +139,10 @@ public class ExpoFamilyControlsModule: Module {
     OnDestroy {
       self.authorizationStatusCancellable?.cancel()
       self.authorizationStatusCancellable = nil
+      DispatchQueue.main.async { [weak self] in
+        self?.activityPickerPresentation?.dismissBecauseModuleWasDestroyed()
+        self?.activityPickerPresentation = nil
+      }
     }
 
     Function("getAuthorizationStatus") {
@@ -167,6 +175,104 @@ public class ExpoFamilyControlsModule: Module {
         self.makeAuthorizationStatusSample(source: "requestCompleted")
       }
     }
+
+    AsyncFunction("getSelectionSummary") { (promise: Promise) in
+      promise.resolve(self.selectionStore.load().summary)
+    }
+    .runOnQueue(.main)
+
+    AsyncFunction("presentActivityPicker") { (promise: Promise) in
+      guard self.activityPickerPresentation == nil else {
+        promise.reject(
+          "ERR_FAMILY_ACTIVITY_PICKER_IN_PROGRESS",
+          "A Family Activity picker is already open."
+        )
+        return
+      }
+
+      guard Self.isAuthorizationUsable(
+        AuthorizationCenter.shared.authorizationStatus
+      ) else {
+        promise.reject(
+          "ERR_FAMILY_CONTROLS_AUTHORIZATION_REQUIRED",
+          "Family Controls authorization must be approved before choosing apps."
+        )
+        return
+      }
+
+      guard let presentingViewController =
+        self.appContext?.utilities?.currentViewController()
+      else {
+        promise.reject(
+          "ERR_FAMILY_ACTIVITY_PICKER_NO_VIEW_CONTROLLER",
+          "The Family Activity picker could not find a view controller to present from."
+        )
+        return
+      }
+
+      let initialSelection = self.selectionStore.load().selection ??
+        FamilyActivitySelection()
+      let presentation = MainActor.assumeIsolated {
+        FamilyActivityPickerPresentation(
+          initialSelection: initialSelection,
+          promise: promise,
+          selectionStore: self.selectionStore,
+          onFinished: { [weak self] in
+            self?.activityPickerPresentation = nil
+          }
+        )
+      }
+      self.activityPickerPresentation = presentation
+      MainActor.assumeIsolated {
+        presentation.present(from: presentingViewController)
+      }
+    }
+    .runOnQueue(.main)
+
+    AsyncFunction("getShieldState") { (promise: Promise) in
+      promise.resolve(self.shieldStore.state())
+    }
+    .runOnQueue(.main)
+
+    AsyncFunction("applyShield") { (promise: Promise) in
+      guard Self.isAuthorizationUsable(
+        AuthorizationCenter.shared.authorizationStatus
+      ) else {
+        promise.reject(
+          "ERR_FAMILY_CONTROLS_AUTHORIZATION_REQUIRED",
+          "Family Controls authorization must be approved before applying a shield."
+        )
+        return
+      }
+
+      let storedSelection = self.selectionStore.load()
+      guard let selection = storedSelection.selection else {
+        let message = storedSelection.storageStatus == "corrupt"
+          ? "The stored selection is unreadable. Choose apps again before applying a shield."
+          : "Choose at least one app, category, or web domain before applying a shield."
+        promise.reject("ERR_FAMILY_ACTIVITY_SELECTION_REQUIRED", message)
+        return
+      }
+
+      guard !selection.applicationTokens.isEmpty ||
+        !selection.categoryTokens.isEmpty ||
+        !selection.webDomainTokens.isEmpty
+      else {
+        promise.reject(
+          "ERR_FAMILY_ACTIVITY_SELECTION_EMPTY",
+          "The saved selection is empty. Choose at least one item before applying a shield."
+        )
+        return
+      }
+
+      promise.resolve(self.shieldStore.apply(selection))
+    }
+    .runOnQueue(.main)
+
+    AsyncFunction("removeShield") { (promise: Promise) in
+      promise.resolve(self.shieldStore.remove())
+    }
+    .runOnQueue(.main)
   }
 
   @MainActor
@@ -258,5 +364,17 @@ public class ExpoFamilyControlsModule: Module {
     @unknown default:
       return "unknown"
     }
+  }
+
+  private static func isAuthorizationUsable(
+    _ status: AuthorizationStatus
+  ) -> Bool {
+    if status == .approved {
+      return true
+    }
+    if #available(iOS 26.4, *), status == .approvedWithDataAccess {
+      return true
+    }
+    return false
   }
 }
