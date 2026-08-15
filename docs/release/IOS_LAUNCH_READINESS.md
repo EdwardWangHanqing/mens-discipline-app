@@ -23,7 +23,10 @@
 # 1. P0 Go / No-Go gates — must happen before full UI polish
 
 ## 1.1 Family Controls technical feasibility
-- [ ] Enroll in Apple Developer Program early enough to test Family Controls on a real iPhone.
+- [x] Enroll in Apple Developer Program early enough to test Family Controls on a real iPhone.
+- [x] Validate paid Individual-team Automatic Signing, physical-device registration, development provisioning, and the signed main-app Family Controls development entitlement.
+- [x] Present the real `.individual` system authorization flow on a physical iPhone and read `approved` after the owner allows access.
+- [ ] Resolve or safely handle the repeatable transient `notDetermined` result on the first cold-launch status read; a later refresh returned the persisted `approved` state in both observed repetitions.
 - [ ] Build the smallest possible App Selection → Shield/Lock → Unlock prototype.
 - [ ] Verify user-selected apps can be shielded and restored reliably.
 - [ ] Verify authorization denied/revoked behavior.
@@ -83,7 +86,7 @@ Before finalizing App Store copy and paywall packaging:
 This track runs in parallel with development; it must not block coding.
 
 ## 2.1 Developer account transition
-- [ ] Start development using an Individual Apple Developer membership if company setup is still pending.
+- [x] Start development using an Individual Apple Developer membership if company setup is still pending.
 - [ ] Incorporate the company before commercial release if the company should appear as seller.
 - [ ] Obtain D-U-N-S for the legal entity.
 - [ ] Prepare company-domain email and a public functional company website.

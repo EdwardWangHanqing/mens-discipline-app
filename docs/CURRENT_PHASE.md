@@ -20,13 +20,13 @@ Men's Discipline App
 
 ## Current Sub-phase
 
-**03.4 — Family Controls Engineering**
+**03.6 — Family Controls Real-Device Authorization Validation**
 
 ## Current Objective
 
-Establish the smallest reproducible Family Controls native foundation before app selection, shielding, extensions, App Groups, or scheduling are introduced.
+Validate the existing Family Controls development-signing and individual-authorization foundation on a physical iPhone before app selection, shielding, extensions, App Groups, or scheduling are introduced.
 
-## Phase 03.4 Current State
+## Family Controls Current State
 
 - The official Expo SDK 57 application baseline is established in this repository.
 - The Checkpoint 1 Family Controls authorization bridge/native module builds, launches, and reads authorization status successfully in the iPhone Simulator.
@@ -35,12 +35,18 @@ Establish the smallest reproducible Family Controls native foundation before app
 - The first checkpoint is a local Expo module for reading and requesting Family Controls authorization from the main application.
 - The bridge performs `AuthorizationCenter` status access and authorization requests on the main queue / main actor as required by Apple.
 - The main-app development entitlement is expressed through tracked Expo application configuration.
-- Real-device authorization, paid Apple Developer membership/provisioning, signing entitlement behavior, and Family Controls runtime behavior on a physical iPhone have not yet been verified.
+- The paid Individual Apple Developer membership is active and recognized by Xcode.
+- An iPhone 13 running iOS 26 paired over USB, was trusted, and had Developer Mode enabled.
+- Automatic Signing registered the device and produced an Xcode-managed development provisioning profile.
+- The physical-device app build, installation, and launch succeeded. The signed app and embedded development profile both contained the Family Controls development entitlement.
+- The React Native bundle loaded and the application-local Swift module registered on the physical device.
+- The pre-request status was `notDetermined`; the real system authorization UI appeared for `.individual`; the owner allowed access; and the post-request status was `approved`.
+- On two complete termination/relaunch repetitions, the immediate startup read was transiently `notDetermined`; a status refresh after several seconds returned the persisted `approved` state. This timing/reliability issue remains unresolved, so the real-device checkpoint is a partial pass pending review.
 - The iOS Simulator can load the bridge and return `notDetermined`, but its system log reports that the `FamilyControlsAgent` service is unavailable; this is not evidence of real-device authorization behavior.
 - The Technical Baseline screen is only a temporary engineering test surface; it is not production UI.
 - FamilyActivityPicker, ManagedSettings shielding, Screen Time extensions, App Groups, and scheduling have not started.
 - The accepted motion-tracking direction is tolerant automatic rep counting with a non-blocking assisted-completion path; tracking failure must not prevent routine completion or app unlock.
-- Movement-agnostic pose architecture and offline/local Vision Checkpoint A is implemented on `spike/vision-pose-foundation` while Family Controls real-device work waits for Apple Developer Program readiness.
+- Movement-agnostic pose architecture and offline/local Vision Checkpoint A is accepted and integrated; Pose Checkpoint B remains outside this Family Controls validation task.
 - Checkpoint A adds a local Apple Vision adapter, a 19-joint normalized TypeScript contract, explicit unavailable-joint representation, and typed complete/partial/no-pose/input/processing outcomes.
 - The adapter accepts local image files only; it adds no camera permission, live capture, networking, raw-image return, persistence, movement rules, repetition counting, or production training UI.
 - The iOS Simulator loads the module and returns the expected typed `invalidInput / fileNotFound` bridge result. A valid local PNG reached Vision but returned typed `processingFailed / visionError` in the Simulator, so successful pose inference and partial-body behavior are not yet claimed.
@@ -49,16 +55,16 @@ Establish the smallest reproducible Family Controls native foundation before app
 
 Immediate work:
 
-1. Validate the main application's Family Controls authorization bridge and development entitlement
+1. Review the physical-iPhone development-signing, entitlement, bridge, and individual-authorization evidence
 2. Preserve the locked iOS Bundle ID and reproducible CNG configuration
-3. Validate the authorization flow on a real iPhone after Apple Developer Program enrollment and provisioning are ready
-4. Add FamilyActivityPicker only after this foundation checkpoint is accepted
+3. Resolve or safely handle the repeatable transient `notDetermined` result on immediate cold-launch status reads
+4. Add FamilyActivityPicker only after this real-device authorization checkpoint is accepted
 5. Validate CNG and native integration against the required Family Controls / Screen Time extension architecture
 6. Build the smallest App Selection → Lock/Shield → Unlock prototype
 7. Review and accept the implemented movement-agnostic pose data contract and offline/local Vision Checkpoint A
 8. Validate live camera framing, latency, partial-body behavior, tolerant counting, and assisted completion on a physical iPhone
 
-The Family Controls Checkpoint 1 implementation is complete, accepted, and merged; real-device authorization validation remains pending. Pose Checkpoint A is implemented locally and awaiting owner review. App selection, shielding, extensions, App Groups, scheduling, live camera, and movement counting remain future tasks.
+The Family Controls Checkpoint 1 implementation is complete, accepted, and merged. Real-device development signing and authorization are a partial pass pending review because persisted approval is available after refresh but the immediate cold-launch read is transiently incorrect. Pose Checkpoint A is accepted and integrated. App selection, shielding, extensions, App Groups, scheduling, live camera, and movement counting remain future tasks.
 
 ## Parallel Track — Business / Apple Account
 
