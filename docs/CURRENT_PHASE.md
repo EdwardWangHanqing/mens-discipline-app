@@ -20,13 +20,13 @@ Men's Discipline App
 
 ## Current Sub-phase
 
-**03.7 — Family Activity Selection and Managed Settings Shielding**
+**03.8 — Device Activity Scheduled Lock**
 
-**Status:** Complete — real-device validation passed
+**Status:** In progress — implementation and unsigned builds pass; real-device signing/runtime proof is blocked on refreshing the Apple team login/provisioning configuration
 
 ## Current Objective
 
-Completed: prove the smallest privacy-preserving real-device path from Apple's `FamilyActivityPicker` through locally persisted opaque selection tokens to applying and removing a `ManagedSettingsStore` shield.
+Prove on a physical iPhone that a recurring `DeviceActivitySchedule` can trigger a `DeviceActivityMonitor` extension while the main app is inactive, read today's shared accountability state, and automatically shield only the saved explicit selection. Prove both incomplete and completed-today branches, plus recovery/reset.
 
 ## Family Controls Current State
 
@@ -54,8 +54,8 @@ Completed: prove the smallest privacy-preserving real-device path from Apple's `
 - The local `ExpoFamilyControls` module now presents Apple's SwiftUI `FamilyActivityPicker` from the React Native diagnostic screen without exposing token contents to JavaScript.
 - A picker draft is initialized from the prior stored selection; Cancel or interactive dismissal preserves the old selection, while Done encodes `FamilyActivitySelection` locally through its Apple-provided `Codable` conformance. No-selection, legitimately empty, replacement, and corrupt-decode states are represented without crashing.
 - JavaScript receives only storage status, saved-selection existence, opaque token counts, saved time, and non-sensitive errors.
-- One fixed named `ManagedSettingsStore` applies only the explicit application, category, and web-domain tokens from the saved selection. Apply requires usable authorization and a non-empty selection; Remove clears only this diagnostic store and remains available as the escape path.
-- Authorization, selection, and shield state remain separate. Selection/shield state is reread on mount and foreground, and editing a selection does not silently mutate an active shield until Apply is tapped again.
+- The Phase 03.7 manual path uses a fixed named `ManagedSettingsStore` and applies only explicit application, category, and web-domain tokens. Phase 03.8 adds separate named stores for the daily and one-off Device Activity paths so overlapping intervals cannot accidentally clear one another. Remove/Reset clears all three diagnostic stores as the development escape path.
+- Authorization, selection, schedule, accountability, callback, and shield state remain separate. State is reread on mount and foreground. Editing to another non-empty selection does not silently mutate an active shield; saving an empty selection now clears all diagnostic shield stores safely.
 - The new module target, full iOS Simulator app, and automatically signed generic iPhoneOS app build succeeded. The build was installed and launched on the connected iPhone; Metro confirmed `approved` authorization plus a successful empty selection/shield bridge read (`none`, zero counts, shield removed).
 - Physical-iPhone validation passed: `FamilyActivityPicker` presented successfully, and the owner created and edited an explicit selection containing 5 application tokens, 1 category token, and 0 web-domain tokens.
 - Selecting an individual app within an Apple category increased the application-token count; selecting the entire category increased the category-token count. This is treated as expected `FamilyActivitySelection` behavior, not a project defect.
@@ -65,7 +65,20 @@ Completed: prove the smallest privacy-preserving real-device path from Apple's `
 - Clearing the picker produced 0 application, 0 category, and 0 web-domain tokens while retaining `Saved selection: yes (empty)`; Apply Shield was disabled.
 - No Family Controls functional error was observed during this validation.
 - Separately, force-quitting and directly reopening the Debug build while Metro was unavailable produced `No script URL provided`. Restoring Metro and relaunching restored the React Native UI and the saved selection. This is currently a Debug/Metro workflow observation, not evidence of authorization, picker, persistence, or shielding failure. Production/TestFlight bundle behavior remains untested.
-- Screen Time extensions, App Groups, scheduling, and production lock UX remain uncreated.
+- Apple's documented architecture requires the main app's `DeviceActivityCenter` to register the schedule and a `DeviceActivityMonitor` extension to receive the system interval callback. Phase 03.8 therefore introduces exactly one extension—no Shield Action, Shield Configuration, Device Activity Report, JS timer, or foreground timer.
+- The new extension target is `MensDisciplineDeviceActivityMonitor` with Bundle ID `com.temperline.mensdiscipline.deviceactivitymonitor`. Both targets declare Family Controls development entitlement and App Group `group.com.temperline.mensdiscipline`; the App Group is required because the callback runs outside the React Native/main-app process.
+- The tracked Expo config plugin recreates, links, and embeds the extension during CNG. The extension and app version/build settings remain aligned, and EAS app-extension metadata is declared without adding a dependency.
+- The saved Apple-opaque `FamilyActivitySelection` migrates from legacy app defaults into App Group `UserDefaults`; only opaque encoded selection, date-scoped completed/incomplete diagnostic state, configuration time, and non-sensitive callback outcome/counts are shared. No token contents are logged or exposed to JavaScript.
+- Production-shaped scheduling is a daily recurring interval from Lock Time through 23:59:59. A separate one-off `+2 minute` diagnostic uses a nonrepeating 16-minute interval to satisfy Apple's 15-minute minimum. Schedule replacement first stops the prior activity and clears only that activity's named shield.
+- `intervalDidStart` applies the activity-specific shield only when today's flag is incomplete and the shared explicit selection is present, non-empty, and decodable. Completed, absent, empty, corrupt, or unavailable shared state fails safely without unintended broad shielding. `intervalDidEnd`, Completed Today, Cancel, Reset, Remove Shield, and empty-selection save provide recovery paths.
+- The app exposes diagnostic-only native controls and non-sensitive system-derived schedule/callback state. React Native is not the background source of truth.
+- Official architecture references: [DeviceActivityCenter](https://developer.apple.com/documentation/deviceactivity/deviceactivitycenter), [DeviceActivityMonitor](https://developer.apple.com/documentation/deviceactivity/deviceactivitymonitor), [Family Controls capability configuration](https://developer.apple.com/help/account/capabilities/configure-app-capabilities/configuring-family-controls/), and [App Groups](https://developer.apple.com/documentation/xcode/configuring-app-groups).
+- Fresh CNG, CocoaPods install, Expo config inspection, lint, TypeScript, diff checks, Device Activity Monitor target build, `ExpoFamilyControls` target build, and full unsigned Debug builds for iOS Simulator and generic iPhoneOS pass. The built Simulator app contains the monitor `.appex` with the correct extension point and matching `1.0.0` version.
+- Fresh `npx expo-doctor` passes 20/21 checks; its only failure is the pre-existing Expo SDK 57 patch-version mismatch across six Expo packages. No package was upgraded during this scoped native-capability phase.
+- The connected iPhone remains paired and visible. Signed build/install did not begin because Xcode currently has no logged-in account for the existing development team; the existing main-app development profile is valid but predates Phase 03.8 and does not contain the required App Group. Updated main-app provisioning and a new extension development profile must be created after the team login is refreshed.
+- Main-app Family Controls (Distribution) remains Assigned. The new Device Activity Monitor extension's separate Distribution entitlement is not requested or Assigned; it is not required for the development proof but is required before TestFlight/App Store distribution.
+- No real-device schedule, extension callback, incomplete automatic shield, completed suppression, background/force-quit behavior, or repeated diagnostic schedule behavior is claimed yet.
+- Final production Lock Time UX remains uncreated.
 - The accepted motion-tracking direction is tolerant automatic rep counting with a non-blocking assisted-completion path; tracking failure must not prevent routine completion or app unlock.
 - Movement-agnostic pose architecture and offline/local Vision Checkpoint A is accepted and integrated; Pose Checkpoint B remains outside this Family Controls validation task.
 - Checkpoint A adds a local Apple Vision adapter, a 19-joint normalized TypeScript contract, explicit unavailable-joint representation, and typed complete/partial/no-pose/input/processing outcomes.
@@ -74,15 +87,16 @@ Completed: prove the smallest privacy-preserving real-device path from Apple's `
 
 ## Primary Track — Technical Feasibility
 
-Phase 03.7 closeout:
+Phase 03.8 next gate:
 
-1. Preserve the verified authorization → explicit selection → local persistence → Apply Shield → system `Restricted` screen → Remove Shield path.
-2. Keep the Debug/Metro `No script URL provided` observation separate from Family Controls functionality and validate production/TestFlight bundle behavior later.
-3. Do not test denied/revoked authorization without explicit approval and a documented recovery path.
-4. Do not begin DeviceActivity scheduling, recurring Lock Time, extensions, App Groups, production UI, or camera/pose integration as part of this completed checkpoint.
-5. Select and authorize the next technical slice in a new conversation.
+1. Refresh the Apple developer-team login in Xcode so Automatic Signing can update the main-app development profile for App Groups and create the new extension development profile.
+2. Build, install, and launch the current branch on the connected iPhone without changing Bundle IDs, signing identity, or product scope.
+3. Preserve/reconfirm the saved explicit selection after its one-time opaque migration into the App Group.
+4. Run the one-off `+2 minute` test while Incomplete, leave the main app, confirm `intervalDidStart / appliedShield`, and verify Apple's `Restricted` UI on a selected app without tapping Apply Shield.
+5. Reset/remove safely, repeat while Completed, and confirm the callback records `skippedCompletedToday` while the selected app remains usable.
+6. Repeat schedule replacement once and confirm Cancel/Reset leaves no diagnostic shield active. Keep longer reboot/timezone/DST reliability work in a later controlled slice.
 
-The Family Controls Checkpoint 1 implementation is complete and merged. Real-device signing, authorization, and the approved-state cold-launch stabilization path are accepted. Phase 03.7 app selection, local persistence, shielding, unshielding, repeated apply/remove, and safe empty-selection behavior have now passed physical-iPhone validation on `spike/family-controls-real-device`. Denied/revoked behavior remains untested. Pose Checkpoint A is accepted and integrated. Extensions, App Groups, scheduling, production/TestFlight bundle behavior, live camera, and movement counting remain future tasks. Phase 03 as a whole is not complete.
+The Family Controls authorization and Phase 03.7 selection/manual-shield path remain accepted real-device baselines. Phase 03.8's repository architecture and unsigned build proof are complete, but the physical-iPhone scheduling verdict is still pending. Denied/revoked authorization, production/TestFlight bundle behavior, extension distribution entitlement, reboot/timezone/DST reliability, live camera, and movement counting remain open. Phase 03 as a whole is not complete.
 
 ## Parallel Track — Business / Apple Account
 

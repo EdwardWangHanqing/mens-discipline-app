@@ -2,7 +2,7 @@
 
 **Status:** Operational source of truth for iOS release readiness
 
-**Last verified against Apple rules:** 2026-08-11
+**Last verified against Apple rules:** 2026-08-14
 
 **Priority:** latest explicitly accepted decision / `docs/DECISIONS.md` > `docs/product/MVP_SCOPE.md` > `docs/product/MASTER_PRODUCT_PLAN.md` > this operational checklist.
 
@@ -32,6 +32,12 @@
 - [x] Validate the implemented named-store Apply Shield → Remove Shield path on explicitly selected apps, including repeated apply/remove.
 - [x] Build and validate the smallest direct App Selection → Shield/Lock → Unlock diagnostic prototype.
 - [x] Verify user-selected apps display Apple's `Restricted` screen when shielded and return to normal access after removal.
+- [x] Implement the repository-side Device Activity architecture with one embedded Device Activity Monitor extension, App Group shared state, production-shaped recurring schedule, separate one-off diagnostic schedule, incomplete/completed branches, and visible recovery/reset controls.
+- [x] Pass CNG, standalone extension/native-module builds, and full unsigned Simulator/generic-iPhoneOS Debug builds; inspect the embedded monitor extension point and host/extension version match.
+- [ ] Refresh the development-team login in Xcode, register/attach the App Group and extension App ID through Automatic Signing or the Developer Portal, and produce updated development profiles for both targets.
+- [ ] On a physical iPhone, prove one-off schedule → system callback → automatic shield while Incomplete with the main app inactive; no manual Apply Shield tap.
+- [ ] On a physical iPhone, prove the same callback suppresses shielding while Completed and record the non-sensitive callback outcome.
+- [ ] Validate schedule replacement/repetition plus Cancel/Reset/empty-selection recovery without a stranded restriction.
 - [ ] Verify authorization denied/revoked behavior.
 - [x] Verify the saved selection remains available after the Debug development relaunch workflow once Metro connectivity is restored.
 - [ ] Verify production/TestFlight bundle behavior after full app termination and direct relaunch without Metro.
@@ -41,12 +47,14 @@
 
 Phase 03.7 Debug-build observation: force-quitting and reopening the installed Debug build while Metro was unavailable displayed `No script URL provided`. Restoring Metro and relaunching restored the React Native UI and persisted selection. This is currently a development-bundle workflow observation, not a Family Controls failure; production/TestFlight bundle behavior remains untested.
 
+Phase 03.8 provisioning status: the repository now defines App Group `group.com.temperline.mensdiscipline` for the host and `com.temperline.mensdiscipline.deviceactivitymonitor` extension. The connected device is available and unsigned builds pass, but the current Xcode installation has no logged-in account for the development team. The prior valid main-app profile contains Family Controls but not the new App Group; an updated main profile and a new extension development profile are required before installation/runtime validation.
+
 ## 1.2 Family Controls distribution entitlement
 - [x] Preserve the explicit main-app identifier `com.temperline.mensdiscipline`.
-- [ ] Create explicit App IDs for every Screen Time extension actually introduced; no extension exists yet.
+- [ ] Register/confirm the explicit Device Activity Monitor App ID `com.temperline.mensdiscipline.deviceactivitymonitor`; this is the only Screen Time extension introduced in Phase 03.8.
 - [x] Request Family Controls **Distribution** entitlement for the main-app path.
 - [x] Confirm Apple assigned Family Controls (Distribution) to the developer account for the main-app path.
-- [ ] Submit the same entitlement request separately for every applicable Screen Time extension (Device Activity Monitor / Report / Shield Action / Shield Configuration).
+- [ ] Submit a separate Family Controls **Distribution** entitlement request for `com.temperline.mensdiscipline.deviceactivitymonitor`. No request is needed for unused Report / Shield Action / Shield Configuration extensions because those targets do not exist.
 - [ ] Validate the main-app distribution entitlement in the eventual distribution provisioning/archive/TestFlight path before submission.
 - [ ] Confirm Assigned status and required distribution methods for every extension actually used before TestFlight/App Store submission.
 - [ ] Keep entitlement request explanation consistent with App Store positioning: accountability / focus / wellness, not covert surveillance.

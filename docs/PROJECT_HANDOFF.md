@@ -4,7 +4,9 @@
 
 **Repository:** `/Users/hanqingwang/Developer/mens-discipline-app`
 
-**Active validation branch:** `spike/family-controls-real-device`
+**Active validation branch:** `spike/device-activity-schedule`
+
+**Phase 03.8 source base:** `spike/family-controls-real-device` at `a161936`
 
 **Accepted integration base:** `main` at `02bef80b8af4209470fbf8b5dd54a1fe984a15ae`
 
@@ -63,6 +65,8 @@ Immediately before this acceptance update:
 
 After the authorized integration, local `main`, `origin/main`, and the retained source branch are expected to point to the accepted checkpoint including this documentation update. Verify exact hashes from Git rather than treating the pre-update hashes above as the final integrated SHA.
 
+Current unaccepted validation work is intentionally separate from `main`: Phase 03.8 is on `spike/device-activity-schedule`, based on the completed Phase 03.7 checkpoint `a161936`. Its repository implementation checkpoint is `ced7111`; physical-device schedule validation is still pending and this branch must not be merged without owner acceptance.
+
 Key commits:
 
 - `6e4753162b8feb3ac05893391bd2355a590274ad` — official Expo application baseline;
@@ -70,7 +74,10 @@ Key commits:
 - `9f433ff0a28913e7de1c288b6563428a24a761fe` — Family Controls owner acceptance; merged `main` state;
 - `a5110c745ce0d029ce8574db9f7149ce925066ee` — tolerant pose recovery decision and Checkpoint A plan;
 - `8a6f7378b6a15cafb31c2699df354442e216f5ee` — offline Apple Vision pose foundation;
-- `de150e8fcf8c5d71e231c6b36467e9a5c9a507dd` — Pose Checkpoint A verification handoff.
+- `de150e8fcf8c5d71e231c6b36467e9a5c9a507dd` — Pose Checkpoint A verification handoff;
+- `6e24178` — Phase 03.7 Family Activity selection and manual shielding implementation;
+- `a161936` — Phase 03.7 physical-iPhone selection/shielding results;
+- `ced7111` — Phase 03.8 Device Activity scheduling and monitor-extension implementation.
 
 ## Completed Checkpoints
 
@@ -121,9 +128,9 @@ That Phase 03.6 checkpoint added no FamilyActivityPicker, app selection, shieldi
 
 ### Family Controls Phase 03.7 — Real-Device Validation Passed
 
-Apple has assigned Family Controls (Distribution) to the developer account for the main-app path. This closes the account-level main-app request item, but does not prove a distribution archive/TestFlight path. No Screen Time extension exists; every extension introduced later will require its own entitlement request.
+Apple has assigned Family Controls (Distribution) to the developer account for the main-app path. This closes the account-level main-app request item, but does not prove a distribution archive/TestFlight path. At the Phase 03.7 checkpoint no Screen Time extension existed; Phase 03.8 now introduces one, whose entitlement status is tracked separately below.
 
-The current branch now contains the next diagnostic slice:
+The Phase 03.7 checkpoint contains this diagnostic slice:
 
 - Apple's SwiftUI `FamilyActivityPicker` is presented from the existing local Expo module and receives a draft initialized from the prior saved `FamilyActivitySelection`;
 - Cancel and interactive dismissal leave the prior saved selection unchanged; Done persists the draft locally using `FamilyActivitySelection`'s Apple-provided `Codable` conformance;
@@ -158,6 +165,58 @@ Physical-iPhone validation then demonstrated:
 - no Family Controls functional error was observed.
 
 Picker Cancel/interactive-dismiss behavior was implemented but was not included in the reported owner test evidence, so it is not promoted to a verified real-device claim.
+
+### Family Controls Phase 03.8 — Scheduled Lock Implementation Ready, Real-Device Proof Pending
+
+Apple's official Screen Time architecture is now represented directly: the main application registers schedules through `DeviceActivityCenter`, while exactly one `DeviceActivityMonitor` extension receives `intervalDidStart` / `intervalDidEnd` outside the React Native process. No Shield Action, Shield Configuration, Device Activity Report, JS timer, or third-party dependency was added. References: [DeviceActivityCenter](https://developer.apple.com/documentation/deviceactivity/deviceactivitycenter), [DeviceActivityMonitor](https://developer.apple.com/documentation/deviceactivity/deviceactivitymonitor), [Family Controls configuration](https://developer.apple.com/help/account/capabilities/configure-app-capabilities/configuring-family-controls/), and [App Groups](https://developer.apple.com/documentation/xcode/configuring-app-groups).
+
+Tracked architecture:
+
+- host app: `com.temperline.mensdiscipline`;
+- Device Activity Monitor target: `MensDisciplineDeviceActivityMonitor`;
+- extension Bundle ID: `com.temperline.mensdiscipline.deviceactivitymonitor`;
+- shared App Group: `group.com.temperline.mensdiscipline`;
+- both targets declare Family Controls development and the same App Group entitlements;
+- a local Expo config plugin copies tracked extension/shared Swift sources, creates and links the native target during CNG, embeds the `.appex`, aligns the extension version/build number, and declares EAS app-extension metadata;
+- the main-app Family Controls Distribution entitlement remains Assigned;
+- the extension's separate Family Controls Distribution entitlement is not requested or Assigned and will be required before TestFlight/App Store distribution, not for this development proof.
+
+Process/privacy boundary:
+
+- the previously saved Apple-opaque `FamilyActivitySelection` migrates from main-app defaults to App Group `UserDefaults`, with readback verification before legacy data is removed;
+- the shared state contains only Apple's opaque encoded selection, a local date-scoped completed/incomplete diagnostic flag, configuration timestamp, and last callback outcome/counts;
+- neither Swift logs nor JavaScript receive token contents or inferred app identities;
+- the extension never relies on JS memory and applies only the explicit decoded token sets;
+- absent, empty, corrupt, or unavailable shared selection state never creates an all-app/all-category policy;
+- the extension does not gate on `AuthorizationCenter`'s transient process-initial `notDetermined` value; if authorization is actually unavailable, Apple's framework cannot enforce the selected-token settings, while the implementation still avoids broad policy construction.
+
+Scheduling/recovery behavior:
+
+- recurring production-shaped schedule: selected Lock Time through 23:59:59 each day, with 23:44 as the latest accepted start so the interval meets Apple's 15-minute minimum;
+- separate one-off diagnostic: `+2 minutes`, nonrepeating, 16-minute interval;
+- incomplete at callback applies only the stored explicit selection; completed at callback suppresses/clears that scheduled shield;
+- daily, one-off, and manual paths use separate named `ManagedSettingsStore` instances so one interval ending cannot clear another active interval;
+- rescheduling stops the previous activity and clears only that activity's store;
+- interval end, Completed Today, Cancel, Reset, Remove Shield, and saving an empty selection provide visible recovery paths;
+- React Native exposes only diagnostic controls and non-sensitive schedule/callback status; it is not the scheduling mechanism.
+
+Fresh repository/build evidence:
+
+- CNG regeneration and CocoaPods integration succeed;
+- generated Xcode project parses and exposes the host and monitor schemes/targets;
+- the Device Activity Monitor target and `ExpoFamilyControls` native target compile;
+- the full unsigned Debug iOS Simulator app compiles, embeds the monitor `.appex`, uses the `com.apple.deviceactivity.monitor-extension` extension point, and matches host/extension version `1.0.0`;
+- Expo config inspection confirms the main App Group and EAS extension declaration;
+- `npm run lint`, `npx tsc --noEmit`, and `git diff --check` pass;
+- a paired iPhone 13 remains connected and available.
+
+Real-device boundary:
+
+- a signed device build was attempted with Automatic Signing, but Xcode currently has no logged-in account for the existing development team;
+- the prior main-app development profile remains valid and contains Family Controls, but predates this phase and does not contain the new App Group;
+- Xcode therefore could not update the main profile or create a development profile for the new extension;
+- no Phase 03.8 build has been installed, and no schedule/callback/incomplete/completed real-device result is claimed;
+- after the owner refreshes the team login in Xcode, retry Automatic Signing first. If Apple then rejects the identifiers/capabilities, create/attach the exact App Group and extension App ID described above and regenerate both development profiles.
 
 ### Debug Development-Build / Metro Observation
 
@@ -212,40 +271,44 @@ Existing third-party Expo / React Native build warnings remain; no project-sourc
 
 Phase 03.7 real-device evidence additionally verifies picker presentation, explicit selection/editing, local selection persistence through the restored development relaunch workflow, ManagedSettings shield application and removal, repeated apply/remove, and safe empty-selection behavior. No new automated code validation was required for the documentation-only closeout.
 
+Phase 03.8 fresh validation additionally passed CNG regeneration, CocoaPods integration, Expo extension-config inspection, strict `swift-format` lint for the three new Swift files, the standalone Device Activity Monitor target, the standalone `ExpoFamilyControls` target, the full unsigned iOS Simulator Debug build, and the full unsigned generic iPhoneOS Debug build. Fresh `npx expo-doctor` passed 20/21 checks; its only failure is the pre-existing six-package Expo patch-version mismatch, and this phase did not upgrade dependencies. The generated host app embeds a version-matched monitor `.appex` with the correct extension point. The Simulator app installed, launched through the existing Metro development server, loaded the native module, and rendered the diagnostic screen without a startup crash; Simulator `notDetermined` remains non-device evidence. The signed physical-device build failed before compilation because Xcode lacks a current login/profile-generation path for the development team; that failure is a provisioning blocker, not runtime evidence.
+
 ## Current Blockers and Explicit Non-Goals
 
-Apple Developer Program enrollment is active, the main-app Family Controls Distribution request is Assigned at the account level, and the individual development-authorization path has been exercised on a physical iPhone. The approved-state cold-launch timing issue is diagnosed and accepted after five consecutive real-device cold starts. Phase 03.7 picker, save/edit, local persistence through the restored development relaunch workflow, shield, remove, repeated apply/remove, and empty-selection behavior are now verified on the physical iPhone. Denied/revoked lifecycle behavior remains unverified and must not be tested without explicit owner approval.
+Apple Developer Program enrollment is active, the main-app Family Controls Distribution request is Assigned at the account level, and the individual development-authorization path has been exercised on a physical iPhone. Phase 03.7 remains verified. Phase 03.8 is blocked specifically because Xcode currently has no logged-in account for the existing development team, the old main-app development profile lacks the new App Group, and no extension development profile exists. The owner must refresh the Apple ID/team in Xcode; Automatic Signing should then update/create the required identifiers and profiles, or expose the next exact Portal action. The Device Activity Monitor extension's separate Distribution entitlement remains unrequested/unassigned. Denied/revoked lifecycle behavior also remains unverified and must not be tested without explicit owner approval.
 
 Until the applicable real-device checkpoint and release review, do not add or claim:
 
 - live camera permission/capture or physical-device pose performance;
 - movement-specific thresholds, repetition counting, or assisted-completion implementation;
 - denied/revoked cold-launch behavior or a complete authorization-state reliability claim;
-- extensions, App Groups, scheduling, or reliable unlock integration;
+- real-device Device Activity schedule/callback behavior, incomplete automatic shield, completed suppression, repeated replacement, reboot/timezone/DST reliability, or reliable production unlock integration;
 - production/TestFlight bundle behavior or Metro-independent release launching;
 - production training UI, TestFlight readiness, or App Store readiness.
 
 ## Authorized Integration and Next Safe Sequence
 
-1. The owner accepted the limited Checkpoint A scope and authorized fast-forward-only integration into `main`, pushing `origin/main`, and retaining the source branch.
-2. Phase 03.7 is complete on `spike/family-controls-real-device`; close it with the documentation-only verification commit and do not merge to `main` without explicit owner acceptance.
-3. Keep the Debug/Metro `No script URL provided` observation separate from Family Controls and validate production/TestFlight bundle behavior in the applicable release checkpoint.
-4. Decide whether and when to test denied/revoked lifecycle behavior; changing the current device authorization requires explicit owner approval and a documented recovery path.
-5. Do not begin DeviceActivity scheduling, recurring Lock Time, extensions, App Groups, camera/live pose work, or production UI in this closeout.
-6. Select and authorize the next technical slice in a new conversation.
+1. In Xcode, refresh/sign in to the Apple ID that owns the existing paid development team and confirm the team appears under Settings → Accounts.
+2. Retry the current branch with Automatic Signing for both `MensDiscipline` and `MensDisciplineDeviceActivityMonitor`. If Xcode cannot create capabilities automatically, register `group.com.temperline.mensdiscipline`, attach it to both explicit App IDs, keep Family Controls enabled on both, and regenerate iOS App Development profiles for both targets.
+3. Install/launch on the connected iPhone; confirm the old explicit selection migrates into App Group storage or choose test apps again if the development reinstall legitimately removes it.
+4. Set Incomplete, schedule the one-off `+2 minute` test, leave Men's Discipline, and verify the selected app shows Apple's Restricted screen without tapping Apply Shield. Relaunch and record the callback outcome.
+5. Cancel/Reset, set Completed, schedule the one-off test again, leave the app, and verify the selected app remains usable while the callback records `skippedCompletedToday`.
+6. Repeat schedule replacement once and confirm Cancel/Reset removes restrictions. Do not promote Phase 03.8 to passed until this evidence exists.
+7. Keep the Debug/Metro observation separate, and defer denied/revoked, reboot, timezone, DST, production/TestFlight, and extension Distribution validation to their controlled checkpoints.
 
 Do not fill the Apple/device gate with production UI or invented thresholds.
 
 ## Release, Privacy, and Rollback
 
-Family Controls creates a real Apple capability, provisioning, distribution-entitlement, selected-app-token privacy, and App Review dependency. The main-app account-level Distribution request is Assigned; distribution signing/TestFlight and any future extension entitlement remain open. Phase 03.7 persists only Apple's opaque selection encoding locally and adds no third-party SDK, server sharing, account/subscription behavior, extension, App Group, new permission, or Bundle ID/signing change. Pose Checkpoint A uses Apple system Vision/ImageIO only and added no entitlement, permission, third-party SDK, networking, storage, account, subscription, or App Privacy collection change.
+Family Controls creates a real Apple capability, provisioning, distribution-entitlement, selected-app-token privacy, and App Review dependency. The main-app account-level Distribution request is Assigned. Phase 03.8 adds one Device Activity Monitor native target, its explicit Bundle ID, Device Activity framework linkage, and an App Group on both targets. The extension requires its own Family Controls Distribution request before TestFlight/App Store distribution. The implementation shares only opaque selection encoding and minimal local diagnostic state, adds no server sharing, third-party SDK, account/subscription behavior, camera permission, or App Privacy collection category. Pose Checkpoint A remains Apple-only and unchanged.
 
 Safe comparison/rollback points:
 
 - Family Controls pre-checkpoint baseline: `6e47531`; revert accepted commits rather than rewriting history.
+- Phase 03.8 pre-implementation baseline: `a161936`; use a normal revert of the Phase 03.8 commit(s) after they are created, not reset/clean/force-push.
 - Pose implementation baseline: `a5110c7`; compare with `git diff a5110c7..8a6f737`.
 - To undo Pose Checkpoint A after review, create revert commits for its implementation/documentation commits; do not reset, clean, or force-push.
 
 ## New-Chat Startup Instruction
 
-> Open `/Users/hanqingwang/Developer/mens-discipline-app`. First run `git status --short --branch`, then completely read `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PHASE.md`, `docs/product/MVP_SCOPE.md`, and `docs/DECISIONS.md`; read the relevant release documents before capability/privacy/release work. Preserve all existing work. Family Controls Checkpoint 1 and Pose Checkpoint A are integrated into `main`; the retained Phase 03.7 source branch is `spike/family-controls-real-device`. Phase 03.6's approved authorization stabilization is accepted. The main-app Family Controls Distribution request is Assigned at the account level. Phase 03.7 is verified on a physical iPhone: Apple's picker presented, the owner created/edited an explicit selection, opaque selection counts persisted through the restored development relaunch workflow, Apply displayed Apple's `Restricted` screen for selected apps, Remove restored access, repeated apply/remove succeeded, and clearing produced a saved empty selection with Apply disabled. The Debug build separately showed `No script URL provided` when reopened without Metro; restoring Metro fixed the development launch, so production/TestFlight bundle behavior remains untested. Denied/revoked authorization, DeviceActivity scheduling, recurring Lock Time, extensions and their entitlements, reboot/timezone/DST behavior, production UI, and camera/live pose integration remain open. Start the next technical slice only with explicit scope in a new conversation. Do not use Superpowers. Explain important decisions and final status in Chinese.
+> Open `/Users/hanqingwang/Developer/mens-discipline-app` on branch `spike/device-activity-schedule`. First run `git status --short --branch`, then completely read `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PHASE.md`, `docs/product/MVP_SCOPE.md`, and `docs/DECISIONS.md`; read the release documents before capability/privacy/release work. Preserve all existing work. Phase 03.7 authorization, picker, opaque selection, manual shield/remove, repeated apply/remove, and empty-selection paths are verified on a physical iPhone. Phase 03.8 adds one Device Activity Monitor extension (`com.temperline.mensdiscipline.deviceactivitymonitor`), App Group `group.com.temperline.mensdiscipline`, native recurring/one-off schedules, shared date-scoped accountability state, automatic selected-token shielding, and visible recovery/reset. CNG, target builds, full unsigned Simulator and generic iPhoneOS builds pass, but no Phase 03.8 real-device runtime result is claimed. Signed build is blocked because Xcode has no current login for the development team; the old main profile lacks App Groups and the new extension profile does not exist. Main-app Family Controls Distribution remains Assigned; extension Distribution is unrequested/unassigned. After the owner refreshes the Xcode team login, retry Automatic Signing, install, then prove the Incomplete and Completed `+2 minute` branches. Do not merge to `main`, begin camera/live pose work, or claim Phase 03.8 passed. Do not use Superpowers. Explain important decisions and final status in Chinese.
