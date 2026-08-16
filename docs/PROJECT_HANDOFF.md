@@ -4,9 +4,9 @@
 
 **Repository:** `/Users/hanqingwang/Developer/mens-discipline-app`
 
-**Active validation branch:** `spike/device-activity-schedule`
+**Active validation branch:** `spike/vision-kneeling-drive`
 
-**Phase 03.8 source base:** `spike/family-controls-real-device` at `a161936`
+**Phase 03.9 source base:** `spike/device-activity-schedule` at `3333f79`
 
 **Accepted integration base:** `main` at `02bef80b8af4209470fbf8b5dd54a1fe984a15ae`
 
@@ -255,6 +255,25 @@ Simulator evidence:
 - the valid-PNG `visionError` requires continued investigation during the physical-device checkpoint;
 - therefore successful human-pose inference, partial-body behavior, orientation/mirroring output, live-camera performance, and counting are not yet claimed.
 
+### Phase 03.9 — Live Camera and Kneeling Drive Implementation Ready
+
+The active branch adds the smallest real Checkpoint B+C implementation for **Kneeling Drive / Kneeling Hip Thrust** while retaining the accepted Phase 03.8 scheduled-lock baseline.
+
+- `ExpoVisionPose` now exposes camera permission state/request plus an Expo native camera view backed by `AVCaptureSession` and `AVCaptureVideoDataOutput`.
+- Live frames are throttled to a target maximum of 10 fps and processed on private queues. Vision 2D runs for every processed frame; iOS 17+ Vision 3D is attempted as diagnostic depth/view-invariant evidence.
+- The bridge sends only normalized joints, confidence/availability, orientation/mirroring, optional model-relative 3D positions, typed pose/no-pose/failure results, and processing timing. It never sends pixels or raw buffers.
+- No video/image is recorded, persisted, uploaded, or shared. No microphone/photo-library permission, networking path, third-party SDK, or new entitlement/target exists.
+- A specific `NSCameraUsageDescription` states that camera access verifies broad movement/counts reps on device and that video is not saved/uploaded.
+- Kneeling Drive visibility/feature/state logic is pure TypeScript and does not import Vision observation types. At least one same-side hip/knee pair above confidence is sufficient for 2D; shoulders are preferred corroboration but not a gate, and head/arms/hands/feet/ankles are irrelevant.
+- 2D uses normalized hip-to-knee geometry, which is invariant to whole-body translation and unaffected by shoulder-only rocking. When 3D hip/knee/shoulder positions exist, view-invariant geometry is preferred to address near-front depth ambiguity; 2D remains the fallback.
+- The session learns the observed BACK/FORWARD range, then uses EMA smoothing, two thresholds with hysteresis, stable-frame requirements, relative hip/knee excursion, minimum rep duration, and bounded tracking-loss handling. Completed reps never reset; long loss abandons only an unfinished cycle.
+- Six deterministic tests cover one full BACK → FORWARD → BACK rep, incomplete/jitter rejection, short/long pose loss, whole-body translation, shoulder-only rocking, and hips/knee partial-body availability.
+- A diagnostic route records each required side/oblique/near-front × fuller/partial run with actual/count/miss/extra totals, no-pose/critical-joint loss, 2D/3D frame use, and average/max processing latency. Scenario selection labels evidence only and never changes the detector.
+
+Fresh non-movement evidence passes: Expo config inspection, CNG, CocoaPods, strict Swift format lint, the standalone `ExpoVisionPose` target, full unsigned Simulator and generic iPhoneOS builds, signed Debug iPhoneOS build, strict host/extension signature verification, purpose-string inspection, Simulator install/launch/Metro bundling, and physical-device installation. The existing Family Controls/App Group entitlements and embedded monitor extension remain intact. The physical app launch attempt was refused only because the iPhone was locked.
+
+Do not claim live pose output, permission behavior, camera orientation/mirroring, 2D/3D usefulness, partial-body tolerance, rep accuracy, or Phase 03.9 success yet. The owner must unlock the installed app and perform the six movement runs; tune from that recorded evidence before committing/pushing the Phase 03.9 checkpoint.
+
 ## Validation Summary
 
 The validated checkpoints and acceptance review passed:
@@ -275,14 +294,16 @@ Phase 03.7 real-device evidence additionally verifies picker presentation, expli
 
 Phase 03.8 fresh validation additionally passed CNG regeneration, CocoaPods integration, Expo extension-config inspection, strict `swift-format` lint for the three new Swift files, the standalone Device Activity Monitor target, the standalone `ExpoFamilyControls` target, the full unsigned iOS Simulator Debug build, and the full unsigned generic iPhoneOS Debug build. Fresh `npx expo-doctor` passed 20/21 checks; its only failure is the pre-existing six-package Expo patch-version mismatch, and this phase did not upgrade dependencies. The generated host app embeds a version-matched monitor `.appex` with the correct extension point. The Simulator app installed, launched through the existing Metro development server, loaded the native module, and rendered the diagnostic screen without a startup crash; Simulator `notDetermined` remains non-device evidence. After the team login was restored, a fresh signed iPhone build passed, both target profiles/entitlements contained Family Controls and the shared App Group, installation/launch succeeded, and physical Incomplete, Completed, same-activity replacement, Reset, and Cancel paths produced the expected system UI and non-sensitive callback state described above.
 
+Phase 03.9 fresh validation passes `npm run test:motion` (6/6), `npx tsc --noEmit`, `npm run lint`, `git diff --check`, strict Swift format lint, Expo config inspection, CNG, CocoaPods, standalone `ExpoVisionPose`, full unsigned Simulator, full unsigned generic iPhoneOS, and full signed Debug iPhoneOS builds. Simulator installation/launch and Metro bundle load pass. The signed host/monitor signatures, existing entitlements, embedded extension, and camera purpose string pass inspection. Physical installation passes; launch and movement evidence wait on the locked iPhone.
+
 ## Current Blockers and Explicit Non-Goals
 
 Apple Developer Program enrollment is active, the main-app Family Controls Distribution request is Assigned at the account level, and the individual development-authorization path has been exercised on a physical iPhone. Phase 03.7 and the bounded Phase 03.8 scheduled-lock development proof are verified. Development provisioning is no longer blocked: both targets have valid Xcode-managed profiles containing Family Controls and the shared App Group. The Device Activity Monitor extension's separate Distribution entitlement remains unrequested/unassigned and blocks TestFlight/App Store distribution readiness, not local development proof. Denied/revoked lifecycle behavior also remains unverified and must not be tested without explicit owner approval.
 
-Until the applicable real-device checkpoint and release review, do not add or claim:
+Until the applicable real-device checkpoint and release review, do not claim:
 
-- live camera permission/capture or physical-device pose performance;
-- movement-specific thresholds, repetition counting, or assisted-completion implementation;
+- live camera permission/capture, physical-device pose performance, or orientation/mirroring correctness;
+- real-device movement thresholds, rep-count reliability, 2D/3D usefulness, or supported angle/framing coverage;
 - denied/revoked cold-launch behavior or a complete authorization-state reliability claim;
 - force-quit/reboot/midnight/timezone/DST schedule reliability, or reliable production unlock integration beyond the accepted inactive-host development proof;
 - production/TestFlight bundle behavior or Metro-independent release launching;
@@ -290,17 +311,17 @@ Until the applicable real-device checkpoint and release review, do not add or cl
 
 ## Authorized Integration and Next Safe Sequence
 
-1. Treat Phase 03.8's signed inactive-host Incomplete/Completed/replacement/recovery proof as the accepted development baseline; do not redo it unless relevant implementation or provisioning changes.
-2. Request and verify Family Controls Distribution separately for `com.temperline.mensdiscipline.deviceactivitymonitor` before attempting TestFlight/App Store distribution.
-3. In a later controlled reliability slice, test force-quit, reboot, midnight rollover, timezone, DST, and longer-running recurring daily behavior on supported shipping iOS versions.
-4. Validate a Release archive/TestFlight build launches independently of Metro before release readiness is claimed.
-5. Keep denied/revoked authorization testing behind explicit owner approval, and do not begin live camera/movement work as part of this scheduled-lock closeout.
+1. Keep Metro running, unlock the paired iPhone, launch the already-installed signed Debug app, and open the Kneeling Drive live-camera spike.
+2. Allow camera access, complete the two-cycle range calibration, then record five deliberate reps for each of the six required side/oblique/near-front × fuller/partial scenarios.
+3. Return the six JSON records plus any visible preview/orientation/guidance issue. Tune from evidence, rebuild, and repeat only failing scenarios.
+4. After the matrix is reliable enough, update the observed 2D/3D decision and limitations, rerun all checks/builds, review the diff, commit, and push this branch. Do not merge `main` without owner acceptance.
+5. Assisted completion and routine → unlock integration remain later bounded slices; do not add them to the representative movement tuning loop.
 
 Do not fill the Apple/device gate with production UI or invented thresholds.
 
 ## Release, Privacy, and Rollback
 
-Family Controls creates a real Apple capability, provisioning, distribution-entitlement, selected-app-token privacy, and App Review dependency. The main-app account-level Distribution request is Assigned. Phase 03.8 adds one Device Activity Monitor native target, its explicit Bundle ID, Device Activity framework linkage, and an App Group on both targets. The extension requires its own Family Controls Distribution request before TestFlight/App Store distribution. The implementation shares only opaque selection encoding and minimal local diagnostic state, adds no server sharing, third-party SDK, account/subscription behavior, camera permission, or App Privacy collection category. Pose Checkpoint A remains Apple-only and unchanged.
+Family Controls creates a real Apple capability, provisioning, distribution-entitlement, selected-app-token privacy, and App Review dependency. The main-app account-level Distribution request is Assigned. Phase 03.8 adds one Device Activity Monitor native target, its explicit Bundle ID, Device Activity framework linkage, and an App Group on both targets. The extension requires its own Family Controls Distribution request before TestFlight/App Store distribution. Phase 03.9 adds camera permission and AVFoundation live capture but no entitlement, target, third-party SDK, server sharing, recording, account/subscription change, microphone/photo-library permission, or raw camera persistence. Only derived pose/count diagnostics cross the native bridge. Camera privacy labels, final derived-data retention, denied/revoked behavior, and reviewer reproduction remain release work.
 
 Safe comparison/rollback points:
 
@@ -311,4 +332,4 @@ Safe comparison/rollback points:
 
 ## New-Chat Startup Instruction
 
-> Open `/Users/hanqingwang/Developer/mens-discipline-app` on branch `spike/device-activity-schedule`. First run `git status --short --branch`, then completely read `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PHASE.md`, `docs/product/MVP_SCOPE.md`, and `docs/DECISIONS.md`; read the release documents before capability/privacy/release work. Preserve all existing work. Phase 03.7 authorization, picker, opaque selection, manual shield/remove, repeated apply/remove, and empty-selection paths are verified on a physical iPhone. Phase 03.8 adds one Device Activity Monitor extension (`com.temperline.mensdiscipline.deviceactivitymonitor`), App Group `group.com.temperline.mensdiscipline`, native recurring/one-off schedules, shared date-scoped accountability state, automatic selected-token shielding, and visible recovery/reset. CNG, native/full builds, signed host/extension entitlements, and iPhone 13 installation pass. With the host inactive, Incomplete recorded `intervalDidStart / appliedShield` and Apple Restricted UI without manual Apply; Reset restored access; Completed recorded `skippedCompletedToday` and left the same app usable; replacement plus final Cancel left no monitoring or diagnostic shield. Main-app Family Controls Distribution remains Assigned; extension Distribution is unrequested/unassigned. Force-quit/reboot/midnight/timezone/DST and Release/TestFlight behavior remain unverified. Do not merge to `main`, begin camera/live pose work, or claim release readiness. Do not use Superpowers. Explain important decisions and final status in Chinese.
+> Open `/Users/hanqingwang/Developer/mens-discipline-app` on branch `spike/vision-kneeling-drive`. First run `git status --short --branch`, then completely read `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PHASE.md`, `docs/product/MVP_SCOPE.md`, `docs/DECISIONS.md`, `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md`, and the release documents. Preserve all uncommitted Phase 03.9 work. Phase 03.7/03.8 Family Controls and scheduled-lock development proofs remain accepted. Phase 03.9 now implements an AVFoundation camera preview, Apple Vision 2D plus optional 3D derived pose output, a normalized bridge, a pure TypeScript adaptive Kneeling Drive state machine, six deterministic tests, permission/denial UI, and a six-scenario recorder. CNG, Pods, Swift/TS/lint/tests, standalone native module, full Simulator/generic-iPhoneOS/signed-device builds, Simulator launch, signature/entitlement/purpose inspection, and physical installation pass. The iPhone was locked when launch was attempted, so live pose, permission, orientation, performance, framing/angle coverage, and rep accuracy are not yet claimed. Keep Metro running; after the owner unlocks the phone, run the six five-rep scenarios, tune only from the recorded JSON evidence, rebuild/retest, update docs, commit, and push. Do not merge `main` or claim Phase 03.9 success before real-device evidence. Do not use Superpowers. Explain important decisions and final status in Chinese.

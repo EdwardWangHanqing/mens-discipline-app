@@ -30,17 +30,58 @@ export type PoseJointObservation = {
   y: number | null;
   confidence: number;
   available: boolean;
+  position3D?: PoseJointPosition3D | null;
+};
+
+export type PoseJointPosition3D = {
+  x: number;
+  y: number;
+  z: number;
+  coordinateSpace: 'modelRelativeToRoot';
 };
 
 export type PoseFrame = {
-  source: 'localImage';
+  source: 'localImage' | 'liveCamera';
   timestampMs: number;
   orientation: PoseImageOrientation;
   isMirrored: boolean;
   coordinateOrigin: 'bottomLeft';
   overallConfidence: number;
   availableJointCount: number;
+  hasThreeDimensionalPose?: boolean;
+  threeDimensionalHeightEstimation?: 'reference' | 'measured' | null;
   joints: PoseJointObservation[];
+};
+
+export type CameraPermissionStatus =
+  | 'authorized'
+  | 'denied'
+  | 'restricted'
+  | 'notDetermined'
+  | 'unknown';
+
+export type CameraPermissionResult = {
+  status: CameraPermissionStatus;
+};
+
+export type VisionPoseCameraPosition = 'front' | 'back';
+
+export type VisionPoseCameraState = {
+  status:
+    | 'stopped'
+    | 'starting'
+    | 'running'
+    | 'permissionRequired'
+    | 'failed';
+  permissionStatus: CameraPermissionStatus;
+  cameraPosition: VisionPoseCameraPosition;
+  message: string | null;
+};
+
+export type LivePoseFrameEvent = {
+  result: PoseDetectionResult;
+  sequenceNumber: number;
+  processingDurationMs: number;
 };
 
 export type PoseInputErrorCode =

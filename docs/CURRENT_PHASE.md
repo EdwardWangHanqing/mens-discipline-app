@@ -20,13 +20,28 @@ Men's Discipline App
 
 ## Current Sub-phase
 
-**03.8 — Device Activity Scheduled Lock**
+**03.9 — Camera / Vision / Kneeling Drive Rep Counting**
 
-**Status:** Complete for the bounded development-feasibility checkpoint — signed real-device Incomplete, Completed, replacement, and recovery paths pass; release/system-edge validation remains open
+**Status:** Repository implementation, deterministic tests, CNG, native/full builds, signing, and physical-device installation pass; live camera and six-scenario movement validation require the owner to unlock the iPhone and perform the movement
 
 ## Objective Result
 
-Prove on a physical iPhone that `DeviceActivityCenter` scheduling can trigger a `DeviceActivityMonitor` extension while the main app is inactive, read today's shared accountability state, and automatically shield only the saved explicit selection. The one-off diagnostic proved both incomplete and completed-today branches plus replacement and recovery; production-shaped recurring scheduling remains implemented but its long-running/system-edge reliability is a later checkpoint.
+Prove that Kneeling Drive / Kneeling Hip Thrust can be counted broadly and reliably enough on a physical iPhone using on-device Apple Vision across side, oblique, and near-front views with both fuller and partial-body framing. The built diagnostic is ready to collect those six physical runs; no movement reliability claim exists until the owner performs them.
+
+## Phase 03.9 Motion State
+
+- Active branch: `spike/vision-kneeling-drive`, based on the accepted Phase 03.8 development checkpoint.
+- The local `ExpoVisionPose` module now owns camera authorization, an `AVCaptureSession` preview, throttled video-frame delivery, Apple Vision 2D body-pose requests, and iOS 17+ 3D body-pose diagnostic requests.
+- Frames remain on device and in memory. No microphone, photo-library permission, raw-frame bridge payload, recording, file persistence, networking, cloud analysis, or third-party camera/pose SDK was added.
+- The normalized pose contract now supports live-camera frames and optional model-relative 3D positions while preserving the existing 19-joint 2D boundary.
+- Kneeling Drive feature extraction and repetition state live in pure TypeScript, separate from Apple observation types. Hips plus at least one same-side knee are the 2D minimum; shoulders are diagnostic corroboration rather than a hard requirement.
+- The detector learns the session's observed BACK/FORWARD range, then applies smoothing, hysteresis, stable-frame requirements, a minimum cycle duration, hip-relative-to-knee movement evidence, and bounded tracking-loss recovery. It preserves completed reps and abandons only an unfinished cycle after prolonged loss.
+- 2D hip-to-knee geometry is the partial-body fallback and ignores whole-body translation and shoulder-only rocking. 3D hip/shoulder/knee geometry is preferred when Vision supplies it, especially for near-front depth movement; it is never a full-body gate.
+- The diagnostic page records actual/count/miss/extra totals, no-pose and critical-landmark loss, 2D/3D frame counts, and Vision processing latency for the required six-scenario matrix. The scenario label does not change detector behavior.
+- The tracked `NSCameraUsageDescription` explains on-device counting and explicitly says video is not saved or uploaded. The UI includes not-determined request, denied/restricted guidance, and Settings recovery.
+- Six deterministic tests pass for a complete cycle, incomplete/jitter rejection, short/long pose loss, translation/shoulder-rocking rejection, and partial-body critical-joint behavior.
+- CNG, CocoaPods, strict Swift formatting, the standalone `ExpoVisionPose` target, full Simulator app, unsigned generic iPhoneOS app, and signed Debug iPhoneOS app build. The signed app and monitor extension pass strict signature validation and retain existing Family Controls/App Group entitlements.
+- The signed build installed on the paired iPhone. Launch was attempted but correctly refused while the device was locked; live permission, camera orientation, pose output, 2D/3D availability/performance, and rep accuracy remain unverified.
 
 ## Family Controls Current State
 

@@ -1,8 +1,8 @@
 # Pose & Motion Tracking Feasibility Plan
 
-**Status:** Checkpoint A implemented locally; Checkpoints B–C require physical-iPhone evidence
+**Status:** Checkpoint A accepted; Phase 03.9 Checkpoints B–C implementation is built and installed, awaiting physical movement evidence
 
-**Branch:** `spike/vision-pose-foundation`
+**Branch:** `spike/vision-kneeling-drive`
 
 **Authority:** `docs/product/MVP_SCOPE.md` and `docs/DECISIONS.md`
 
@@ -146,3 +146,36 @@ Local validation proved that the module compiles, autolinks, loads in the iOS Si
 3. When Apple Developer Program enrollment and a physical iPhone are ready, perform Checkpoint B before implementing production live-camera behavior.
 4. Select one representative MVP movement before Checkpoint C movement logic.
 5. Stop before camera permission, live capture, movement-specific counting, or assisted-completion UI until the applicable checkpoint and release review are ready.
+
+## 10. Phase 03.9 Implementation Ready for Device Validation
+
+Phase 03.9 selects **Kneeling Drive / Kneeling Hip Thrust** as the representative movement and implements the approved live-camera/counting slice without adding production training UI or assisted completion.
+
+Architecture:
+
+Camera / `AVCaptureSession`
+
+→ Apple Vision 2D plus optional iOS 17+ 3D observations
+
+→ normalized 19-joint pose frame with optional model-relative 3D positions
+
+→ movement-critical visibility and confidence assessment
+
+→ Kneeling Drive features and adaptive state machine in pure TypeScript
+
+→ rep events and non-sensitive validation diagnostics.
+
+The 2D path uses hip position relative to the same-side knee so whole-body translation and shoulder-only rocking do not produce motion evidence. One hip/knee pair is sufficient; shoulders, head, arms, hands, feet, and ankles are not required. When Vision supplies a 3D skeleton, view-invariant hip/shoulder/knee geometry becomes the preferred evidence for near-front movement, while 2D remains the required partial-body fallback. Apple 3D is not treated as a full-body requirement.
+
+Session movement endpoints are learned from observed geometry. Smoothing, hysteresis, stable frames, minimum cycle time, relative hip/knee excursion, and a bounded tracking-loss grace period prevent jitter, half reps, double counts, whole-body translation, and short pose loss from corrupting progress. The checked-in bootstrap confidence/noise/timing values are spike parameters pending the required real-device matrix; they are not locked product biomechanics.
+
+Repository/build evidence currently passes, but no live-pose or movement-accuracy claim is made. The signed app is installed on the paired iPhone; the next action is to unlock it and record five post-calibration reps in each of the six required side/oblique/near-front × fuller/partial scenarios. Tune only from those results, then rerun validation, document the observed 2D/3D decision, commit, and push.
+
+Official implementation references reviewed for this slice:
+
+- [Requesting authorization to capture and save media](https://developer.apple.com/documentation/avfoundation/requesting-authorization-to-capture-and-save-media)
+- [Detecting Human Body Poses in Images](https://developer.apple.com/documentation/vision/detecting-human-body-poses-in-images)
+- [Identifying 3D human body poses in images](https://developer.apple.com/documentation/vision/identifying-3d-human-body-poses-in-images)
+- [Detecting human body poses in 3D with Vision](https://developer.apple.com/documentation/vision/detecting-human-body-poses-in-3d-with-vision)
+
+Apple documents 2D normalized joint coordinates/confidence and recommends substantial key-region visibility, while the 3D sample asks for all limbs to be visible. The project therefore treats 2D hips/knees as the tolerant partial-body baseline and 3D as optional evidence whose practical value must be established on the real device.

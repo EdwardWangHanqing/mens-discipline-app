@@ -2,7 +2,7 @@
 
 **Status:** Operational source of truth for iOS release readiness
 
-**Last verified against Apple rules:** 2026-08-14
+**Last verified against Apple rules:** 2026-08-15
 
 **Priority:** latest explicitly accepted decision / `docs/DECISIONS.md` > `docs/product/MVP_SCOPE.md` > `docs/product/MASTER_PRODUCT_PLAN.md` > this operational checklist.
 
@@ -81,6 +81,8 @@ Before finalizing App Store copy and paywall packaging:
 - [ ] Validate normalized pose output and partial-body observations from representative human input on a physical iPhone.
 
 ### Phase 03 Technical Feasibility exit
+- [x] Implement a real on-device `AVCaptureSession` → Apple Vision → normalized pose → pure movement-state diagnostic for Kneeling Drive without a third-party SDK or raw-frame bridge payload.
+- [x] Add deterministic rep-state tests and a six-scenario physical validation recorder covering count, miss/extra counts, pose/landmark loss, 2D/3D availability, and processing latency.
 - [ ] Validate at least **one representative MVP movement** on a real iPhone.
 - [ ] Prove camera/pose detection → movement state → rep count → completion can work reliably enough to justify continued development.
 - [ ] Verify the representative movement does not require perfect full-body alignment when a smaller movement-specific joint set is sufficient.
@@ -222,6 +224,8 @@ At minimum audit: account identifiers, email, routine history, streak/momentum, 
 
 Current Phase 03.7 evidence: `FamilyActivitySelection` is encoded only in local app storage through Apple's `Codable` conformance. JavaScript receives storage state and aggregate token counts only; token contents are not logged, uploaded, reverse-engineered, or exposed through the bridge. Physical-iPhone validation observed 5 application tokens, 1 category token, and 0 web-domain tokens; clearing the picker retained a saved but empty selection with all counts at zero and disabled Apply Shield. Final retention/deletion behavior must still be defined before release.
 
+Current Phase 03.9 implementation evidence: live camera frames are consumed in memory by AVFoundation and Apple Vision, then discarded. JavaScript receives normalized joint observations, confidence/availability, optional model-relative 3D joint positions, rep state, counts, and processing diagnostics only. No recording, frame/file persistence, microphone/photo-library permission, networking, server sharing, or third-party camera/pose SDK was added. Physical camera behavior and final derived-data retention still require device and product validation.
+
 ## 5.2 Privacy Policy
 - [ ] Explains what is collected and what is not collected.
 - [ ] Explicitly explains camera processing and whether raw video is stored/uploaded.
@@ -244,7 +248,7 @@ Current Phase 03.7 evidence: `FamilyActivitySelection` is encoded only in local 
 
 ## 5.5 Permission strings
 Each permission must have a specific user-facing reason and a denial path.
-- [ ] Camera.
+- [x] Camera purpose string and an explicit not-determined / denied / restricted recovery UI are implemented; denied/revoked behavior still requires physical-device validation.
 - [ ] Family Controls / Screen Time authorization flow.
 - [ ] Notifications, only if MVP genuinely uses them.
 - [ ] Any additional permission added later requires review of policy, privacy labels and UI explanation.

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { type Href, useRouter } from 'expo-router';
 import {
   AppState,
   type AppStateStatus,
@@ -72,6 +73,7 @@ function wait(delayMs: number): Promise<void> {
 }
 
 export default function HomeScreen() {
+  const router = useRouter();
   const [diagnostic, setDiagnostic] = useState(
     initialAuthorizationDiagnostic
   );
@@ -880,6 +882,16 @@ export default function HomeScreen() {
           Uses an intentionally missing local file. Expected: invalidInput /
           fileNotFound.
         </Text>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push('/motion-diagnostic' as Href)}
+          style={styles.button}
+        >
+          <Text style={styles.buttonText}>
+            Open Kneeling Drive live-camera spike
+          </Text>
+        </Pressable>
 
         {poseResult?.message || poseErrorMessage ? (
           <Text selectable style={styles.error}>
