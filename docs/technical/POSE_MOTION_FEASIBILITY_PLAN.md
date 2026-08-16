@@ -80,7 +80,8 @@ not create an MVP camera requirement.
 
 ## 4. Checkpoint A — Offline Foundation
 
-The accepted movement-agnostic foundation remains in the repository:
+The accepted movement-agnostic foundation is preserved in historical checkpoint
+`8a6f737`:
 
 - 19 canonical joints with normalized coordinates, confidence, timestamps,
   orientation/mirroring, and explicit unavailable joints;
@@ -131,11 +132,11 @@ The full live-camera implementation is preserved in Git checkpoint `463e4f2`
 (`spike: prototype Kneeling Drive Vision counting`) on
 `spike/vision-kneeling-drive`.
 
-The branch tip intentionally removes the live-camera diagnostic route, camera
-purpose string, AVFoundation capture view, and movement counter from the MVP
-runtime. This prevents an unfinished beta feature from shipping while keeping
-the implementation recoverable for future R&D. The offline Vision foundation is
-retained in the current source tree.
+The branch tip intentionally removes all active Camera/Vision runtime code: the
+live-camera diagnostic route, camera purpose string, AVFoundation capture view,
+movement counter, and offline Vision adapter module. This prevents unfinished
+R&D code from shipping while keeping both the offline foundation (`8a6f737`) and
+the full live prototype (`463e4f2`) recoverable in Git history.
 
 ## 7. Historical Non-Goals and Unfinished Validation
 

@@ -34,9 +34,10 @@ Accepted conclusion:
 to framing/tracking friction.**
 
 Camera / Apple Vision is no longer an MVP feature, release gate, reviewer path,
-or completion path. No unfinished Camera diagnostic is exposed in the current
-MVP source. The full prototype remains in Git checkpoint `463e4f2` and its
-findings remain in `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md`.
+or completion path. No active Camera/Vision runtime module or diagnostic is
+present in the current MVP source. The full prototype remains in Git checkpoint
+`463e4f2` and its findings remain in
+`docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md`.
 
 ## Accepted MVP Training Direction
 

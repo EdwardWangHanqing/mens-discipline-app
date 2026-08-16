@@ -76,10 +76,16 @@ adaptive pure-TypeScript Kneeling Drive counter, six deterministic tests,
 permission recovery UI, and diagnostic recorder. Native/full builds, signed
 physical-device installation, and live use were completed.
 
-The branch tip intentionally removes the live-camera route, purpose string,
-capture view, and movement counter from the MVP runtime. The earlier accepted
-offline/local Vision foundation remains in the repository as post-MVP R&D
-reference. See `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md`.
+The branch tip removes all active Camera/Vision runtime code, including the
+live-camera route, purpose string, capture view, movement counter, and offline
+adapter module. Both the offline foundation (`8a6f737`) and full prototype
+(`463e4f2`) remain recoverable in Git history as post-MVP R&D references. See
+`docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md`.
+
+Final cleanup removes the remaining autolinked `modules/vision-pose` runtime.
+Fresh Expo config/autolinking shows no Camera/Vision module or permission, while
+the Family Controls module, Device Activity Monitor target, and shared App Group
+remain present; a clean CNG iOS Simulator build passes.
 
 ## Family Controls Accepted Baseline
 
