@@ -4,7 +4,7 @@ A private men's performance training application built around consistency and ac
 
 Core product loop:
 
-**Select distracting apps → Lock → Complete today's routine → Verify completion → Unlock**
+**Select distracting apps → Lock → Complete today's guided routine → Unlock**
 
 ## Project Status
 
@@ -57,9 +57,9 @@ Use `docs/product/MASTER_PRODUCT_PLAN.md` when broader product context is requir
 - Premium
 - Intentional
 
-Motion tracking principle:
+Training principle:
 
-**Verify, don't judge.**
+**Guide clearly. Keep the daily path low-friction.**
 
 Accountability principle:
 
@@ -75,9 +75,8 @@ Primary Phase 03 risks:
 
 1. Apple Family Controls / Screen Time
 2. App restriction and unlock
-3. Camera / pose detection
-4. Rep counting
-5. React Native ↔ native iOS integration
+3. Guided routine completion → unlock integration
+4. React Native ↔ native iOS integration
 
 Business setup and release-readiness work run in parallel so they do not become launch-week blockers.
 
@@ -90,7 +89,9 @@ Planned direction:
 - TypeScript
 - Native iOS / Swift where required
 - Apple Family Controls / Screen Time APIs
-- On-device pose detection
+
+The MVP uses guided cadence training. The Phase 03.9 Apple Vision prototype is
+retained only as a post-MVP R&D reference.
 
 Exact architecture and versions are intentionally not locked in this README yet.
 
@@ -98,9 +99,8 @@ They will be decided during Phase 03 Technical Feasibility.
 
 ## Privacy
 
-Camera video should remain on device whenever possible.
-
-Do not upload or persist training video by default.
+The MVP does not request camera access or process training video. Future
+camera-assisted R&D would require a new privacy and release review.
 
 ## Git
 

@@ -28,13 +28,13 @@ Do not silently change locked product decisions, add new product features, or br
 
 Current technical priorities are:
 - App Lock / Screen Time feasibility
-- On-device motion tracking feasibility
+- Guided training engine and routine-completion → unlock integration
 - Reliable React Native ↔ native iOS integration
 
 Privacy is a core requirement:
-- Do not upload camera video unless explicitly approved.
-- Do not persist camera recordings by default.
-- Prefer on-device pose / motion processing.
+- The MVP does not request camera access or use Camera/Vision for completion.
+- If post-MVP Camera/Vision R&D is explicitly approved, do not upload or persist
+  camera video by default and prefer on-device processing.
 - Store only the minimum derived training data required by the product.
 
 Do not perform unrelated refactoring while implementing a scoped task.

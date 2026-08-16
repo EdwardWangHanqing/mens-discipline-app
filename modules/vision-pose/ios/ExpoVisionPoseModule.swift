@@ -1,4 +1,3 @@
-import AVFoundation
 import ExpoModulesCore
 import Foundation
 import ImageIO
@@ -11,7 +10,7 @@ public class ExpoVisionPoseModule: Module {
   )
 
   private static let supportedImageExtensions: Set<String> = [
-    "heic", "heif", "jpeg", "jpg", "png", "tif", "tiff",
+    "heic", "heif", "jpeg", "jpg", "png", "tif", "tiff"
   ]
 
   private static let jointDefinitions: [JointDefinition] = [
@@ -39,35 +38,6 @@ public class ExpoVisionPoseModule: Module {
   public func definition() -> ModuleDefinition {
     Name("ExpoVisionPose")
 
-    Function("getCameraPermissionStatus") {
-      self.cameraPermissionResult()
-    }
-
-    AsyncFunction("requestCameraPermission") { (promise: Promise) in
-      let currentStatus = AVCaptureDevice.authorizationStatus(for: .video)
-      guard currentStatus == .notDetermined else {
-        promise.resolve(self.cameraPermissionResult())
-        return
-      }
-
-      AVCaptureDevice.requestAccess(for: .video) { _ in
-        promise.resolve(self.cameraPermissionResult())
-      }
-    }
-
-    View(ExpoVisionPoseCameraView.self) {
-      Events("onCameraState", "onPoseFrame")
-
-      Prop("active", false) { (view: ExpoVisionPoseCameraView, active: Bool) in
-        view.setActive(active)
-      }
-
-      Prop("cameraPosition", "front") {
-        (view: ExpoVisionPoseCameraView, cameraPosition: String) in
-        view.setCameraPosition(cameraPosition)
-      }
-    }
-
     AsyncFunction("detectPoseFromImageFile") {
       (imageUri: String, orientation: String, isMirrored: Bool) -> [String: Any] in
       guard let imageUrl = self.localImageUrl(from: imageUri) else {
@@ -78,12 +48,10 @@ public class ExpoVisionPoseModule: Module {
         )
       }
 
-      guard
-        let imageOrientation = self.imageOrientation(
-          from: orientation,
-          isMirrored: isMirrored
-        )
-      else {
+      guard let imageOrientation = self.imageOrientation(
+        from: orientation,
+        isMirrored: isMirrored
+      ) else {
         return self.failureResult(
           status: "invalidInput",
           errorCode: "unsupportedOrientation",
@@ -92,12 +60,10 @@ public class ExpoVisionPoseModule: Module {
       }
 
       var isDirectory: ObjCBool = false
-      guard
-        FileManager.default.fileExists(
-          atPath: imageUrl.path,
-          isDirectory: &isDirectory
-        ), !isDirectory.boolValue
-      else {
+      guard FileManager.default.fileExists(
+        atPath: imageUrl.path,
+        isDirectory: &isDirectory
+      ), !isDirectory.boolValue else {
         return self.failureResult(
           status: "invalidInput",
           errorCode: "fileNotFound",
@@ -113,11 +79,9 @@ public class ExpoVisionPoseModule: Module {
         )
       }
 
-      guard
-        Self.supportedImageExtensions.contains(
-          imageUrl.pathExtension.lowercased()
-        )
-      else {
+      guard Self.supportedImageExtensions.contains(
+        imageUrl.pathExtension.lowercased()
+      ) else {
         return self.failureResult(
           status: "invalidInput",
           errorCode: "unsupportedFormat",
@@ -134,11 +98,9 @@ public class ExpoVisionPoseModule: Module {
         )
         try requestHandler.perform([request])
 
-        guard
-          let observation = request.results?.max(
-            by: { $0.confidence < $1.confidence }
-          )
-        else {
+        guard let observation = request.results?.max(
+          by: { $0.confidence < $1.confidence }
+        ) else {
           return self.emptyResult(status: "noPose")
         }
 
@@ -159,8 +121,7 @@ public class ExpoVisionPoseModule: Module {
           return self.emptyResult(status: "noPose")
         }
 
-        let status =
-          availableJointCount == Self.jointDefinitions.count
+        let status = availableJointCount == Self.jointDefinitions.count
           ? "poseAvailable"
           : "partialPoseAvailable"
 
@@ -187,24 +148,6 @@ public class ExpoVisionPoseModule: Module {
         )
       }
     }
-  }
-
-  private func cameraPermissionResult() -> [String: Any] {
-    let status: String
-    switch AVCaptureDevice.authorizationStatus(for: .video) {
-    case .authorized:
-      status = "authorized"
-    case .denied:
-      status = "denied"
-    case .restricted:
-      status = "restricted"
-    case .notDetermined:
-      status = "notDetermined"
-    @unknown default:
-      status = "unknown"
-    }
-
-    return ["status": status]
   }
 
   private func localImageUrl(from imageUri: String) -> URL? {

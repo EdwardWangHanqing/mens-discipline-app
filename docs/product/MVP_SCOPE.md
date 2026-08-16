@@ -87,9 +87,11 @@ Platform-specific functionality may use native implementations.
 Expected platform-specific areas include:
 
 - App Lock / Screen Time
-- Pose detection adapters
 - iOS extensions
 - Apple-specific authentication
+
+Camera / pose detection is not part of the MVP. A platform pose adapter remains
+only a possible post-MVP R&D concern.
 
 Shared business logic should remain reusable where practical.
 
@@ -145,15 +147,15 @@ Therefore:
 
 # 5. Sets, Repetitions and Rest
 
-The daily movement is performed for approximately:
+The daily movement is performed for exactly:
 
 **5 sets**
 
-Each set contains approximately:
+Each set typically contains:
 
 **15–20 repetitions**
 
-Rest between sets is approximately:
+Rest between sets is exactly:
 
 **20 seconds**
 
@@ -162,6 +164,11 @@ Exact repetition targets are NOT yet globally locked.
 They will be determined later on a movement-by-movement basis.
 
 Do not automatically assign the same repetition target to all seven movements.
+
+Rep cadence / tempo is also movement-specific and will be defined with each
+movement and Coach asset. Do not assign one universal cadence or total session
+duration across all seven movements; duration follows from each movement's
+approved repetitions and cadence plus the fixed rests.
 
 ---
 
@@ -206,100 +213,50 @@ Do not remove this capability from the MVP without explicit approval.
 
 ---
 
-# 8. Camera and Motion Tracking
+# 8. Guided Cadence Training
 
-Camera-assisted motion tracking is part of the MVP.
+Camera / Apple Vision repetition counting is not an MVP user feature, release
+requirement, or completion path.
 
-Its purpose is to:
+The MVP training sequence is:
 
-- confirm that the user is actually performing the movement;
-- count repetitions;
-- determine basic completion.
+Movement demonstration
 
-The camera system should NOT become a strict form-correction coach.
+→ countdown
 
-Core principle:
+→ guided repetitions
 
-**Verify, don't judge.**
+→ set completion
 
----
+→ 20-second rest
 
-## Camera Should Do
+→ next set
 
-The system may determine:
+→ routine completion
 
-- whether a person is visible;
-- whether general movement is occurring;
-- whether the expected movement pattern is broadly present;
-- repetition count;
-- movement completion.
+→ accountability satisfied / unlock.
 
----
+The app guides the user through movement-specific repetitions and tempo. MVP does
+not attempt to cryptographically or visually prove every repetition was
+performed. Do not replace Camera/Vision with manual tapping,
+hardware-volume-button counting, or another counting workaround.
 
-## Camera Should Not Do
-
-The MVP should not provide:
-
-- detailed form scores;
-- precise biomechanical scoring;
-- centimeter-level correction;
-- aggressive error messages;
-- detailed posture coaching;
-- competitive performance ratings.
+Set transitions, the rest timer, and routine completion must be clear and
+reliable. Exact per-movement repetition targets, cadence values, Coach assets,
+audio behavior, and final visual progress treatment remain later decisions.
 
 ---
 
-## Tracking Reliability and Assisted Completion
+# 9. Camera Privacy and Future R&D Boundary
 
-Automatic repetition counting is the preferred normal path, but the MVP must not require a perfectly aligned full body when a movement can be broadly verified from a smaller movement-specific set of joints or body regions.
+The MVP does not request camera permission, capture training video, or use pose
+landmarks for completion. Persist only the minimum training/accountability data
+required by the product, such as movement, configured repetition target, session
+completion, and session date.
 
-The system must:
-
-- tolerate reasonable camera placement and partial-body visibility where the movement-specific evidence remains sufficient;
-- preserve valid repetition progress through temporary tracking interruptions;
-- avoid resetting a set because tracking confidence drops;
-- use calm, limited framing guidance;
-- offer assisted completion when reliable automatic tracking cannot be recovered;
-- allow assisted completion to satisfy the daily requirement and unlock selected apps.
-
-Assisted completion is failure recovery rather than an always-prominent bypass. Exact thresholds, timing, confirmation friction, and progress presentation require real-device validation before they are locked.
-
-This recovery behavior does not authorize detailed form scoring and does not remove automatic rep counting from the normal MVP flow.
-
----
-
-# 9. Camera Privacy
-
-Camera processing should remain on device whenever technically practical.
-
-The MVP should NOT normally:
-
-- upload training videos;
-- store camera recordings;
-- send video to cloud generative AI systems.
-
-Preferred architecture:
-
-Camera
-
-→ On-device pose / motion detection
-
-→ Derived body landmarks
-
-→ Rep counting / completion logic
-
-→ Discard camera frames
-
-Persist only the minimum information required for product functionality.
-
-Example:
-
-- movement completed;
-- repetition count;
-- session completion;
-- session date.
-
-Privacy is a core product requirement.
+If Camera/Vision is explicitly revisited after MVP, raw frames must remain on
+device and must not be stored or uploaded by default. That future work requires a
+new permission, privacy, release, and usability review.
 
 ---
 
@@ -642,6 +599,8 @@ It does not authorize copying another company's visual assets or interface.
 Unless a later explicit decision changes this, MVP does not include:
 
 - Android release;
+- camera / Apple Vision repetition counting or pose verification;
+- manual-tap, hardware-button, or similar proof/counting workarounds;
 - detailed form correction;
 - detailed movement scoring;
 - cloud video analysis;
@@ -664,7 +623,7 @@ The following are not permission for Codex to invent answers.
 
 They are intentionally pending later decisions or technical validation:
 
-- exact repetition target for each movement;
+- exact repetition target and cadence/tempo for each movement;
 - detailed Skip Today friction;
 - detailed Grace Extension UX;
 - detailed Replace Movement behavior;
@@ -676,8 +635,8 @@ They are intentionally pending later decisions or technical validation:
 - exact Home visual layout;
 - final navigation structure;
 - exact implementation of cross-device sync;
-- exact motion-detection thresholds.
-- exact assisted-completion trigger, recovery timing, confirmation friction, and progress presentation.
+- final audio/haptic behavior;
+- final visual progress animation/treatment.
 
 When one of these details becomes necessary:
 
@@ -724,9 +683,9 @@ are not implementation requirements.
 The current structure is defined by:
 
 - one movement per day;
-- approximately five sets;
-- approximately 15–20 reps per set;
-- approximately 20 seconds rest between sets.
+- exactly five sets;
+- typically 15–20 reps per set, defined per movement;
+- exactly 20 seconds rest between sets.
 
 Exact duration will depend on the movement.
 
@@ -778,15 +737,15 @@ User performs today's single movement
 
 →
 
-approximately five sets
+views the movement demonstration and countdown
 
 →
 
-camera broadly verifies movement and counts reps when tracking is reliable
+completes five guided sets using that movement's repetition target and cadence
 
 →
 
-if reliable tracking cannot be recovered, assisted completion prevents technical lockout
+rests 20 seconds between sets
 
 →
 

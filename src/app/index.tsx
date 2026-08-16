@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { type Href, useRouter } from 'expo-router';
 import {
   AppState,
   type AppStateStatus,
@@ -19,12 +18,6 @@ import FamilyControls, {
   type FamilyControlsShieldState,
   type ScheduledLockState,
 } from '../../modules/family-controls';
-import VisionPose, {
-  type PoseDetectionResult,
-} from '../../modules/vision-pose';
-
-const missingDiagnosticImagePath =
-  '/expo-vision-pose-diagnostic/missing-image.png';
 const jsModuleInitializedAtMs = Date.now();
 const authorizationRetryDelaysMs = [0, 100, 200, 400, 800, 1_000, 1_500];
 
@@ -73,7 +66,6 @@ function wait(delayMs: number): Promise<void> {
 }
 
 export default function HomeScreen() {
-  const router = useRouter();
   const [diagnostic, setDiagnostic] = useState(
     initialAuthorizationDiagnostic
   );
@@ -99,9 +91,6 @@ export default function HomeScreen() {
   >(null);
   const [familyActivityErrorMessage, setFamilyActivityErrorMessage] =
     useState<string | null>(null);
-  const [poseResult, setPoseResult] = useState<PoseDetectionResult | null>(null);
-  const [poseErrorMessage, setPoseErrorMessage] = useState<string | null>(null);
-  const [isRunningPoseDiagnostic, setIsRunningPoseDiagnostic] = useState(false);
   const authorizationCheckGeneration = useRef(0);
   const authorizationCheckingStartedAtMs = useRef<number | null>(null);
   const latestResolvedAuthorizationStatus =
@@ -411,31 +400,6 @@ export default function HomeScreen() {
       FamilyControls.resetScheduledLockDiagnostics()
     );
   }, [runScheduledLockAction]);
-
-  const runPoseBridgeDiagnostic = useCallback(async () => {
-    setIsRunningPoseDiagnostic(true);
-    setPoseResult(null);
-    setPoseErrorMessage(null);
-
-    try {
-      const result = await VisionPose.detectPoseFromImageFile(
-        missingDiagnosticImagePath
-      );
-      setPoseResult(result);
-    } catch (error) {
-      setPoseErrorMessage(formatError(error));
-    } finally {
-      setIsRunningPoseDiagnostic(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const startPoseDiagnosticTimer = setTimeout(() => {
-      void runPoseBridgeDiagnostic();
-    }, 0);
-
-    return () => clearTimeout(startPoseDiagnosticTimer);
-  }, [runPoseBridgeDiagnostic]);
 
   useEffect(() => {
     const refreshFamilyActivityStateTimer = setTimeout(() => {
@@ -855,50 +819,6 @@ export default function HomeScreen() {
         ) : null}
       </View>
 
-      <View style={styles.diagnosticSection}>
-        <Text style={styles.diagnosticTitle}>Vision pose diagnostic</Text>
-        <Text style={styles.status}>
-          Status: {poseResult?.status ?? 'notRun'}
-        </Text>
-        {poseResult?.errorCode ? (
-          <Text style={styles.status}>Code: {poseResult.errorCode}</Text>
-        ) : null}
-
-        <Pressable
-          accessibilityRole="button"
-          disabled={isRunningPoseDiagnostic}
-          onPress={runPoseBridgeDiagnostic}
-          style={[
-            styles.button,
-            isRunningPoseDiagnostic && styles.buttonDisabled,
-          ]}
-        >
-          <Text style={styles.buttonText}>
-            {isRunningPoseDiagnostic ? 'Running…' : 'Test native bridge'}
-          </Text>
-        </Pressable>
-
-        <Text style={styles.caption}>
-          Uses an intentionally missing local file. Expected: invalidInput /
-          fileNotFound.
-        </Text>
-
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => router.push('/motion-diagnostic' as Href)}
-          style={styles.button}
-        >
-          <Text style={styles.buttonText}>
-            Open Kneeling Drive live-camera spike
-          </Text>
-        </Pressable>
-
-        {poseResult?.message || poseErrorMessage ? (
-          <Text selectable style={styles.error}>
-            {poseResult?.message ?? poseErrorMessage}
-          </Text>
-        ) : null}
-      </View>
     </ScrollView>
   );
 }

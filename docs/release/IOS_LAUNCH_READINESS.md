@@ -15,8 +15,8 @@
 - First complete routine is experienced before the user is asked to save progress / create an account.
 - Account direction: Apple + Google + Email; Phone OTP is not an MVP priority.
 - 3-day free trial is locked; subscription plans are Monthly / 3-Month / Annual.
-- Daily training structure from final Phase 02 remains authoritative: exactly 1 movement/day, 7-movement cycle without repetition, ~5 sets, ~15–20 reps/set, ~20s rest; exact reps are movement-specific later.
-- Camera is for basic verification + rep counting, not strict form scoring/correction; video should remain on-device and should not be stored/uploaded unless a later decision explicitly changes this.
+- Daily training structure is exactly 1 movement/day, a 7-movement cycle without repetition, exactly 5 sets, typically 15–20 reps/set with exact targets defined per movement, and exactly 20s rest; cadence is movement-specific.
+- MVP uses guided cadence training. Camera/Vision is not an MVP feature, completion path, permission, reviewer flow, or release requirement.
 
 ---
 
@@ -60,44 +60,37 @@ Phase 03.8 development status: the repository defines App Group `group.com.tempe
 - [ ] Keep entitlement request explanation consistent with App Store positioning: accountability / focus / wellness, not covert surveillance.
 
 ## 1.3 Monetization-policy review — Guideline 4.10 (P1 review watch item, not a technical blocker)
-Apple Guideline 4.10 explicitly names the camera and Screen Time APIs in its restriction on monetizing built-in hardware, operating-system capabilities, and Apple services or technologies.
+Apple Guideline 4.10 explicitly names Screen Time APIs in its restriction on monetizing built-in operating-system capabilities and Apple services or technologies. Camera is no longer part of the MVP release package.
 
-Existing approved paid apps that integrate these capabilities suggest that camera and Screen Time APIs can be part of a paid product in practice. However, Apple does not provide an explicit safe harbor for this product's specific implementation or monetization structure. Guideline 4.10 therefore remains a P1 App Review and packaging risk.
+Existing approved paid apps that integrate Screen Time suggest that it can be part of a paid product in practice. However, Apple does not provide an explicit safe harbor for this product's specific implementation or monetization structure. Guideline 4.10 therefore remains a P1 App Review and packaging risk.
 
 Before finalizing App Store copy and paywall packaging:
-- [ ] Describe paid value as the complete proprietary training/accountability product: programming, routine system, verification/counting logic, progress/momentum, coaching/content, history, personalization, etc.
-- [ ] Do not market the purchase as a fee simply to “access the iPhone camera,” “access Screen Time,” or another Apple-provided capability.
+- [ ] Describe paid value as the complete proprietary training/accountability product: programming, guided routine system, progress/momentum, coaching/content, history, personalization, etc.
+- [ ] Do not market the purchase as a fee simply to “access Screen Time” or another Apple-provided capability.
 - [ ] Review the final paywall, metadata, value proposition, and Review Notes specifically for Guideline 4.10 risk before submission.
-- [ ] Explain how Screen Time and camera usage integrate with the app's proprietary functionality without claiming that this packaging guarantees approval.
-- [ ] Do **not** change the locked subscription model or force a free basic-lock/camera tier solely because of Guideline 4.10.
+- [ ] Explain how Screen Time integrates with the app's proprietary functionality without claiming that this packaging guarantees approval.
+- [ ] Do **not** change the locked subscription model or force a free basic-lock tier solely because of Guideline 4.10.
 - [ ] If App Review specifically raises 4.10, address the concrete concern and record any resulting product change explicitly.
 
-## 1.4 Camera / rep-counting validation gates
+## 1.4 Guided training / completion validation gates
 
-### Phase 03 offline foundation
-- [x] Define a movement-agnostic derived pose contract with explicit per-joint availability and confidence.
-- [x] Establish an Apple Vision adapter that accepts local files and returns typed complete/partial/no-pose/error outcomes.
-- [x] Confirm the offline foundation adds no camera permission, live capture, networking, raw-image return, or image/video persistence.
-- [ ] Validate normalized pose output and partial-body observations from representative human input on a physical iPhone.
+### Phase 03.9 historical finding
+- [x] Demonstrate an on-device AVFoundation → Apple Vision → movement-state prototype for Kneeling Drive.
+- [x] Record the accepted finding: technical pose/counting capability demonstrated; mandatory MVP UX feasibility rejected because framing/tracking/calibration friction is too high.
+- [x] Preserve the implementation as a post-MVP R&D checkpoint while removing its route, camera purpose string, and live runtime from the MVP surface.
+
+These are historical evidence, not Camera production gates. No seven-movement
+Camera validation or Camera reviewer flow is required for MVP.
 
 ### Phase 03 Technical Feasibility exit
-- [x] Implement a real on-device `AVCaptureSession` → Apple Vision → normalized pose → pure movement-state diagnostic for Kneeling Drive without a third-party SDK or raw-frame bridge payload.
-- [x] Add deterministic rep-state tests and a six-scenario physical validation recorder covering count, miss/extra counts, pose/landmark loss, 2D/3D availability, and processing latency.
-- [ ] Validate at least **one representative MVP movement** on a real iPhone.
-- [ ] Prove camera/pose detection → movement state → rep count → completion can work reliably enough to justify continued development.
-- [ ] Verify the representative movement does not require perfect full-body alignment when a smaller movement-specific joint set is sufficient.
-- [ ] Verify temporary tracking loss preserves valid rep progress and does not reset the set.
-- [ ] Verify repeated tracking failure can enter assisted completion and cannot leave an honest user unable to complete or unlock.
-- [ ] Confirm no raw training video is stored or uploaded in MVP.
+- [ ] Prove guided routine completion → shared accountability completion → selected-app unlock/suppression on a real iPhone.
+- [ ] Verify exactly five sets and 20-second rests without hard-coding one universal repetition target or cadence.
+- [ ] Verify interruption/background recovery cannot falsely strand the user in an incomplete/locked state.
 
-### Phase 09 Motion Tracking / before Beta
-- [ ] Validate **all 7 final MVP movements** individually on a real iPhone.
-- [ ] Define and meet a minimum acceptable recognition/counting threshold for each movement.
-- [ ] Document movements or camera conditions that remain problematic.
-
-### Before public release
-- [ ] Test all 7 movements under reasonable real-world failure conditions, including camera distance, partial-body visibility, lighting, interruption, and denied/revoked camera permission.
-- [ ] Test assisted-completion entry, recovery, completion, unlock, and progress behavior for every movement where automatic tracking can fail.
+### Guided Training Engine / before Beta
+- [ ] Define exact repetition target and cadence/tempo separately for each of the seven movements.
+- [ ] Validate demonstration, countdown, set transitions, 20-second rests, routine completion, and recovery for all seven movement specifications.
+- [ ] Validate approved Coach assets, audio/haptics, and visual progress behavior after those decisions are made.
 
 ---
 
@@ -220,15 +213,21 @@ Maintain a simple table for every data type:
 - Shared third party / SDK
 - Deletion behavior
 
-At minimum audit: account identifiers, email, routine history, streak/momentum, selected-app tokens, camera frames/pose landmarks, analytics events, subscription identifiers, crash diagnostics.
+At minimum audit: account identifiers, email, routine history, streak/momentum,
+selected-app tokens, guided-training events, analytics events, subscription
+identifiers, and crash diagnostics. Camera frames/pose landmarks are not MVP data
+types; reassess them only if post-MVP Camera R&D becomes a product feature.
 
 Current Phase 03.7 evidence: `FamilyActivitySelection` is encoded only in local app storage through Apple's `Codable` conformance. JavaScript receives storage state and aggregate token counts only; token contents are not logged, uploaded, reverse-engineered, or exposed through the bridge. Physical-iPhone validation observed 5 application tokens, 1 category token, and 0 web-domain tokens; clearing the picker retained a saved but empty selection with all counts at zero and disabled Apply Shield. Final retention/deletion behavior must still be defined before release.
 
-Current Phase 03.9 implementation evidence: live camera frames are consumed in memory by AVFoundation and Apple Vision, then discarded. JavaScript receives normalized joint observations, confidence/availability, optional model-relative 3D joint positions, rep state, counts, and processing diagnostics only. No recording, frame/file persistence, microphone/photo-library permission, networking, server sharing, or third-party camera/pose SDK was added. Physical camera behavior and final derived-data retention still require device and product validation.
+Historical Phase 03.9 evidence: the feasibility build processed camera frames in
+memory and exposed only derived pose/count diagnostics. It did not record,
+persist, upload, or bridge raw frames and added no third-party pose SDK. The live
+runtime and camera purpose string are absent from the current MVP source.
 
 ## 5.2 Privacy Policy
 - [ ] Explains what is collected and what is not collected.
-- [ ] Explicitly explains camera processing and whether raw video is stored/uploaded.
+- [ ] Does not claim the MVP uses camera processing; explains any future camera behavior only if that feature is explicitly reintroduced.
 - [ ] Explains selected-app / Screen Time data at an appropriate level without implying access Apple does not grant.
 - [ ] Lists analytics / subscription processors actually used.
 - [ ] Explains account/data deletion.
@@ -248,7 +247,7 @@ Current Phase 03.9 implementation evidence: live camera frames are consumed in m
 
 ## 5.5 Permission strings
 Each permission must have a specific user-facing reason and a denial path.
-- [x] Camera purpose string and an explicit not-determined / denied / restricted recovery UI are implemented; denied/revoked behavior still requires physical-device validation.
+- [x] Camera is not requested by MVP; no Camera purpose string is present.
 - [ ] Family Controls / Screen Time authorization flow.
 - [ ] Notifications, only if MVP genuinely uses them.
 - [ ] Any additional permission added later requires review of policy, privacy labels and UI explanation.
@@ -318,14 +317,14 @@ Each permission must have a specific user-facing reason and a denial path.
 - [ ] Skip Today behavior works exactly as Phase 02 specifies and streak behavior is correct.
 - [ ] Completion unlocks selected apps.
 - [ ] Routine deck/cycle does not repeat movement before cycle reset.
-- [ ] Set/rest logic works.
-- [ ] Camera counts expected reps and handles failure states.
-- [ ] Temporary pose-tracking loss preserves completed reps and does not reset the current set.
-- [ ] Unrecoverable tracking failure offers assisted completion and still allows the daily requirement to complete and selected apps to unlock.
+- [ ] Each routine runs exactly five sets with 20-second rests.
+- [ ] Per-movement repetition targets and cadence load from movement specifications rather than one universal hard-coded value.
+- [ ] Demonstration, countdown, guided repetitions, set completion, rest, next-set, routine-completion, and interruption/recovery paths work.
+- [ ] Routine completion updates accountability state and unlocks/suppresses the selected-app shield without Camera proof.
 
 ## System edge cases
-- [ ] Permission denied.
-- [ ] Permission revoked in iOS Settings.
+- [ ] Family Controls permission denied.
+- [ ] Family Controls permission revoked in iOS Settings.
 - [ ] Device reboot.
 - [ ] App killed from memory.
 - [ ] Background/foreground transition.
@@ -357,9 +356,9 @@ Each permission must have a specific user-facing reason and a denial path.
 
 - [x] Family Controls distribution entitlement Assigned at the developer-account level for the main-app path.
 - [ ] Validate the entitlement in the distribution provisioning/archive/TestFlight path and obtain Assigned status for every extension actually introduced.
-- [ ] Review Notes explain the exact core loop: selected apps → scheduled accountability lock → routine → on-device verification → unlock.
-- [ ] Explain that camera analysis is local and raw video is not uploaded/stored in MVP.
-- [ ] Explain subscription value and avoid wording that suggests charging for Screen Time API/camera capability itself.
+- [ ] Review Notes explain the exact core loop: selected apps → scheduled accountability lock → guided routine → completion → unlock.
+- [ ] Do not include Camera setup, Camera privacy claims, or pose-counting steps in the MVP reviewer flow.
+- [ ] Explain subscription value and avoid wording that suggests charging for Screen Time API capability itself.
 - [ ] Give exact reviewer steps for Family Controls authorization and app selection.
 - [ ] Provide demo account credentials if any reviewable feature needs login.
 - [ ] Confirm sandbox subscriptions load and purchase successfully.
@@ -373,7 +372,7 @@ Each permission must have a specific user-facing reason and a denial path.
 
 Do not submit because “development is finished.” Submit only when all five gates are green:
 
-**Gate A — Core loop:** Lock → Train → Verify → Complete → Unlock works on a real iPhone.
+**Gate A — Core loop:** Lock → guided training → Complete → Unlock works on a real iPhone.
 
 **Gate B — Apple capability:** Family Controls distribution entitlement is ready for every relevant target.
 

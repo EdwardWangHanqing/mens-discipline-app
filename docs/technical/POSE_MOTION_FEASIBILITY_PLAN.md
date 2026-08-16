@@ -1,20 +1,65 @@
 # Pose & Motion Tracking Feasibility Plan
 
-**Status:** Checkpoint A accepted; Phase 03.9 Checkpoints B–C implementation is built and installed, awaiting physical movement evidence
+**Status:** Phase 03.9 closed — technical capability demonstrated; mandatory MVP UX feasibility rejected
 
-**Branch:** `spike/vision-kneeling-drive`
+**Validation branch:** `spike/vision-kneeling-drive`
 
-**Authority:** `docs/product/MVP_SCOPE.md` and `docs/DECISIONS.md`
+**Authority:** `docs/product/MVP_SCOPE.md`, `docs/DECISIONS.md` (especially DEC-021)
 
-## 1. Objective
+## 1. Final Conclusion
 
-Prove that on-device pose observations can support broad movement verification and tolerant repetition counting without requiring perfect full-body framing or allowing tracking failure to trap the user in the locked state.
+The real-device Kneeling Drive / Kneeling Hip Thrust spike demonstrated that an
+on-device AVFoundation → Apple Vision → normalized pose → movement-state pipeline
+can detect pose and count a representative movement.
 
-The normal path remains automatic rep counting. When reliable tracking cannot be recovered, assisted completion must allow the daily requirement to finish and selected apps to unlock.
+It did not meet the usability bar for a mandatory MVP completion path:
 
-## 2. Privacy and Data Boundary
+- movement-critical joints leave frame during normal motion often enough to make
+  tracking too sensitive;
+- partial-body framing remains too brittle;
+- landscape side view performs materially better than portrait;
+- front and near-front views are unreliable;
+- calibration and framing create too much daily-user friction.
 
-Preferred processing boundary:
+The accepted result is:
+
+**Technical capability demonstrated; mandatory MVP UX feasibility rejected due
+to framing/tracking friction.**
+
+This is a usability/product conclusion, not a claim that Apple Vision cannot
+detect poses or that the prototype never counted repetitions.
+
+## 2. Current Product Consequence
+
+Camera / Apple Vision is not an MVP user feature, release gate, reviewer path, or
+mandatory completion path. The MVP does not request camera permission.
+
+Do not replace the rejected path with manual tapping, hardware-volume-button
+counting, or another proof/counting workaround. The accepted MVP path is guided
+cadence training:
+
+Movement demonstration
+
+→ countdown
+
+→ guided repetitions
+
+→ set completion
+
+→ 20-second rest
+
+→ next set
+
+→ routine completion
+
+→ accountability satisfied / unlock.
+
+Camera/Vision may return only through an explicitly approved post-MVP R&D task
+with a fresh permission, privacy, release, and usability review.
+
+## 3. Privacy and Data Boundary Demonstrated
+
+The spike used this boundary:
 
 Camera or local test input
 
@@ -24,134 +69,33 @@ Camera or local test input
 
 → movement state / repetition engine
 
-→ minimal derived completion data
+→ non-sensitive diagnostic output.
 
-Raw camera frames must not be uploaded or persisted by default. The React Native layer should receive only the minimum derived information required for diagnostics, movement logic, and UI.
+Raw camera frames were processed in memory and were not uploaded, persisted,
+recorded, or bridged to React Native. No microphone/photo-library permission,
+networking, cloud analysis, or third-party camera/pose SDK was added.
 
-No third-party pose SDK is approved by this plan. Adding one later requires an explicit dependency, privacy, and release review.
+This remains the required privacy baseline if the R&D is ever resumed; it does
+not create an MVP camera requirement.
 
-## 3. Accepted Reliability Behavior
+## 4. Checkpoint A — Offline Foundation
 
-- Do not require a complete skeleton when the current movement can be verified from a smaller joint set.
-- Treat per-joint availability and confidence independently.
-- Smooth observations over time rather than judging isolated frames.
-- Count broad movement state transitions rather than exact form.
-- Preserve valid repetitions through temporary observation loss.
-- Never reset completed progress merely because tracking confidence drops.
-- Provide limited, calm setup/recovery guidance.
-- Offer assisted completion when automatic recovery fails.
-- Allow assisted completion to satisfy the routine and unlock selected apps.
+The accepted movement-agnostic foundation remains in the repository:
 
-Exact thresholds and timings must come from real-device evidence rather than being invented during foundation work.
+- 19 canonical joints with normalized coordinates, confidence, timestamps,
+  orientation/mirroring, and explicit unavailable joints;
+- an application-local Apple Vision adapter for local image files;
+- typed complete/partial/no-pose/input/processing outcomes;
+- no camera permission, live capture, networking, or image/video persistence.
 
-## 4. Checkpoint A — Movement-Agnostic Offline Foundation
+The iOS Simulator loaded the adapter and returned the expected typed
+`invalidInput / fileNotFound` result. A valid local PNG reached Vision but returned
+typed `processingFailed / visionError` in the Simulator, so that checkpoint proved
+the adapter/data boundary rather than reliable pose inference.
 
-This checkpoint can proceed before Apple Developer Program enrollment is ready.
+## 5. Phase 03.9 Prototype Architecture
 
-### Scope
-
-1. Define a platform-neutral pose observation contract containing:
-   - joint identifier;
-   - normalized coordinates;
-   - per-joint confidence;
-   - frame timestamp;
-   - orientation / mirroring metadata;
-   - explicit unavailable-joint representation.
-2. Establish an application-local Apple Vision adapter boundary.
-3. Process local test input without camera permission, networking, or persistence.
-4. Return typed outcomes for:
-   - pose available;
-   - partial pose available;
-   - no person detected;
-   - unsupported or invalid input;
-   - native processing failure.
-5. Keep movement-specific rules and production UI out of this checkpoint.
-
-### Acceptance Evidence
-
-- TypeScript and native boundaries compile.
-- The iOS Simulator build loads the native adapter.
-- Local input produces normalized derived observations or a typed failure result.
-- Missing joints do not crash the bridge.
-- No raw image/video data is uploaded or persisted.
-- No camera permission is added by Checkpoint A.
-
-Checkpoint A proves architecture and data flow only. It does not prove live-camera performance, rep-counting accuracy, or real-world framing tolerance.
-
-## 5. Checkpoint B — Real-Device Live Camera Feasibility
-
-This checkpoint requires a physical iPhone and must include the applicable camera permission and release-impact review before implementation.
-
-Validate:
-
-- front/rear camera choice and practical phone placement;
-- portrait orientation and mirrored preview handling;
-- end-to-end observation latency and sustained performance;
-- reasonable room sizes and camera distances;
-- movement-specific partial-body visibility;
-- low/uneven light and common clothing variation;
-- temporary occlusion and leaving/re-entering frame;
-- thermal and battery behavior for a full routine;
-- permission denied/revoked and interruption recovery;
-- confirmation that raw frames are not stored or uploaded.
-
-## 6. Checkpoint C — Representative Movement and Assisted Completion
-
-Select one representative MVP movement before implementing movement-specific logic.
-
-For that movement:
-
-1. Define the minimum required joints/body regions.
-2. Define tolerant movement states and temporal smoothing.
-3. Count complete state transitions without form scoring.
-4. Preserve count through temporary tracking loss.
-5. Provide one calm recovery prompt when framing becomes unusable.
-6. Enter assisted completion when reliable tracking cannot be restored.
-7. Verify both automatic and assisted paths complete the routine and unlock correctly.
-
-The representative movement, exact repetition target, confidence thresholds, recovery duration, assisted confirmation friction, and progress presentation are intentionally not selected by this plan.
-
-## 7. Explicit Non-Goals
-
-- all seven movement detectors;
-- detailed form correction or scoring;
-- production camera/training UI;
-- cloud video analysis;
-- stored training recordings;
-- custom Core ML model training;
-- third-party pose SDK adoption;
-- Android motion implementation;
-- coach animations or final audio;
-- final assisted-completion UX polish.
-
-## 8. Checkpoint A Implementation Status
-
-Checkpoint A is implemented on `spike/vision-pose-foundation`:
-
-- the TypeScript contract defines 19 canonical joints, normalized coordinates, per-joint confidence, timestamp, orientation, mirroring, coordinate origin, and explicit unavailable joints;
-- the application-local `ExpoVisionPose` module wraps Apple's on-device Vision framework;
-- the native API accepts local image files only and rejects network/non-file URIs;
-- processing runs through an Expo asynchronous native function rather than the main UI queue;
-- JavaScript receives only derived pose observations and typed status/error metadata;
-- typed results distinguish complete pose, partial pose, no pose, invalid input, and Vision processing failure;
-- the Technical Baseline screen includes an engineering-only bridge diagnostic;
-- no camera permission, live capture, image picker, networking, raw-image return, or persistence was added.
-
-Local validation proved that the module compiles, autolinks, loads in the iOS Simulator, and returns `invalidInput / fileNotFound` across the native bridge for a missing local file. A valid local PNG reached the Vision request and returned the typed `processingFailed / visionError` result in the iOS 26.5 Simulator. Therefore, Checkpoint A proves the adapter and error/data boundary but does **not** claim successful Simulator pose inference. A partial-pose result and normalized joint output still require representative human input and physical-iPhone validation.
-
-## 9. Immediate Next Engineering Task
-
-1. Review and accept the Checkpoint A implementation as an architecture checkpoint.
-2. Keep Checkpoint A isolated on `spike/vision-pose-foundation` until owner acceptance.
-3. When Apple Developer Program enrollment and a physical iPhone are ready, perform Checkpoint B before implementing production live-camera behavior.
-4. Select one representative MVP movement before Checkpoint C movement logic.
-5. Stop before camera permission, live capture, movement-specific counting, or assisted-completion UI until the applicable checkpoint and release review are ready.
-
-## 10. Phase 03.9 Implementation Ready for Device Validation
-
-Phase 03.9 selects **Kneeling Drive / Kneeling Hip Thrust** as the representative movement and implements the approved live-camera/counting slice without adding production training UI or assisted completion.
-
-Architecture:
+The historical live prototype implemented:
 
 Camera / `AVCaptureSession`
 
@@ -159,23 +103,63 @@ Camera / `AVCaptureSession`
 
 → normalized 19-joint pose frame with optional model-relative 3D positions
 
-→ movement-critical visibility and confidence assessment
+→ movement-critical visibility/confidence assessment
 
-→ Kneeling Drive features and adaptive state machine in pure TypeScript
+→ pure-TypeScript Kneeling Drive adaptive state machine
 
-→ rep events and non-sensitive validation diagnostics.
+→ repetition events and non-sensitive validation diagnostics.
 
-The 2D path uses hip position relative to the same-side knee so whole-body translation and shoulder-only rocking do not produce motion evidence. One hip/knee pair is sufficient; shoulders, head, arms, hands, feet, and ankles are not required. When Vision supplies a 3D skeleton, view-invariant hip/shoulder/knee geometry becomes the preferred evidence for near-front movement, while 2D remains the required partial-body fallback. Apple 3D is not treated as a full-body requirement.
+The 2D feature used hip position relative to the same-side knee to ignore
+whole-body translation and shoulder-only rocking. One hip/knee pair was
+sufficient; shoulders were corroborating rather than mandatory. Optional 3D
+geometry was preferred when available for depth evidence.
 
-Session movement endpoints are learned from observed geometry. Smoothing, hysteresis, stable frames, minimum cycle time, relative hip/knee excursion, and a bounded tracking-loss grace period prevent jitter, half reps, double counts, whole-body translation, and short pose loss from corrupting progress. The checked-in bootstrap confidence/noise/timing values are spike parameters pending the required real-device matrix; they are not locked product biomechanics.
+The state machine included session endpoint learning, smoothing, hysteresis,
+stable-frame requirements, minimum cycle time, movement excursion checks, and a
+bounded pose-loss grace period. Six deterministic tests covered a complete
+cycle, incomplete/jitter rejection, short/long pose loss, translation and
+shoulder-rocking rejection, and partial-body critical-joint behavior.
 
-Repository/build evidence currently passes, but no live-pose or movement-accuracy claim is made. The signed app is installed on the paired iPhone; the next action is to unlock it and record five post-calibration reps in each of the six required side/oblique/near-front × fuller/partial scenarios. Tune only from those results, then rerun validation, document the observed 2D/3D decision, commit, and push.
+Repository checks, native/full builds, signing, strict signature validation,
+physical-device installation, and live use were completed. The qualitative
+real-device finding above is authoritative; no unsupported quantitative accuracy
+rate is claimed.
 
-Official implementation references reviewed for this slice:
+## 6. Source Preservation
+
+The full live-camera implementation is preserved in Git checkpoint `463e4f2`
+(`spike: prototype Kneeling Drive Vision counting`) on
+`spike/vision-kneeling-drive`.
+
+The branch tip intentionally removes the live-camera diagnostic route, camera
+purpose string, AVFoundation capture view, and movement counter from the MVP
+runtime. This prevents an unfinished beta feature from shipping while keeping
+the implementation recoverable for future R&D. The offline Vision foundation is
+retained in the current source tree.
+
+## 7. Historical Non-Goals and Unfinished Validation
+
+The spike did not produce or approve:
+
+- seven production movement detectors;
+- a production camera/training UI;
+- assisted-completion UX;
+- detailed form correction/scoring;
+- exact production confidence thresholds;
+- custom Core ML training;
+- Android motion tracking;
+- stored recordings or cloud video analysis.
+
+Those items are not open MVP tasks. Seven-movement Camera validation and Camera
+reviewer instructions are explicitly removed from MVP release planning.
+
+## 8. Official References Used
 
 - [Requesting authorization to capture and save media](https://developer.apple.com/documentation/avfoundation/requesting-authorization-to-capture-and-save-media)
 - [Detecting Human Body Poses in Images](https://developer.apple.com/documentation/vision/detecting-human-body-poses-in-images)
 - [Identifying 3D human body poses in images](https://developer.apple.com/documentation/vision/identifying-3d-human-body-poses-in-images)
 - [Detecting human body poses in 3D with Vision](https://developer.apple.com/documentation/vision/detecting-human-body-poses-in-3d-with-vision)
 
-Apple documents 2D normalized joint coordinates/confidence and recommends substantial key-region visibility, while the 3D sample asks for all limbs to be visible. The project therefore treats 2D hips/knees as the tolerant partial-body baseline and 3D as optional evidence whose practical value must be established on the real device.
+Apple's 2D APIs expose normalized joint coordinates/confidence, while its 3D
+sample guidance expects broad limb visibility. That documented visibility
+constraint is consistent with the real-device framing friction observed here.

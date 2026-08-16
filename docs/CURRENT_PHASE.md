@@ -10,242 +10,140 @@ Men's Discipline App
 
 ## Completed Sub-phases
 
-**03.1 — Project Bootstrap**
+- 03.1 — Project Bootstrap
+- 03.2 — Apple / iOS Prerequisites
+- 03.3 — Official App Baseline / Expo Project Bootstrap
+- 03.6 — Family Controls authorization stabilization
+- 03.7 — Family Activity selection and manual shielding proof
+- 03.8 — Device Activity scheduled-lock proof
+- 03.9 — Camera / Vision / Kneeling Drive feasibility spike
 
-**03.2 — Apple / iOS Prerequisites**
+## Phase 03.9 Final Result
 
-**03.3 — Official App Baseline / Expo Project Bootstrap**
+**Status:** Closed
 
-**Status:** Complete
+The real-device Kneeling Drive spike demonstrated technical pose/counting
+capability, but mandatory MVP UX feasibility was rejected. Movement-critical
+joints leave frame during normal movement, partial-body framing is brittle,
+landscape side view performs materially better than portrait, front/near-front
+is unreliable, and calibration/framing adds too much daily friction.
 
-## Current Sub-phase
+Accepted conclusion:
 
-**03.9 — Camera / Vision / Kneeling Drive Rep Counting**
+**Technical capability demonstrated; mandatory MVP UX feasibility rejected due
+to framing/tracking friction.**
 
-**Status:** Repository implementation, deterministic tests, CNG, native/full builds, signing, and physical-device installation pass; live camera and six-scenario movement validation require the owner to unlock the iPhone and perform the movement
+Camera / Apple Vision is no longer an MVP feature, release gate, reviewer path,
+or completion path. No unfinished Camera diagnostic is exposed in the current
+MVP source. The full prototype remains in Git checkpoint `463e4f2` and its
+findings remain in `docs/technical/POSE_MOTION_FEASIBILITY_PLAN.md`.
 
-## Objective Result
+## Accepted MVP Training Direction
 
-Prove that Kneeling Drive / Kneeling Hip Thrust can be counted broadly and reliably enough on a physical iPhone using on-device Apple Vision across side, oblique, and near-front views with both fuller and partial-body framing. The built diagnostic is ready to collect those six physical runs; no movement reliability claim exists until the owner performs them.
+The MVP uses guided cadence training:
 
-## Phase 03.9 Motion State
+Movement demonstration
 
-- Active branch: `spike/vision-kneeling-drive`, based on the accepted Phase 03.8 development checkpoint.
-- The local `ExpoVisionPose` module now owns camera authorization, an `AVCaptureSession` preview, throttled video-frame delivery, Apple Vision 2D body-pose requests, and iOS 17+ 3D body-pose diagnostic requests.
-- Frames remain on device and in memory. No microphone, photo-library permission, raw-frame bridge payload, recording, file persistence, networking, cloud analysis, or third-party camera/pose SDK was added.
-- The normalized pose contract now supports live-camera frames and optional model-relative 3D positions while preserving the existing 19-joint 2D boundary.
-- Kneeling Drive feature extraction and repetition state live in pure TypeScript, separate from Apple observation types. Hips plus at least one same-side knee are the 2D minimum; shoulders are diagnostic corroboration rather than a hard requirement.
-- The detector learns the session's observed BACK/FORWARD range, then applies smoothing, hysteresis, stable-frame requirements, a minimum cycle duration, hip-relative-to-knee movement evidence, and bounded tracking-loss recovery. It preserves completed reps and abandons only an unfinished cycle after prolonged loss.
-- 2D hip-to-knee geometry is the partial-body fallback and ignores whole-body translation and shoulder-only rocking. 3D hip/shoulder/knee geometry is preferred when Vision supplies it, especially for near-front depth movement; it is never a full-body gate.
-- The diagnostic page records actual/count/miss/extra totals, no-pose and critical-landmark loss, 2D/3D frame counts, and Vision processing latency for the required six-scenario matrix. The scenario label does not change detector behavior.
-- The tracked `NSCameraUsageDescription` explains on-device counting and explicitly says video is not saved or uploaded. The UI includes not-determined request, denied/restricted guidance, and Settings recovery.
-- Six deterministic tests pass for a complete cycle, incomplete/jitter rejection, short/long pose loss, translation/shoulder-rocking rejection, and partial-body critical-joint behavior.
-- CNG, CocoaPods, strict Swift formatting, the standalone `ExpoVisionPose` target, full Simulator app, unsigned generic iPhoneOS app, and signed Debug iPhoneOS app build. The signed app and monitor extension pass strict signature validation and retain existing Family Controls/App Group entitlements.
-- The signed build installed on the paired iPhone. Launch was attempted but correctly refused while the device was locked; live permission, camera orientation, pose output, 2D/3D availability/performance, and rep accuracy remain unverified.
+→ countdown
 
-## Family Controls Current State
+→ guided repetitions
 
-- The official Expo SDK 57 application baseline is established in this repository.
-- The Checkpoint 1 Family Controls authorization bridge/native module builds, launches, and reads authorization status successfully in the iPhone Simulator.
-- The iOS Bundle ID is `com.temperline.mensdiscipline`.
-- Expo Continuous Native Generation (CNG) remains the current working native-project strategy.
-- The first checkpoint is a local Expo module for reading and requesting Family Controls authorization from the main application.
-- The bridge performs `AuthorizationCenter` status access and authorization requests on the main queue / main actor as required by Apple.
-- The main-app development entitlement is expressed through tracked Expo application configuration.
-- The paid Individual Apple Developer membership is active and recognized by Xcode.
-- An iPhone 13 running iOS 26 paired over USB, was trusted, and had Developer Mode enabled.
-- Automatic Signing registered the device and produced an Xcode-managed development provisioning profile.
-- The physical-device app build, installation, and launch succeeded. The signed app and embedded development profile both contained the Family Controls development entitlement.
-- The React Native bundle loaded and the application-local Swift module registered on the physical device.
-- The pre-request status was `notDetermined`; the real system authorization UI appeared for `.individual`; the owner allowed access; and the post-request status was `approved`.
-- On two complete termination/relaunch repetitions, the old implementation's immediate startup read was transiently `notDetermined`; a status refresh after several seconds returned the persisted `approved` state.
-- Follow-up diagnosis confirmed that Apple's published authorization property itself begins at `notDetermined` and then updates to the persisted value. The old UI synchronously exposed that initial native value; it was not a JavaScript default-value race, and the behavior still reproduced with Metro already ready.
-- The current branch observes the native publisher, begins in `checking`, reads after App active, and uses bounded incremental retries without automatically requesting authorization.
-- Five consecutive physical-iPhone cold starts automatically resolved from `checking` to `approved` without manual refresh, without presenting `notDetermined` as a final/user-actionable state, and without another authorization prompt. The owner visually confirmed the result. Denied/revoked behavior remains untested pending explicit approval.
-- Phase 03.6's approved cold-start authorization path is accepted as the base for Phase 03.7 and has not been redesigned.
-- Apple has assigned Family Controls (Distribution) to the developer account for the main-app path. Distribution signing/TestFlight behavior is not yet validated, and any future Screen Time extension will still require its own entitlement request.
-- The iOS Simulator can load the bridge and return `notDetermined`, but its system log reports that the `FamilyControlsAgent` service is unavailable; this is not evidence of real-device authorization behavior.
-- The Technical Baseline screen is only a temporary engineering test surface; it is not production UI.
-- The local `ExpoFamilyControls` module now presents Apple's SwiftUI `FamilyActivityPicker` from the React Native diagnostic screen without exposing token contents to JavaScript.
-- A picker draft is initialized from the prior stored selection; Cancel or interactive dismissal preserves the old selection, while Done encodes `FamilyActivitySelection` locally through its Apple-provided `Codable` conformance. No-selection, legitimately empty, replacement, and corrupt-decode states are represented without crashing.
-- JavaScript receives only storage status, saved-selection existence, opaque token counts, saved time, and non-sensitive errors.
-- The Phase 03.7 manual path uses a fixed named `ManagedSettingsStore` and applies only explicit application, category, and web-domain tokens. Phase 03.8 adds separate named stores for the daily and one-off Device Activity paths so overlapping intervals cannot accidentally clear one another. Remove/Reset clears all three diagnostic stores as the development escape path.
-- Authorization, selection, schedule, accountability, callback, and shield state remain separate. State is reread on mount and foreground. Editing to another non-empty selection does not silently mutate an active shield; saving an empty selection now clears all diagnostic shield stores safely.
-- The new module target, full iOS Simulator app, and automatically signed generic iPhoneOS app build succeeded. The build was installed and launched on the connected iPhone; Metro confirmed `approved` authorization plus a successful empty selection/shield bridge read (`none`, zero counts, shield removed).
-- Physical-iPhone validation passed: `FamilyActivityPicker` presented successfully, and the owner created and edited an explicit selection containing 5 application tokens, 1 category token, and 0 web-domain tokens.
-- Selecting an individual app within an Apple category increased the application-token count; selecting the entire category increased the category-token count. This is treated as expected `FamilyActivitySelection` behavior, not a project defect.
-- Apply Shield restricted the selected applications, and opening a selected application displayed Apple's system `Restricted` screen.
-- Remove Shield restored normal access. Repeated Apply → Remove also succeeded.
-- The saved selection remained available after the Debug development relaunch workflow once Metro connectivity was restored.
-- Clearing the picker produced 0 application, 0 category, and 0 web-domain tokens while retaining `Saved selection: yes (empty)`; Apply Shield was disabled.
-- No Family Controls functional error was observed during this validation.
-- Separately, force-quitting and directly reopening the Debug build while Metro was unavailable produced `No script URL provided`. Restoring Metro and relaunching restored the React Native UI and the saved selection. This is currently a Debug/Metro workflow observation, not evidence of authorization, picker, persistence, or shielding failure. Production/TestFlight bundle behavior remains untested.
-- Apple's documented architecture requires the main app's `DeviceActivityCenter` to register the schedule and a `DeviceActivityMonitor` extension to receive the system interval callback. Phase 03.8 therefore introduces exactly one extension—no Shield Action, Shield Configuration, Device Activity Report, JS timer, or foreground timer.
-- The new extension target is `MensDisciplineDeviceActivityMonitor` with Bundle ID `com.temperline.mensdiscipline.deviceactivitymonitor`. Both targets declare Family Controls development entitlement and App Group `group.com.temperline.mensdiscipline`; the App Group is required because the callback runs outside the React Native/main-app process.
-- The tracked Expo config plugin recreates, links, and embeds the extension during CNG. The extension and app version/build settings remain aligned, and EAS app-extension metadata is declared without adding a dependency.
-- The saved Apple-opaque `FamilyActivitySelection` migrates from legacy app defaults into App Group `UserDefaults`; only opaque encoded selection, date-scoped completed/incomplete diagnostic state, configuration time, and non-sensitive callback outcome/counts are shared. No token contents are logged or exposed to JavaScript.
-- Production-shaped scheduling is a daily recurring interval from Lock Time through 23:59:59. A separate one-off `+2 minute` diagnostic uses a nonrepeating 16-minute interval to satisfy Apple's 15-minute minimum. Schedule replacement first stops the prior activity and clears only that activity's named shield.
-- `intervalDidStart` applies the activity-specific shield only when today's flag is incomplete and the shared explicit selection is present, non-empty, and decodable. Completed, absent, empty, corrupt, or unavailable shared state fails safely without unintended broad shielding. `intervalDidEnd`, Completed Today, Cancel, Reset, Remove Shield, and empty-selection save provide recovery paths.
-- The app exposes diagnostic-only native controls and non-sensitive system-derived schedule/callback state. React Native is not the background source of truth.
-- Official architecture references: [DeviceActivityCenter](https://developer.apple.com/documentation/deviceactivity/deviceactivitycenter), [DeviceActivityMonitor](https://developer.apple.com/documentation/deviceactivity/deviceactivitymonitor), [Family Controls capability configuration](https://developer.apple.com/help/account/capabilities/configure-app-capabilities/configuring-family-controls/), and [App Groups](https://developer.apple.com/documentation/xcode/configuring-app-groups).
-- Fresh CNG, CocoaPods install, Expo config inspection, lint, TypeScript, diff checks, Device Activity Monitor target build, `ExpoFamilyControls` target build, and full unsigned Debug builds for iOS Simulator and generic iPhoneOS pass. The built Simulator app contains the monitor `.appex` with the correct extension point and matching `1.0.0` version.
-- Fresh `npx expo-doctor` passes 20/21 checks; its only failure is the pre-existing Expo SDK 57 patch-version mismatch across six Expo packages. No package was upgraded during this scoped native-capability phase.
-- After the owner restored the Apple team login, Xcode Automatic Signing created updated development profiles for both targets. A fresh signed Debug build for the paired iPhone 13 passed; the host and embedded monitor `.appex` signatures were valid, and both signed entitlements/profiles contained Family Controls plus `group.com.temperline.mensdiscipline`.
-- The signed build installed and launched on the physical iPhone. Authorization resolved to `approved`, the saved opaque selection read from verified App Group storage (`available`, one category token), and the manual diagnostic shield was initially inactive.
-- Incomplete one-off proof passed with the host app inactive: the native `+2 minute` schedule remained active in `DeviceActivityCenter`, the extension recorded `intervalDidStart / appliedShield` with `completedToday=false`, and YouTube displayed Apple's system `Restricted` screen without any manual Apply Shield action. Instagram remained usable, consistent with shielding only the saved category rather than creating a broad policy.
-- Reset removed the scheduled shield and immediately restored YouTube access. The Completed one-off then recorded `intervalDidStart / skippedCompletedToday` with `completedToday=true`; YouTube remained usable and the aggregate diagnostic shield state stayed inactive.
-- Re-registering the same one-off activity replaced its pending start without error. Final Cancel stopped both daily and diagnostic monitoring and left all diagnostic shield counts at zero; `intervalDidEnd / removedShieldAtIntervalEnd` was recorded during recovery.
-- Main-app Family Controls (Distribution) remains Assigned. The new Device Activity Monitor extension's separate Distribution entitlement is not requested or Assigned; it is not required for the development proof but is required before TestFlight/App Store distribution.
-- The validated scope is a development build with the main app inactive during the interval. Force-quit/reboot, midnight rollover, timezone/DST, production/TestFlight bundle behavior, and long-running daily reliability are not yet claimed.
-- Final production Lock Time UX remains uncreated.
-- The accepted motion-tracking direction is tolerant automatic rep counting with a non-blocking assisted-completion path; tracking failure must not prevent routine completion or app unlock.
-- Movement-agnostic pose architecture and offline/local Vision Checkpoint A is accepted and integrated; Pose Checkpoint B remains outside this Family Controls validation task.
-- Checkpoint A adds a local Apple Vision adapter, a 19-joint normalized TypeScript contract, explicit unavailable-joint representation, and typed complete/partial/no-pose/input/processing outcomes.
-- The adapter accepts local image files only; it adds no camera permission, live capture, networking, raw-image return, persistence, movement rules, repetition counting, or production training UI.
-- The iOS Simulator loads the module and returns the expected typed `invalidInput / fileNotFound` bridge result. A valid local PNG reached Vision but returned typed `processingFailed / visionError` in the Simulator, so successful pose inference and partial-body behavior are not yet claimed.
+→ set completion
 
-## Primary Track — Technical Feasibility
+→ 20-second rest
 
-Phase 03.8 accepted evidence:
+→ next set
 
-1. Automatic Signing, host/extension development profiles, signed build, installation, and launch pass on the paired iPhone 13.
-2. The saved Apple-opaque selection is available from the shared App Group, and the extension callback reads it outside the main-app process.
-3. Incomplete `+2 minute` proof records `intervalDidStart / appliedShield` and displays Apple's `Restricted` UI on the saved category without a manual Apply Shield action.
-4. Reset restores access; Completed `+2 minute` proof records `intervalDidStart / skippedCompletedToday` while the same selected app remains usable.
-5. Same-activity replacement succeeds, and final Cancel leaves daily/diagnostic monitoring inactive with no diagnostic shield active.
+→ routine completion
 
-The Family Controls authorization, Phase 03.7 selection/manual-shield path, and Phase 03.8 bounded scheduled-lock proof are accepted real-device baselines. Denied/revoked authorization, production/TestFlight bundle behavior, the extension Distribution entitlement, force-quit/reboot/midnight/timezone/DST reliability, live camera, and movement counting remain open. Phase 03 as a whole is not complete.
+→ accountability satisfied / unlock.
 
-## Parallel Track — Business / Apple Account
+Locked structure:
 
-This track must not block Phase 03 coding.
+- exactly one movement per day;
+- exactly five sets;
+- typically 15–20 repetitions per set, with exact targets defined per movement;
+- exactly 20 seconds of rest between sets;
+- cadence/tempo defined per movement with its Coach asset;
+- no universal repetition target, cadence, or total session duration;
+- no camera proof, manual-tap counting, hardware-button counting, or substitute
+  proof workaround.
 
-1. Apple Developer membership may begin as **Individual** if company setup is still pending
-2. Incorporate the intended company
-3. Obtain D-U-N-S for the company
-4. Prepare company-domain email and public functional website
-5. Convert the same Apple Developer membership from Individual → Organization before public commercial App Store launch
-6. Complete paid commerce setup after the organization identity is stable
+The app guides the session; MVP does not attempt to cryptographically or visually
+prove every repetition.
 
-Detailed business sequencing is tracked in:
+## Next Sub-phase
 
-`docs/business/BUSINESS_APPLE_ACCOUNT_PLAN.md`
+**03.10 — Guided Routine → Accountability Unlock Integration**
 
-## Parallel Track — Release Compliance
+Objective: prove the smallest end-to-end development flow using a data-driven
+guided training engine:
 
-Start release readiness now rather than waiting until Phase 16.
+1. load one representative movement specification without inventing the final
+   seven movement targets;
+2. run demonstration → countdown → five guided sets → 20-second rests;
+3. mark the routine complete through the training state machine;
+4. write today's accountability completion state;
+5. clear/suppress the selected-app shield through the already validated Family
+   Controls boundary;
+6. demonstrate the complete flow on a real iPhone.
 
-Current release-readiness work:
+This sub-phase should establish interfaces and state transitions, not final Coach
+art, final audio/haptics, final visual progress animation, or final per-movement
+content values.
 
-1. Record the main-app Family Controls Distribution entitlement as Assigned; continue tracking separate entitlement requirements for every Screen Time extension actually introduced
-2. Maintain the App Review risk register
-3. Start data / permission / SDK inventory as technical dependencies are selected
-4. Treat Apple Guideline 4.10—which explicitly names camera and Screen Time APIs—as a P1 packaging/review risk with no explicit safe harbor for this implementation; do not redesign the locked subscription model solely on that basis, and review the final paywall, metadata, value proposition, and Review Notes before submission
-5. Record any release impact when Phase 03 introduces a new capability, permission, native target, SDK, or data flow
+## Family Controls Accepted Baseline
 
-Operational source:
+- Bundle ID: `com.temperline.mensdiscipline`.
+- Expo CNG remains the working native-project strategy.
+- Real-device `.individual` authorization is approved; five cold starts resolved
+  automatically from `checking` to `approved` without another prompt.
+- `FamilyActivityPicker` selection/editing, opaque local persistence, empty state,
+  and manual Apply/Remove Shield passed on the physical iPhone.
+- The Device Activity Monitor extension is
+  `com.temperline.mensdiscipline.deviceactivitymonitor` and shares App Group
+  `group.com.temperline.mensdiscipline` with the host.
+- Incomplete one-off scheduling produced `intervalDidStart / appliedShield` with
+  the host inactive; Completed produced `skippedCompletedToday`; Reset/Cancel
+  restored access and left no diagnostic shield active.
+- Main-app Family Controls Distribution is Assigned. The monitor extension still
+  requires its separate Distribution entitlement before TestFlight/App Store.
+- No token contents are logged, reverse-engineered, or exposed to JavaScript.
 
-`docs/release/IOS_LAUNCH_READINESS.md`
+## Remaining Phase 03 / Release Risks
 
-Risk source:
-
-`docs/release/APP_REVIEW_RISK_REGISTER.md`
-
-## Phase 03 Primary Goal
-
-Prove that the core product loop is technically feasible:
-
-App Selection
-
-→ App Lock
-
-→ Begin Routine
-
-→ Camera / Pose Tracking
-
-→ Rep Completion
-
-→ Routine Complete
-
-→ Unlock Selected Apps
-
-## Technical Risks To Validate First
-
-### 1. iOS App Lock
-
-Validate:
-
-- Family Controls authorization
-- App selection
-- Managed Settings shielding
-- Locking selected apps
-- Unlocking selected apps
-- Required Screen Time extensions
-- main-app / extension Bundle ID architecture
-- Distribution entitlement requirements
-- behavior after app relaunch / device reboot where relevant
-- Lock Time state behavior around device/system edge cases
-
-### 2. Camera / Motion Tracking
-
-Validate:
-
-- Camera access
-- On-device human pose detection
-- Body landmark normalization
-- Simple movement state detection
-- Rep counting
-- Reliable basic completion verification
-- realistic failure states such as no person / partial body / poor lighting / denied camera permission
-
-Core principle:
-
-**Verify, don't judge.**
-
-The system should verify general movement completion and count repetitions.
-
-It should NOT provide detailed form scoring or detailed corrective coaching in the MVP.
-
-## Current Platform Priority
-
-**iOS first.**
-
-Android architecture should remain possible later, but Android implementation is not part of Phase 03.
+- Connect guided routine completion to the shared accountability state and prove
+  completion → unlock on a real iPhone.
+- Validate Family Controls denied/revoked behavior.
+- Validate Release/TestFlight bundle launch independently of Metro.
+- Obtain/validate the monitor extension's Distribution entitlement.
+- Later reliability testing still includes force-quit, reboot, midnight,
+  timezone/DST, and supported iOS versions.
+- Final production Lock Time, Grace Extension, Skip Today, and Replace Movement UX
+  remain unbuilt.
 
 ## Do Not Start Yet
 
-Do not begin:
+Do not invent or finalize in this checkpoint:
 
-- Full production UI
-- Full Figma implementation
-- Production coach animations
-- Final audio system
-- RevenueCat integration
-- Subscription paywall implementation
-- Analytics implementation
-- Android implementation
-- Social features
-- Leaderboards
-- Large exercise library
+- exact repetition/cadence values for all seven movements;
+- final Coach design/assets;
+- final audio/haptic system;
+- final visual progress animation;
+- full production UI or Figma implementation;
+- RevenueCat/paywall, analytics, Android, social, or leaderboard work.
 
-Business formation, Apple account preparation, and release-readiness documentation are exceptions because they run in parallel and prevent avoidable launch delays.
+Business formation, Apple account preparation, and release-readiness work continue
+in parallel.
 
-## Exit Criteria For Phase 03
+## Phase 03 Exit Direction
 
-Phase 03 is complete only when we have enough evidence that:
+Phase 03 no longer requires Camera detection or representative rep counting. It
+requires enough evidence that:
 
-1. User can select distracting apps on a real iPhone
-2. Selected apps can be restricted
-3. Selected apps can be reliably unshielded/unlocked in the intended core loop
-4. Main app + required Screen Time extension architecture is known
-5. Main-app Family Controls Distribution is Assigned and every extension actually introduced has a documented/requested entitlement path
-6. User can begin a routine
-7. Camera can detect the user
-8. At least one representative MVP movement can be counted reliably enough to justify further implementation
-9. Routine completion can trigger app unlock
-10. Major failure states discovered during feasibility work are documented
-11. No known P0 technical assumption is being postponed solely for visual polish
-
-The prototype may be visually rough.
-
-Technical feasibility matters more than visual polish in this phase.
+1. app selection and scheduled restriction work on a real iPhone;
+2. selected apps can be reliably unshielded in the intended accountability flow;
+3. the main app/monitor extension architecture and Distribution path are known;
+4. a guided routine can complete and update accountability state;
+5. routine completion triggers/suppresses the selected-app restriction;
+6. major system failure states are documented rather than postponed for polish.

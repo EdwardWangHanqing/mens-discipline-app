@@ -38,7 +38,7 @@ MVP should keep the rule understandable rather than introduce many lock modes.
 
 ## DEC-003 — Camera Processing Should Be On Device
 
-**Status:** Accepted
+**Status:** Accepted for post-MVP R&D; superseded as an MVP requirement by DEC-021
 
 Camera footage should not be uploaded to a server for routine rep counting.
 
@@ -62,11 +62,15 @@ Privacy is a core product requirement.
 
 Cloud generative AI is unnecessary for basic movement verification.
 
+The MVP does not request camera access or depend on Camera / Apple Vision. This
+decision remains the privacy boundary if camera-assisted training is revisited
+after MVP.
+
 ---
 
 ## DEC-004 — Verify, Don't Judge
 
-**Status:** Accepted
+**Status:** Accepted for post-MVP Camera/Vision R&D; superseded as an MVP path by DEC-021
 
 Motion tracking should determine:
 
@@ -113,9 +117,8 @@ A branch should represent one logical unit of work rather than every tiny edit.
 Do not spend significant time building polished production UI before validating:
 
 1. Family Controls / App Lock
-2. Camera / pose detection
-3. Rep counting
-4. Lock → Routine → Unlock integration
+2. React Native ↔ native iOS integration
+3. Lock → guided routine → unlock integration
 
 ### Reason
 
@@ -135,7 +138,7 @@ Native iOS code may be used where required for:
 - Managed Settings
 - Device Activity
 - Screen Time extensions
-- Apple Vision integration
+- post-MVP Apple Vision R&D, if explicitly approved
 - other iOS-specific capabilities
 
 Final architecture will be locked after feasibility testing.
@@ -180,13 +183,15 @@ Examples shown in older planning documents must not be treated as implementation
 
 In particular, routine structure, movement count, sets, repetitions, difficulty, lock behavior, trial flow, and similar MVP details must follow the final Phase 02 decisions.
 
-The final Phase 02 MVP Scope defines the current daily training structure:
+DEC-021 updates the current daily training structure to:
 
 - exactly 1 movement per day;
-- that daily movement is performed for approximately 5 sets;
-- approximately 15–20 repetitions per set;
-- approximately 20 seconds rest between sets;
-- exact repetition targets will be determined later on a movement-by-movement basis.
+- that daily movement is performed for exactly 5 sets;
+- typically 15–20 repetitions per set;
+- exactly 20 seconds rest between sets;
+- exact repetition targets and cadence are determined later on a
+  movement-by-movement basis;
+- no universal total session duration.
 
 Do not silently revive superseded requirements.
 
@@ -380,27 +385,84 @@ CNG keeps the official application baseline reproducible while native iOS feasib
 
 ## DEC-020 — Tolerant Automatic Rep Counting With Non-Blocking Assisted Completion
 
-**Status:** Accepted
+**Status:** Superseded for MVP by DEC-021; retained as Phase 03.9 historical context
 
-Automatic repetition counting remains the preferred MVP training experience, but camera tracking must not become a single point of failure that prevents an honest user from completing the routine or unlocking selected apps.
+At the time it was accepted, this decision made tolerant automatic repetition
+counting the proposed normal path and required a non-blocking assisted-completion
+fallback. It specified movement-specific minimum joints, smoothing, preserved
+counts through short tracking loss, calm framing guidance, and recovery that
+could not trap an honest user in the locked state.
 
-The motion system must follow these rules:
-
-- require only the movement-specific body regions and joints needed for broad verification rather than requiring a perfectly aligned full body by default;
-- use tolerant movement states, temporal smoothing, and confidence handling rather than strict pose matching or form scoring;
-- preserve already-counted repetitions when tracking is interrupted or temporarily loses required joints;
-- provide calm, minimal framing guidance instead of repeated corrective warnings;
-- offer an assisted-completion path when reliable automatic tracking cannot be recovered;
-- allow assisted completion to satisfy the daily routine and unlock selected apps so a technical failure cannot trap the user.
-
-Assisted completion is a failure-recovery path, not a frictionless replacement for the normal training flow. Exact activation thresholds, recovery timing, confirmation friction, and how assisted sessions appear in streak/progress detail remain pending real-device feasibility and UX validation.
-
-This decision does not remove camera-assisted verification or automatic rep counting from the normal MVP path. It clarifies how the product behaves when tracking conditions are not reliable.
+Phase 03.9 subsequently demonstrated why this mitigation was insufficient for
+the daily MVP experience: framing and calibration themselves remained too
+brittle. DEC-021 supersedes the complete Camera/automatic-counting/assisted-
+completion path for MVP. The old rules remain relevant only if Camera/Vision R&D
+is explicitly reopened after MVP.
 
 ### Reason
 
-In this product, a false negative has unusually high cost because training completion controls access to selected apps. A user who performed the routine must not be punished because of room size, camera placement, partial-body visibility, lighting, clothing, or temporary tracking loss.
+The original reason was that a false negative has unusually high cost when
+training completion controls access to selected apps. The accepted pivot removes
+that false-negative source from MVP rather than adding another proof workaround.
 
 ### Principle
 
 **Verify when possible. Recover when necessary. Never let tracking failure become a lockout.**
+
+---
+
+## DEC-021 — MVP Uses Guided Cadence Training, Not Camera Verification
+
+**Status:** Accepted
+
+Phase 03.9 demonstrated that on-device AVFoundation + Apple Vision can produce
+derived pose observations and count a representative Kneeling Drive pattern.
+The mandatory MVP user experience was rejected because normal movement causes
+critical joints to leave frame, partial-body framing remains brittle, landscape
+side view performs materially better than portrait, front/near-front is
+unreliable, and calibration/framing adds too much daily friction.
+
+Camera / Apple Vision repetition counting is therefore not an MVP user feature,
+release requirement, or completion path. The MVP must not replace it with manual
+tapping, hardware-volume-button counting, or another counting workaround.
+
+The accepted MVP training path is:
+
+Movement demonstration
+
+→ countdown
+
+→ guided repetitions
+
+→ set completion
+
+→ 20-second rest
+
+→ next set
+
+→ routine completion
+
+→ accountability satisfied / selected apps unlocked.
+
+The daily structure is locked as:
+
+- exactly one movement per day;
+- exactly five sets;
+- typically 15–20 repetitions per set, with the exact target defined separately
+  for each movement;
+- exactly 20 seconds of rest between sets;
+- movement-specific cadence/tempo defined with each movement and Coach asset;
+- no universal repetition target, cadence, or total session duration across all
+  seven movements.
+
+The app guides the session but does not attempt to cryptographically or visually
+prove every repetition. Camera/Vision may be reconsidered only as an explicit
+post-MVP R&D initiative. The Phase 03.9 source and findings remain in Git history
+and technical documentation; no unfinished Camera beta may be exposed in MVP.
+
+### Reason
+
+Technical capability alone did not meet the daily usability and reliability bar
+for an accountability product. Guided cadence preserves the intended training
+structure and low-friction daily habit while avoiding false negatives and camera
+setup overhead.

@@ -16,9 +16,6 @@
     },
     "ios": {
       "bundleIdentifier": "com.temperline.mensdiscipline",
-      "infoPlist": {
-        "NSCameraUsageDescription": "Camera access lets Men's Discipline verify broad movement and count repetitions on this device. Video is not saved or uploaded."
-      },
       "entitlements": {
         "com.apple.developer.family-controls": true,
         "com.apple.security.application-groups": [

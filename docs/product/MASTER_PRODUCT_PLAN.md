@@ -75,7 +75,7 @@ Perform the training
 
 →
 
-Camera verifies completion and counts reps
+Follow movement-specific guided repetitions, sets, and rests
 
 →
 
@@ -358,69 +358,33 @@ The completion experience should feel satisfying without becoming game-like.
 
 ---
 
-# 14. Camera and Motion Tracking
+# 14. Guided Cadence Training
 
-The product uses camera-assisted movement verification.
+The MVP uses a low-friction guided session rather than camera-assisted movement
+verification. The Coach demonstrates the movement, the app counts down, guides
+movement-specific repetitions and tempo across five sets, provides 20-second
+rests, then records routine completion for accountability.
 
-The strategic technical principle is:
-
-**Verify, don't judge.**
-
-The camera system exists to:
-
-- confirm that the user is participating;
-- identify broad movement patterns;
-- count repetitions;
-- determine basic completion.
-
-It is not intended to become an advanced biomechanical coach in the MVP.
-
-Avoid:
-
-- detailed form grades;
-- competitive scores;
-- harsh correction;
-- medical interpretation.
+MVP does not claim to prove every repetition. It must not replace Vision with a
+manual-tap, hardware-button, or similar counting workaround. Exact movement
+targets, cadence, Coach assets, audio/haptics, and visual progress treatment are
+defined in later content/design work.
 
 ---
 
 # 15. Camera Privacy
 
-Privacy is a major product differentiator.
-
-Preferred architecture:
-
-Camera feed
-
-→
-
-on-device pose detection
-
-→
-
-body landmarks
-
-→
-
-rep / completion logic
-
-→
-
-discard frames.
-
-The product should avoid uploading or storing training video by default.
-
-Store only derived data needed for functionality.
-
-Potential privacy message:
-
-**Your training stays private.**
+The MVP does not request camera permission or process training video. Privacy
+remains a major product differentiator. If camera-assisted R&D resumes after
+MVP, raw frames should remain on device and should not be uploaded or stored by
+default.
 
 ---
 
-# 16. Pose Architecture
+# 16. Post-MVP Pose Architecture Reference
 
-Long-term architecture should separate:
+Phase 03.9 demonstrated an architecture that could be revisited after MVP. Any
+future implementation should separate:
 
 ### Platform pose adapter
 
@@ -444,7 +408,8 @@ Android pose technology
 
 → shared movement logic.
 
-This keeps future Android development possible without unnecessarily rewriting all movement logic.
+This keeps future Android development possible without unnecessarily rewriting
+all movement logic. It is not an MVP implementation requirement.
 
 ---
 
@@ -461,9 +426,10 @@ Cross-platform logic should remain reusable where practical.
 Platform-specific functionality is expected for:
 
 - App Lock;
-- pose detection adapter;
 - native permissions;
 - native extensions.
+
+A pose detection adapter is only a post-MVP possibility.
 
 ---
 
@@ -510,8 +476,9 @@ Where required for:
 - Managed Settings;
 - Device Activity;
 - Screen Time extensions;
-- Apple Vision;
 - other Apple-specific capabilities.
+
+Apple Vision remains a post-MVP R&D option, not part of the MVP runtime.
 
 The final technical boundary will be determined during feasibility testing.
 
@@ -617,7 +584,8 @@ Platform-independent areas should include where practical:
 Platform-specific areas are expected to include:
 
 - App Lock;
-- pose detection adapter.
+
+If explicitly resumed after MVP, pose detection would also be platform-specific.
 
 Android App Lock implementation must be evaluated separately for Google Play policy compliance.
 
@@ -706,7 +674,7 @@ Day 1 / Day 3 / Day 7 / Day 14 / Day 30.
 
 - routine completion;
 - abandonment;
-- movement recognition problems;
+- guided cadence / training-flow comprehension problems;
 - time to completion.
 
 Analytics implementation belongs to a later project phase.
@@ -731,15 +699,7 @@ Lock
 
 →
 
-Train
-
-→
-
-Camera Detection
-
-→
-
-Rep Count
+Guided Training
 
 →
 
@@ -775,7 +735,7 @@ Current high-level roadmap:
 
 08 — Screen Time System
 
-09 — Motion Tracking
+09 — Guided Training Engine
 
 10 — Coach Assets
 
@@ -796,6 +756,14 @@ Current high-level roadmap:
 18 — Android
 
 Some phases may overlap where appropriate.
+
+For the MVP training workstream, Phase 07/09 should build the data-driven guided
+training engine, demonstration/countdown flow, five-set state machine, 20-second
+rests, and movement-specific repetition/cadence specifications. Phase 10 supplies
+the approved movement/Coach assets, Phase 11 defines the final audio/haptic
+system, and Phase 12 defines the visual progress/completion treatment. Do not
+redirect this roadmap toward productionizing Camera/Vision across seven
+movements.
 
 The numbered phases remain the primary product/development sequence, but release readiness is no longer deferred to Phase 16.
 
@@ -848,9 +816,12 @@ Current active phase:
 Primary questions:
 
 1. Can the Apple accountability / App Lock mechanism work reliably?
-2. Can camera-based pose detection work reliably enough for our movements?
-3. Can native iOS functionality integrate cleanly with the chosen React Native / Expo architecture?
-4. Can the complete Lock → Train → Count → Complete → Unlock loop run on a real iPhone?
+2. Can native iOS functionality integrate cleanly with the chosen React Native / Expo architecture?
+3. Can the complete Lock → guided training → Complete → Unlock loop run on a real iPhone?
+
+Phase 03.9 answered a separate question: Apple Vision pose counting is
+technically possible, but its framing/calibration UX is not acceptable as a
+mandatory MVP path.
 
 Visual polish is secondary during this phase.
 
@@ -883,11 +854,15 @@ If the answer to any item is yes, update the release checklist and/or risk regis
 
 Apple review rules should be interpreted carefully and in context.
 
-Guideline 4.10 explicitly names the camera and Screen Time APIs. Existing approved paid apps suggest that these capabilities can be integrated into paid products in practice, but Apple provides no explicit safe harbor for this product's specific implementation or monetization structure.
+Guideline 4.10 explicitly names Screen Time APIs. Camera is no longer part of the
+MVP release package. Existing approved paid apps suggest that Screen Time can be
+integrated into paid products in practice, but Apple provides no explicit safe
+harbor for this product's specific implementation or monetization structure.
 
 This therefore remains a P1 App Review and packaging risk. The final paywall, metadata, value proposition, and Review Notes must be reviewed before submission and should describe the complete Men's Discipline training/accountability experience without claiming that this packaging guarantees approval.
 
-Do not change the locked subscription model solely because a paid feature uses Screen Time or camera APIs.
+Do not change the locked subscription model solely because a paid feature uses
+Screen Time APIs.
 
 If App Review raises a concrete concern, address the specific review issue and record any resulting product decision explicitly.
 

@@ -37,7 +37,6 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "test:motion": "node --experimental-strip-types --test src/motion/kneelingDrive.test.mjs",
     "web": "expo start --web",
     "lint": "expo lint"
   },
