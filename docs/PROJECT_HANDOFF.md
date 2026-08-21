@@ -4,11 +4,11 @@
 
 **Repository:** `/Users/hanqingwang/Developer/mens-discipline-app`
 
-**Active closure branch:** `feature/guided-routine-accountability`
+**Active branch:** `main`
 
-**Branch base:** `main` at `3d58052cb504de37fb7b4be87206aa2118b66530`
+**Phase 03.10 integration checkpoint:** `main` at `e1e7267447615319fc49630dcfa038c756f842f6`
 
-**Accepted main base:** `main` at `3d58052cb504de37fb7b4be87206aa2118b66530`
+**Accepted main checkpoint:** `main` at `e1e7267447615319fc49630dcfa038c756f842f6`
 
 ## Purpose and Authority
 
@@ -110,7 +110,8 @@ privacy boundary, or existing reliability conclusion changed in Phase 03.10.
 
 ## Current Phase and Next Safe Task
 
-Phase 03 remains active; Phase 03.10 passed its exit criteria.
+Phase 03 remains active; Phase 03.10 passed its exit criteria and is merged into
+`main` at `e1e7267447615319fc49630dcfa038c756f842f6`.
 
 Phase 03.10 introduced the smallest data-driven guided routine engine and proved
 the full accountability boundary:
@@ -162,8 +163,9 @@ or polish until the owner selects the next logical unit.
 
 ## Safe Comparison and Rollback Points
 
-- Accepted main base and Phase 03.10 branch base:
-  `3d58052cb504de37fb7b4be87206aa2118b66530`.
+- Phase 03.9 accepted main baseline: `3d58052cb504de37fb7b4be87206aa2118b66530`.
+- Phase 03.10 merged main checkpoint:
+  `e1e7267447615319fc49630dcfa038c756f842f6`.
 - Phase 03.8 branch base: `3333f79`.
 - Live Vision prototype checkpoint: `463e4f2`.
 - To undo the Phase 03.10 checkpoint after review, create a normal revert commit;
@@ -172,7 +174,7 @@ or polish until the owner selects the next logical unit.
 ## New-Task Startup Instruction
 
 > Open `/Users/hanqingwang/Developer/mens-discipline-app` on
-> `feature/guided-routine-accountability`. Run `git status --short --branch`, then read
+> `main`. Run `git status --short --branch`, then read
 > `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PHASE.md`,
 > `docs/product/MVP_SCOPE.md`, `docs/DECISIONS.md`, and the release documents.
 > Follow DEC-021 and DEC-022. Phase 03.10 real-device acceptance passed; preserve
