@@ -6,9 +6,9 @@
 
 **Active branch:** `spike/family-controls-reliability`
 
-**Phase 03.10 integration checkpoint:** `main` at `c398be46e3eac99eef45df3abecaff375f9a9f90`
+**Phase 03.10 integration checkpoint:** `main` at `c398be46ecae5dd9e97c89f2922cb1cb3a73f898`
 
-**Accepted main checkpoint:** `main` at `c398be46e3eac99eef45df3abecaff375f9a9f90`
+**Accepted main checkpoint:** `main` at `c398be46ecae5dd9e97c89f2922cb1cb3a73f898`
 
 **Phase 03.11 status:** Passed on the feature branch; not merged into `main`
 
@@ -121,7 +121,7 @@ privacy boundary, or existing reliability conclusion changed in Phase 03.10.
 
 Phase 03 remains formally active pending owner acceptance of Phase 03.11 and a
 separate merge decision. Phase 03.10 is merged into `main` at
-`c398be46e3eac99eef45df3abecaff375f9a9f90`.
+`c398be46ecae5dd9e97c89f2922cb1cb3a73f898`.
 
 Phase 03.10 introduced the smallest data-driven guided routine engine and proved
 the full accountability boundary:
@@ -186,9 +186,9 @@ treated as complete. Do not begin Phase 04 until the owner makes that decision.
 
 - Phase 03.9 accepted main baseline: `3d58052cb504de37fb7b4be87206aa2118b66530`.
 - Phase 03.10 merged main checkpoint:
-  `c398be46e3eac99eef45df3abecaff375f9a9f90`.
+  `c398be46ecae5dd9e97c89f2922cb1cb3a73f898`.
 - Phase 03.11 branch base:
-  `c398be46e3eac99eef45df3abecaff375f9a9f90`.
+  `c398be46ecae5dd9e97c89f2922cb1cb3a73f898`.
 - Phase 03.8 branch base: `3333f79`.
 - Live Vision prototype checkpoint: `463e4f2`.
 - To undo an accepted checkpoint after review, create a normal revert commit; do
