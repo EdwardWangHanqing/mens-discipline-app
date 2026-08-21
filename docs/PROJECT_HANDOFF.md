@@ -12,7 +12,7 @@
 
 **Phase 03.11 merged checkpoint:** `main` at `5b8cca697b601aff9a7d31759f6ec0309f2d7756`
 
-**Final main checkpoint after Phase 03 closure:** `main` at `273e1a52dbaed0cf1f68b9b8b46297dc5eb8a063`
+**Phase 03 closure documentation checkpoint:** `main` at `273e1a52dbaed0cf1f68b9b8b46297dc5eb8a063`
 
 **Primary Phase 03 status:** Closed / Passed
 
