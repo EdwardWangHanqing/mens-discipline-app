@@ -6,7 +6,9 @@ Men's Discipline App
 
 ## Current Phase
 
-**03 — Technical Feasibility**
+**03 — Technical Feasibility (Closed / Passed)**
+
+**Next planned phase:** UX Architecture, owner-directed and not yet started
 
 ## Completed Sub-phases
 
@@ -126,6 +128,30 @@ distribution archive/profile and TestFlight build remain unverified.
 See
 `docs/technical/FAMILY_CONTROLS_RELIABILITY_RELEASE_BASELINE.md`.
 
+## Phase 03 Closure Record
+
+**Status:** Closed / Passed after owner approval and fast-forward integration on
+2026-08-20.
+
+Primary Phase 03 technical feasibility is established on a real iPhone:
+
+- Family Controls authorization and saved opaque app selection;
+- manual shielding/unshielding and scheduled shielding;
+- Device Activity Monitor operation while the host is inactive or force-quit;
+- guided routine → shared accountability → unlock and scheduled-lock
+  suppression;
+- definitive denied/revoked safety recovery with schedules cancelled, shields
+  removed, and selection retained;
+- signed Release-configuration cold launch with Metro fully stopped;
+- force-quit Incomplete and Completed paths;
+- reboot Incomplete scheduled-lock path; and
+- Family Controls (Distribution) shown as `Assigned` for both the host app and
+  `com.temperline.mensdiscipline.deviceactivitymonitor`.
+
+Closing primary Phase 03 records sufficient technical feasibility to move toward
+owner-directed UX Architecture. It does not mean App Store release readiness is
+complete.
+
 ## Family Controls Accepted Baseline
 
 - Bundle ID: `com.temperline.mensdiscipline`.
@@ -145,16 +171,18 @@ See
   TestFlight validation are still required.
 - No token contents are logged, reverse-engineered, or exposed to JavaScript.
 
-## Remaining Phase 03 / Release Risks
+## Remaining Beta / Release Gates
 
-- Validate an actual distribution archive and TestFlight build; the passed
-  no-Metro test used a Release configuration with development provisioning.
-- Later reliability testing still includes midnight, timezone/DST, and supported
-  iOS versions beyond Clover on iOS 26.6.
-- Picker Cancel/interactive-dismiss and corrupt scheduled-selection negative
-  paths remain unverified.
-- Final production Lock Time, Grace Extension, Skip Today, and Replace Movement UX
-  remain unbuilt.
+- actual distribution archive/profile validation;
+- actual TestFlight installation and no-Metro cold launch;
+- midnight/date-boundary behavior;
+- timezone changes;
+- DST transitions;
+- supported/multiple iOS-version coverage;
+- picker Cancel/interactive-dismiss;
+- corrupt scheduled-selection negative path;
+- production Lock Time / Grace / Skip / Replace behavior; and
+- final session recovery UX.
 
 ## Do Not Start Yet
 
@@ -171,14 +199,19 @@ The first launch remains on the current Apple Developer Individual membership.
 Company incorporation and Organization conversion are deferred owner decisions
 and are not Phase 03 or first-launch blockers.
 
-## Phase 03 Exit Direction
+## Phase 03 Closure Direction
 
-Phase 03 no longer requires Camera detection or representative rep counting. It
-requires enough evidence that:
+Phase 03 no longer requires Camera detection or representative rep counting. Its
+closure is based on evidence that:
 
 1. app selection and scheduled restriction work on a real iPhone;
 2. selected apps can be reliably unshielded in the intended accountability flow;
 3. the main app/monitor extension architecture and Distribution path are known;
 4. a guided routine can complete and update accountability state;
 5. routine completion triggers/suppresses the selected-app restriction;
-6. major system failure states are documented rather than postponed for polish.
+6. major system failure states are documented and tested within the accepted
+   scope.
+
+Phase 04 implementation, Figma work, movement specification, production
+Lock/Grace/Skip/Replace, RevenueCat, auth/backend, analytics, and other new
+feature work have not started.

@@ -4,13 +4,17 @@
 
 **Repository:** `/Users/hanqingwang/Developer/mens-discipline-app`
 
-**Active branch:** `spike/family-controls-reliability`
+**Active branch:** `main`
 
 **Phase 03.10 integration checkpoint:** `main` at `c398be46ecae5dd9e97c89f2922cb1cb3a73f898`
 
 **Accepted main checkpoint:** `main` at `c398be46ecae5dd9e97c89f2922cb1cb3a73f898`
 
-**Phase 03.11 status:** Passed on the feature branch; not merged into `main`
+**Phase 03.11 merged checkpoint:** `main` at `5b8cca697b601aff9a7d31759f6ec0309f2d7756`
+
+**Primary Phase 03 status:** Closed / Passed
+
+**Next planned phase:** UX Architecture, owner-directed and not yet started
 
 ## Purpose and Authority
 
@@ -24,8 +28,8 @@ When documents conflict, follow:
 3. `docs/product/MVP_SCOPE.md`;
 4. `docs/product/MASTER_PRODUCT_PLAN.md`.
 
-Always start with `git status --short --branch` and preserve existing work. Do not
-merge a checkpoint into `main` without explicit owner acceptance.
+Always start with `git status --short --branch` and preserve existing work. Phase
+03.11 has owner approval and is now fast-forward integrated into `main`.
 
 ## Latest Accepted Product Pivot
 
@@ -112,16 +116,16 @@ remain present; a clean CNG iOS Simulator build passes.
   skipped it, and force-quit plus reboot Incomplete applied it. Selection,
   accountability and callback evidence persisted.
 - Midnight, timezone/DST, multi-iOS, distribution archive/profile and actual
-  TestFlight reliability remain open.
+  TestFlight reliability remain open as Beta / Release gates.
 
 No Family Controls capability, entitlement, App Group, Bundle ID, selected-app
 privacy boundary, or existing reliability conclusion changed in Phase 03.10.
 
 ## Current Phase and Next Safe Task
 
-Phase 03 remains formally active pending owner acceptance of Phase 03.11 and a
-separate merge decision. Phase 03.10 is merged into `main` at
-`c398be46ecae5dd9e97c89f2922cb1cb3a73f898`.
+Primary Phase 03 Technical Feasibility is **closed / passed**. Phase 03.10 is
+merged into `main` at `c398be46ecae5dd9e97c89f2922cb1cb3a73f898`; Phase 03.11 is
+merged at `5b8cca697b601aff9a7d31759f6ec0309f2d7756`.
 
 Phase 03.10 introduced the smallest data-driven guided routine engine and proved
 the full accountability boundary:
@@ -151,17 +155,14 @@ completion. This is a conservative recovery baseline, not a final UX decision.
 Technical details are in
 `docs/technical/GUIDED_ROUTINE_ACCOUNTABILITY_INTEGRATION.md`.
 
-Phase 03.11 on `spike/family-controls-reliability` adds denied-only native safety
-reconciliation and has owner-confirmed physical-device acceptance for
-Release/no-Metro, revoke/deny/recovery, force-quit Incomplete, force-quit
-Completed and reboot. Its evidence is recorded in
+Phase 03.11 added denied-only native safety reconciliation and has
+owner-confirmed physical-device acceptance for Release/no-Metro,
+revoke/deny/recovery, force-quit Incomplete, force-quit Completed and reboot. Its
+evidence is recorded in
 `docs/technical/FAMILY_CONTROLS_RELIABILITY_RELEASE_BASELINE.md`.
 
-After review, the recommended next decision is for the owner to approve the
-Phase 03.11 merge and close primary Phase 03 Technical Feasibility. Remaining
-midnight, timezone/DST, multi-iOS, distribution archive/profile and TestFlight
-checks should remain tracked beta/release gates rather than being silently
-treated as complete. Do not begin Phase 04 until the owner makes that decision.
+The next project phase is ready for owner-directed UX Architecture work. This
+task does not begin that work or any Phase 04 implementation.
 
 ## Release / Privacy State
 
@@ -182,6 +183,18 @@ treated as complete. Do not begin Phase 04 until the owner makes that decision.
   and Organization conversion are deferred and are not launch or Phase 03
   blockers.
 
+Primary Phase 03 closure does not mean App Store release readiness is complete.
+The remaining Beta / Release gates are:
+
+- actual distribution archive/profile validation;
+- actual TestFlight installation and no-Metro cold launch;
+- midnight/date-boundary, timezone and DST behavior;
+- supported/multiple iOS-version coverage;
+- picker Cancel/interactive-dismiss and corrupt scheduled-selection negative
+  paths;
+- production Lock Time / Grace / Skip / Replace behavior; and
+- final session recovery UX.
+
 ## Safe Comparison and Rollback Points
 
 - Phase 03.9 accepted main baseline: `3d58052cb504de37fb7b4be87206aa2118b66530`.
@@ -189,6 +202,8 @@ treated as complete. Do not begin Phase 04 until the owner makes that decision.
   `c398be46ecae5dd9e97c89f2922cb1cb3a73f898`.
 - Phase 03.11 branch base:
   `c398be46ecae5dd9e97c89f2922cb1cb3a73f898`.
+- Phase 03.11 branch remains intact at
+  `5b8cca697b601aff9a7d31759f6ec0309f2d7756`.
 - Phase 03.8 branch base: `3333f79`.
 - Live Vision prototype checkpoint: `463e4f2`.
 - To undo an accepted checkpoint after review, create a normal revert commit; do
@@ -196,12 +211,13 @@ treated as complete. Do not begin Phase 04 until the owner makes that decision.
 
 ## New-Task Startup Instruction
 
-> Open `/Users/hanqingwang/Developer/mens-discipline-app` on the branch specified
-> above. Run `git status --short --branch`, then read
+> Open `/Users/hanqingwang/Developer/mens-discipline-app` on `main`. Run
+> `git status --short --branch`, then read
 > `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PHASE.md`,
 > `docs/product/MVP_SCOPE.md`, `docs/DECISIONS.md`, and the release documents.
-> Follow DEC-021 and DEC-022. Phase 03.10 and 03.11 real-device acceptance passed;
-> preserve the guided routine → shared accountability → unlock boundary and the
-> denied-state safety behavior. Do not treat company incorporation/Organization
-> conversion as a first-launch blocker, begin Phase 04, close Phase 03, or merge
-> into `main` without explicit owner acceptance.
+> Follow DEC-021 and DEC-022. Primary Phase 03 Technical Feasibility is closed /
+> passed; preserve the guided routine → shared accountability → unlock boundary
+> and denied-state safety behavior. Do not treat company incorporation/
+> Organization conversion as a first-launch blocker. The next phase is
+> owner-directed UX Architecture; do not begin Phase 04 implementation without
+> explicit owner direction.
