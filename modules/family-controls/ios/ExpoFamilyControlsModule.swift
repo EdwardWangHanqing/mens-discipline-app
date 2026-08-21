@@ -347,6 +347,18 @@ public class ExpoFamilyControlsModule: Module {
     }
     .runOnQueue(.main)
 
+    AsyncFunction("completeRoutineToday") { (promise: Promise) in
+      do {
+        promise.resolve(try self.scheduleStore.completeRoutineToday())
+      } catch {
+        promise.reject(
+          "ERR_ROUTINE_COMPLETION_SHARED_STATE",
+          error.localizedDescription
+        )
+      }
+    }
+    .runOnQueue(.main)
+
     AsyncFunction("cancelScheduledLocks") { (promise: Promise) in
       promise.resolve(self.scheduleStore.cancelSchedulesAndRemoveShield())
     }

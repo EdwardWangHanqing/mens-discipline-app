@@ -112,7 +112,7 @@ struct FamilyControlsAccountabilityState {
       "completedToday": completedToday,
       "completedDateKey": completedDateKey,
       "updatedAtMs": updatedAtMs,
-      "source": "diagnosticAppGroupState",
+      "source": "sharedAppGroupState",
     ]
   }
 }
@@ -317,9 +317,21 @@ final class FamilyControlsSharedStateStore {
       throw FamilyControlsSharedStorageError.unavailable
     }
 
+    let dateKey = makeDateKey(date)
+    let existingDateKey = sharedDefaults.string(
+      forKey: FamilyControlsSharedConfiguration.accountabilityCompletedDateKey
+    )
+
+    if completed && existingDateKey == dateKey {
+      return accountabilityState(at: date)
+    }
+    if !completed && existingDateKey == nil {
+      return accountabilityState(at: date)
+    }
+
     if completed {
       sharedDefaults.set(
-        makeDateKey(date),
+        dateKey,
         forKey: FamilyControlsSharedConfiguration.accountabilityCompletedDateKey
       )
     } else {

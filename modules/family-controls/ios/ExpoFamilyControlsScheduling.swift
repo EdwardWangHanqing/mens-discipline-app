@@ -169,6 +169,22 @@ final class FamilyControlsScheduleStore {
     return state()
   }
 
+  func completeRoutineToday() throws -> [String: Any?] {
+    let previous = sharedStateStore.accountabilityState()
+    let accountability = try sharedStateStore.setAccountabilityCompletedToday(
+      true
+    )
+    let shield = shieldStore.remove()
+    print(
+      "[GuidedRoutine] completedToday=true alreadyCompleted=\(previous.completedToday) shieldRemoved=true"
+    )
+    return [
+      "accountability": accountability.summary,
+      "shield": shield,
+      "wasAlreadyCompletedToday": previous.completedToday,
+    ]
+  }
+
   func cancelSchedulesAndRemoveShield() -> [String: Any?] {
     center.stopMonitoring([
       FamilyControlsSharedConfiguration.dailyLockActivity,

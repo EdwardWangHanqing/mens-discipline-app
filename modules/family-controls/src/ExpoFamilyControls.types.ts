@@ -91,7 +91,13 @@ export type DiagnosticAccountabilityState = {
   completedToday: boolean;
   completedDateKey: string | null;
   updatedAtMs: number | null;
-  source: 'diagnosticAppGroupState';
+  source: 'sharedAppGroupState';
+};
+
+export type RoutineCompletionResult = {
+  accountability: DiagnosticAccountabilityState;
+  shield: FamilyControlsShieldState;
+  wasAlreadyCompletedToday: boolean;
 };
 
 export type ScheduledLockCallbackRecord = {

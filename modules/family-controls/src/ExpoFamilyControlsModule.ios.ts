@@ -7,6 +7,7 @@ import type {
   FamilyControlsAuthorizationStatus,
   FamilyControlsSelectionSummary,
   FamilyControlsShieldState,
+  RoutineCompletionResult,
   ScheduledLockState,
 } from './ExpoFamilyControls.types';
 
@@ -25,6 +26,7 @@ declare class ExpoFamilyControlsModule extends NativeModule<ExpoFamilyControlsEv
   setDiagnosticAccountabilityCompleted(
     completed: boolean
   ): Promise<ScheduledLockState>;
+  completeRoutineToday(): Promise<RoutineCompletionResult>;
   cancelScheduledLocks(): Promise<ScheduledLockState>;
   resetScheduledLockDiagnostics(): Promise<ScheduledLockState>;
 }

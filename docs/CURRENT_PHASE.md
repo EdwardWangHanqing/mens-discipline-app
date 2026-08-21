@@ -17,6 +17,7 @@ Men's Discipline App
 - 03.7 — Family Activity selection and manual shielding proof
 - 03.8 — Device Activity scheduled-lock proof
 - 03.9 — Camera / Vision / Kneeling Drive feasibility spike
+- 03.10 — Guided Routine → Accountability Unlock Integration
 
 ## Phase 03.9 Final Result
 
@@ -73,25 +74,38 @@ Locked structure:
 The app guides the session; MVP does not attempt to cryptographically or visually
 prove every repetition.
 
-## Next Sub-phase
+## Phase 03.10 Final Result
 
-**03.10 — Guided Routine → Accountability Unlock Integration**
+**Status:** Passed
 
-Objective: prove the smallest end-to-end development flow using a data-driven
-guided training engine:
+The first real MVP technical loop now works on a physical iPhone:
 
-1. load one representative movement specification without inventing the final
-   seven movement targets;
-2. run demonstration → countdown → five guided sets → 20-second rests;
-3. mark the routine complete through the training state machine;
-4. write today's accountability completion state;
-5. clear/suppress the selected-app shield through the already validated Family
-   Controls boundary;
-6. demonstrate the complete flow on a real iPhone.
+guided routine → valid final state → today's shared App Group accountability
+state → active shield removal / later scheduled-lock suppression.
 
-This sub-phase should establish interfaces and state transitions, not final Coach
-art, final audio/haptics, final visual progress animation, or final per-movement
-content values.
+- The data-driven TypeScript state machine runs demonstration, countdown, five
+  guided sets and exactly four 20-second inter-set rests.
+- The fifth set transitions directly to accountability completion with no fifth
+  rest or premature completion path.
+- One representative 5-rep/1-second-cadence specification proves the interface;
+  these values are explicitly non-production and do not decide final content.
+- The native `completeRoutineToday()` boundary performs an idempotent,
+  local-calendar-date-scoped App Group write and clears every known named shield
+  store.
+- The existing Device Activity Monitor continues to read the same shared state
+  and returns `skippedCompletedToday` for a later same-day schedule.
+- Leaving the foreground interrupts an unfinished routine and grants no
+  completion. This conservative recovery is a technical baseline, not final UX.
+
+Real-device acceptance passed on Clover (iOS 26.6) on 2026-08-20:
+
+1. Incomplete + shielded → full routine → Completed → shield removed → selected
+   app accessible.
+2. Reset/incomplete → full routine → schedule fired →
+   `intervalDidStart / skippedCompletedToday` → shield remained removed →
+   selected app accessible.
+
+See `docs/technical/GUIDED_ROUTINE_ACCOUNTABILITY_INTEGRATION.md`.
 
 ## Family Controls Accepted Baseline
 
@@ -113,8 +127,6 @@ content values.
 
 ## Remaining Phase 03 / Release Risks
 
-- Connect guided routine completion to the shared accountability state and prove
-  completion → unlock on a real iPhone.
 - Validate Family Controls denied/revoked behavior.
 - Validate Release/TestFlight bundle launch independently of Metro.
 - Obtain/validate the monitor extension's Distribution entitlement.
@@ -134,8 +146,9 @@ Do not invent or finalize in this checkpoint:
 - full production UI or Figma implementation;
 - RevenueCat/paywall, analytics, Android, social, or leaderboard work.
 
-Business formation, Apple account preparation, and release-readiness work continue
-in parallel.
+The first launch remains on the current Apple Developer Individual membership.
+Company incorporation and Organization conversion are deferred owner decisions
+and are not Phase 03 or first-launch blockers.
 
 ## Phase 03 Exit Direction
 

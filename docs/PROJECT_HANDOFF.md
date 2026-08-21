@@ -1,14 +1,14 @@
 # Men's Discipline App — Project Handoff
 
-**Last updated:** 2026-08-15 (America/Vancouver)
+**Last updated:** 2026-08-20 (America/Vancouver)
 
 **Repository:** `/Users/hanqingwang/Developer/mens-discipline-app`
 
-**Active closure branch:** `spike/vision-kneeling-drive`
+**Active closure branch:** `feature/guided-routine-accountability`
 
-**Branch base:** `spike/device-activity-schedule` at `3333f79`
+**Branch base:** `main` at `3d58052cb504de37fb7b4be87206aa2118b66530`
 
-**Accepted main base:** `main` at `02bef80b8af4209470fbf8b5dd54a1fe984a15ae`
+**Accepted main base:** `main` at `3d58052cb504de37fb7b4be87206aa2118b66530`
 
 ## Purpose and Authority
 
@@ -106,27 +106,44 @@ remain present; a clean CNG iOS Simulator build passes.
   timezone/DST, and multi-version reliability remain open.
 
 No Family Controls capability, entitlement, App Group, Bundle ID, selected-app
-privacy boundary, or existing reliability conclusion changed in Phase 03.9.
+privacy boundary, or existing reliability conclusion changed in Phase 03.10.
 
 ## Current Phase and Next Safe Task
 
-Phase 03 remains active; Phase 03.9 is closed.
+Phase 03 remains active; Phase 03.10 passed its exit criteria.
 
-Next logical sub-phase: **03.10 — Guided Routine → Accountability Unlock
-Integration**.
+Phase 03.10 introduced the smallest data-driven guided routine engine and proved
+the full accountability boundary:
 
-Build the smallest data-driven training state machine and diagnostic flow that:
+1. demonstration → countdown → five guided sets;
+2. exactly four 20-second rests and no rest after set five;
+3. valid final state → `completeRoutineToday()`;
+4. idempotent current-date App Group completion write;
+5. removal of manual, daily and diagnostic named shield stores;
+6. same-day Device Activity suppression through the existing
+   `completedToday` read.
 
-1. accepts one representative movement specification without locking all seven
-   movement values;
-2. runs demonstration/countdown, five guided sets, and 20-second rests;
-3. records routine completion;
-4. updates today's shared accountability state;
-5. proves completion → unlock/suppress shield on a real iPhone.
+The representative 5 reps / 1-second cadence is architecture-test data only.
+Final movement specifications, Coach, audio/haptics and production visual design
+remain deferred.
 
-The roadmap after that should focus on movement-specific specifications and
-cadence, Coach assets, set/rest interaction, audio/haptics, and visual progress.
-It should not productionize Vision across seven movements.
+Real-device acceptance passed on Clover (iOS 26.6) on 2026-08-20:
+
+- Locked → full routine → shared Completed → shield removed → selected app
+  accessible.
+- Reset/incomplete → full routine before one-off schedule → monitor callback
+  `intervalDidStart / skippedCompletedToday` → shield remained removed → selected
+  app accessible.
+
+Unfinished sessions are reset when the app leaves the foreground and never grant
+completion. This is a conservative recovery baseline, not a final UX decision.
+Technical details are in
+`docs/technical/GUIDED_ROUTINE_ACCOUNTABILITY_INTEGRATION.md`.
+
+Next safe Phase 03 work is one of the remaining Family Controls/release
+reliability checks (denied/revoked, Release/TestFlight without Metro, reboot,
+midnight/timezone/DST, or supported-version coverage). Do not begin final content
+or polish until the owner selects the next logical unit.
 
 ## Release / Privacy State
 
@@ -139,21 +156,26 @@ It should not productionize Vision across seven movements.
   persisted, uploaded, or bridged to JavaScript.
 - Family Controls entitlement, privacy, reliability, App Review, and reviewer
   testability requirements remain unchanged.
+- The first launch remains on the current Individual membership. Incorporation
+  and Organization conversion are deferred and are not launch or Phase 03
+  blockers.
 
 ## Safe Comparison and Rollback Points
 
-- Accepted main base: `02bef80b8af4209470fbf8b5dd54a1fe984a15ae`.
+- Accepted main base and Phase 03.10 branch base:
+  `3d58052cb504de37fb7b4be87206aa2118b66530`.
 - Phase 03.8 branch base: `3333f79`.
 - Live Vision prototype checkpoint: `463e4f2`.
-- To undo the final Phase 03.9 closure after review, create a normal revert commit;
+- To undo the Phase 03.10 checkpoint after review, create a normal revert commit;
   do not reset, clean, rewrite history, or force-push.
 
 ## New-Task Startup Instruction
 
 > Open `/Users/hanqingwang/Developer/mens-discipline-app` on
-> `spike/vision-kneeling-drive`. Run `git status --short --branch`, then read
+> `feature/guided-routine-accountability`. Run `git status --short --branch`, then read
 > `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PHASE.md`,
 > `docs/product/MVP_SCOPE.md`, `docs/DECISIONS.md`, and the release documents.
-> Follow DEC-021: MVP uses guided cadence training, not Camera/Vision counting.
-> Preserve the Vision spike in Git history and do not expose its diagnostic in
-> MVP. Do not merge `main` without explicit owner acceptance.
+> Follow DEC-021 and DEC-022. Phase 03.10 real-device acceptance passed; preserve
+> its guided routine → shared accountability → unlock boundary. Do not treat
+> company incorporation/Organization conversion as a first-launch blocker, and
+> do not merge `main` without explicit owner acceptance.

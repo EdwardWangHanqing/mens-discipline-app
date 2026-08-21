@@ -98,19 +98,25 @@ Camera validation or Camera reviewer flow is required for MVP.
 
 This track runs in parallel with development; it must not block coding.
 
-## 2.1 Developer account transition
+## 2.1 Developer account path
 - [x] Start development using an Individual Apple Developer membership if company setup is still pending.
-- [ ] Incorporate the company before commercial release if the company should appear as seller.
-- [ ] Obtain D-U-N-S for the legal entity.
-- [ ] Prepare company-domain email and a public functional company website.
-- [ ] Request Individual → Organization membership conversion before public App Store launch.
+- [ ] Deferred by DEC-022: incorporate only after a future owner decision; not a
+      first-launch blocker.
+- [ ] Deferred by DEC-022: obtain D-U-N-S only for a future Organization
+      transition; not a first-launch blocker.
+- [ ] Prepare the support email and public app website required for first launch;
+      a company-domain identity for future Organization verification is deferred.
+- [ ] Deferred by DEC-022: request Individual → Organization conversion only
+      after a future owner decision; not a first-launch blocker.
 - [ ] Avoid creating a second unrelated Developer account unless there is a clear reason; prefer converting the existing membership.
 
-## 2.2 Paid business setup — after organization conversion is stable
+## 2.2 Paid business setup — current Individual account
 - [ ] Accept the Paid Apps Agreement.
 - [ ] Submit required Canadian tax information, including GST/HST information required by Apple for Canada-based developers.
-- [ ] Add the company bank account using details that match the bank's records.
-- [ ] Apply to the App Store Small Business Program after the Paid Apps Agreement is active and organization details are stable.
+- [ ] Add banking information that matches the current Individual account holder
+      for first-launch commerce setup.
+- [ ] Apply to the App Store Small Business Program after the Paid Apps Agreement
+      is active and current account details are verified.
 - [ ] Do not wait until launch day to apply to the Small Business Program; allow time for the reduced commission to become effective.
 
 ## 2.3 EU territory decision
@@ -376,7 +382,10 @@ Do not submit because “development is finished.” Submit only when all five g
 
 **Gate B — Apple capability:** Family Controls distribution entitlement is ready for every relevant target.
 
-**Gate C — Commerce:** Organization/account, Paid Apps Agreement, tax/bank, RevenueCat, subscriptions, Small Business Program and sandbox path are ready.
+**Gate C — Commerce:** Current Individual account, Paid Apps Agreement,
+tax/bank, RevenueCat, subscriptions, Small Business Program and sandbox path are
+ready. Organization conversion is deferred by DEC-022 and is not a first-launch
+gate.
 
 **Gate D — Privacy/compliance:** Privacy policy, data map, labels, manifest, SDK audit, age rating, export compliance and legal links are complete.
 

@@ -199,7 +199,7 @@ Do not silently revive superseded requirements.
 
 ## DEC-010 — Apple Developer Membership May Start as Individual
 
-**Status:** Proposed — Pending Owner Approval
+**Status:** Superseded by DEC-022
 
 Technical development may begin under an **Individual Apple Developer Program** membership if company formation is still in progress.
 
@@ -215,7 +215,7 @@ Family Controls and other Apple-specific technical validation should begin early
 
 ## DEC-011 — Commercial Apple Setup Follows Organization Conversion
 
-**Status:** Proposed — Pending Owner Approval
+**Status:** Superseded for the first launch by DEC-022
 
 Unless there is a specific development need to do otherwise, the preferred commercial sequencing is:
 
@@ -466,3 +466,25 @@ Technical capability alone did not meet the daily usability and reliability bar
 for an accountability product. Guided cadence preserves the intended training
 structure and low-friction daily habit while avoiding false negatives and camera
 setup overhead.
+
+---
+
+## DEC-022 — First Launch Uses the Current Individual Membership
+
+**Status:** Accepted owner override
+
+The first public launch remains under the current Apple Developer Individual
+membership. Company incorporation and Individual → Organization conversion are
+deferred. Neither is a Phase 03 exit criterion nor a first-launch blocker.
+
+DEC-010 and DEC-011 remain historical context for a possible future company
+transition, but their pre-launch Organization preference and sequencing no
+longer govern the first launch. Do not reopen the company/Organization decision
+during technical phases unless the owner explicitly changes this decision or an
+external Apple requirement creates a concrete blocker.
+
+### Reason
+
+The owner chose to keep the verified current Apple account path for the first
+launch and defer legal-entity conversion rather than make it a dependency of
+MVP engineering and release readiness.

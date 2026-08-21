@@ -5,6 +5,7 @@ import type {
   FamilyControlsAuthorizationStatus,
   FamilyControlsSelectionSummary,
   FamilyControlsShieldState,
+  RoutineCompletionResult,
   ScheduledLockState,
 } from './ExpoFamilyControls.types';
 
@@ -43,7 +44,7 @@ const unsupportedScheduledLockState: ScheduledLockState = {
     completedToday: false,
     completedDateKey: null,
     updatedAtMs: null,
-    source: 'diagnosticAppGroupState',
+    source: 'sharedAppGroupState',
   },
   daily: {
     ...unsupportedMonitoringState,
@@ -123,6 +124,9 @@ export default {
   async setDiagnosticAccountabilityCompleted(
     _completed: boolean
   ): Promise<ScheduledLockState> {
+    throw new Error(unsupportedPlatformMessage);
+  },
+  async completeRoutineToday(): Promise<RoutineCompletionResult> {
     throw new Error(unsupportedPlatformMessage);
   },
   async cancelScheduledLocks(): Promise<ScheduledLockState> {

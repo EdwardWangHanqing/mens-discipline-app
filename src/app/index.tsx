@@ -18,6 +18,19 @@ import FamilyControls, {
   type FamilyControlsShieldState,
   type ScheduledLockState,
 } from '../../modules/family-controls';
+import {
+  GUIDED_ROUTINE_SET_COUNT,
+  advanceRoutine,
+  createInitialRoutineState,
+  interruptRoutine,
+  isTimedRoutinePhase,
+  markAccountabilityFailed,
+  markAccountabilitySucceeded,
+  remainingPhaseMs,
+  representativeMovementSpecification,
+  retryAccountability,
+  startRoutine,
+} from '../training/guidedRoutineEngine';
 const jsModuleInitializedAtMs = Date.now();
 const authorizationRetryDelaysMs = [0, 100, 200, 400, 800, 1_000, 1_500];
 
@@ -65,7 +78,33 @@ function wait(delayMs: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, delayMs));
 }
 
+function routinePhaseLabel(
+  phase: ReturnType<typeof createInitialRoutineState>['phase']
+): string {
+  switch (phase) {
+    case 'idle':
+      return 'Ready';
+    case 'demonstration':
+      return 'Demonstration';
+    case 'countdown':
+      return 'Countdown';
+    case 'guidedSet':
+      return 'Guided set';
+    case 'rest':
+      return '20-second rest';
+    case 'awaitingAccountability':
+      return 'Saving completion + unlocking';
+    case 'completionFailed':
+      return 'Completion write failed';
+    case 'completed':
+      return 'Routine completed today';
+  }
+}
+
 export default function HomeScreen() {
+  const [routineState, setRoutineState] = useState(createInitialRoutineState);
+  const [routineWasAlreadyCompletedToday, setRoutineWasAlreadyCompletedToday] =
+    useState<boolean | null>(null);
   const [diagnostic, setDiagnostic] = useState(
     initialAuthorizationDiagnostic
   );
@@ -96,6 +135,8 @@ export default function HomeScreen() {
   const latestResolvedAuthorizationStatus =
     useRef<FamilyControlsAuthorizationStatus | null>(null);
   const appState = useRef<AppStateStatus>(AppState.currentState);
+  const lastRoutineTickAtMs = useRef<number | null>(null);
+  const routineCompletionRequestKey = useRef<string | null>(null);
 
   const recordAuthorizationTimeline = useCallback((message: string) => {
     const timestampMs = Date.now();
@@ -401,6 +442,91 @@ export default function HomeScreen() {
     );
   }, [runScheduledLockAction]);
 
+  const beginGuidedRoutine = useCallback(() => {
+    setRoutineWasAlreadyCompletedToday(null);
+    routineCompletionRequestKey.current = null;
+    setRoutineState((current) =>
+      startRoutine(current, representativeMovementSpecification)
+    );
+  }, []);
+
+  const retryRoutineCompletion = useCallback(() => {
+    setRoutineState(retryAccountability);
+  }, []);
+
+  useEffect(() => {
+    if (!isTimedRoutinePhase(routineState.phase)) {
+      lastRoutineTickAtMs.current = null;
+      return;
+    }
+
+    lastRoutineTickAtMs.current = Date.now();
+    const timer = setInterval(() => {
+      const now = Date.now();
+      const previousTick = lastRoutineTickAtMs.current ?? now;
+      lastRoutineTickAtMs.current = now;
+      if (appState.current !== 'active') {
+        return;
+      }
+
+      // Never catch up a long event-loop/background gap. Recovery is
+      // conservative: only short, foreground time slices advance the routine.
+      const foregroundElapsedMs = Math.min(250, Math.max(0, now - previousTick));
+      setRoutineState((current) =>
+        advanceRoutine(
+          current,
+          representativeMovementSpecification,
+          foregroundElapsedMs
+        )
+      );
+    }, 100);
+
+    return () => clearInterval(timer);
+  }, [routineState.phase]);
+
+  useEffect(() => {
+    if (routineState.phase !== 'awaitingAccountability') {
+      return;
+    }
+
+    const requestKey = `${routineState.sessionId}:${routineState.completionAttempt}`;
+    if (routineCompletionRequestKey.current === requestKey) {
+      return;
+    }
+    routineCompletionRequestKey.current = requestKey;
+    let isCurrent = true;
+
+    void FamilyControls.completeRoutineToday()
+      .then((result) => {
+        if (!isCurrent) {
+          return;
+        }
+        setScheduledLockState((current) =>
+          current
+            ? { ...current, accountability: result.accountability }
+            : current
+        );
+        setShieldState(result.shield);
+        setRoutineWasAlreadyCompletedToday(result.wasAlreadyCompletedToday);
+        setRoutineState(markAccountabilitySucceeded);
+      })
+      .catch((error: unknown) => {
+        if (isCurrent) {
+          setRoutineState((current) =>
+            markAccountabilityFailed(current, formatError(error))
+          );
+        }
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [
+    routineState.completionAttempt,
+    routineState.phase,
+    routineState.sessionId,
+  ]);
+
   useEffect(() => {
     const refreshFamilyActivityStateTimer = setTimeout(() => {
       void refreshFamilyActivityState();
@@ -449,6 +575,7 @@ export default function HomeScreen() {
           void runAuthorizationCheck('app-became-active');
           void refreshFamilyActivityState();
         } else {
+          setRoutineState(interruptRoutine);
           authorizationCheckGeneration.current += 1;
           latestResolvedAuthorizationStatus.current = null;
           setDiagnostic((current) => ({
@@ -501,6 +628,13 @@ export default function HomeScreen() {
     selectionSummary?.hasSelection === true &&
     scheduledLockState?.sharedStorageAvailable === true &&
     !isRunningScheduledLockAction;
+  const routineRemainingMs = remainingPhaseMs(
+    routineState,
+    representativeMovementSpecification
+  );
+  const isRoutineRunning =
+    isTimedRoutinePhase(routineState.phase) ||
+    routineState.phase === 'awaitingAccountability';
 
   return (
     <ScrollView
@@ -677,6 +811,77 @@ export default function HomeScreen() {
         {familyActivityErrorMessage ? (
           <Text selectable style={styles.error}>
             {familyActivityErrorMessage}
+          </Text>
+        ) : null}
+      </View>
+
+      <View style={styles.diagnosticSection}>
+        <Text style={styles.diagnosticTitle}>
+          Phase 03.10 guided routine
+        </Text>
+        <Text style={styles.status}>
+          State: {routinePhaseLabel(routineState.phase)}
+        </Text>
+        <Text style={styles.status}>
+          Set: {routineState.setNumber || 0}/{GUIDED_ROUTINE_SET_COUNT} · Reps:{' '}
+          {routineState.repetitionsCompleted}/
+          {representativeMovementSpecification.repsPerSet}
+        </Text>
+        {routineRemainingMs !== null ? (
+          <Text style={styles.status}>
+            Phase remaining: {Math.ceil(routineRemainingMs / 1_000)}s
+          </Text>
+        ) : null}
+        <Text style={styles.caption}>
+          Architecture-test movement only — 5 reps at a 1-second cadence. These
+          are representative values, not final movement content. The locked
+          structure is five sets with four 20-second inter-set rests and no rest
+          after set five.
+        </Text>
+
+        <View style={styles.actions}>
+          <Pressable
+            accessibilityRole="button"
+            disabled={isRoutineRunning}
+            onPress={beginGuidedRoutine}
+            style={[styles.button, isRoutineRunning && styles.buttonDisabled]}
+          >
+            <Text style={styles.buttonText}>
+              {routineState.phase === 'idle'
+                ? 'Start guided routine'
+                : 'Start again'}
+            </Text>
+          </Pressable>
+          {routineState.phase === 'completionFailed' ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={retryRoutineCompletion}
+              style={styles.button}
+            >
+              <Text style={styles.buttonText}>Retry completion + unlock</Text>
+            </Pressable>
+          ) : null}
+        </View>
+
+        {routineState.interruptionReason ? (
+          <Text style={styles.error}>
+            Routine interrupted when the app left the foreground. No completion
+            was granted; start again. This is the conservative Phase 03.10
+            recovery baseline.
+          </Text>
+        ) : null}
+        {routineState.completionError ? (
+          <Text selectable style={styles.error}>
+            {routineState.completionError}
+          </Text>
+        ) : null}
+        {routineState.phase === 'completed' ? (
+          <Text style={styles.success}>
+            Shared completion is present for today and all known shield stores
+            were cleared.
+            {routineWasAlreadyCompletedToday
+              ? ' The existing same-day completion was reused idempotently.'
+              : ''}
           </Text>
         ) : null}
       </View>
@@ -912,6 +1117,11 @@ const styles = StyleSheet.create({
   },
   error: {
     color: '#F08A84',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  success: {
+    color: '#8CCB9B',
     fontSize: 14,
     lineHeight: 20,
   },

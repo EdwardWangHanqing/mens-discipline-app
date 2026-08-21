@@ -38,7 +38,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "test:routine": "node --experimental-default-type=module --experimental-strip-types --test src/training/guidedRoutineEngine.test.mjs"
   },
   "private": true,
   "engines": {
