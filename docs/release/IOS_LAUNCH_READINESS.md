@@ -2,7 +2,7 @@
 
 **Status:** Operational source of truth for iOS release readiness
 
-**Last verified against Apple rules:** 2026-08-15
+**Last verified against Apple rules and current device evidence:** 2026-08-20
 
 **Priority:** latest explicitly accepted decision / `docs/DECISIONS.md` > `docs/product/MVP_SCOPE.md` > `docs/product/MASTER_PRODUCT_PLAN.md` > this operational checklist.
 
@@ -38,25 +38,46 @@
 - [x] On a physical iPhone, prove one-off schedule → system callback → automatic shield while Incomplete with the main app inactive; no manual Apply Shield tap.
 - [x] On a physical iPhone, prove the same callback suppresses shielding while Completed and record the non-sensitive callback outcome.
 - [x] Validate same-activity schedule replacement plus Cancel/Reset recovery without a stranded restriction. Empty-selection recovery remains covered by the Phase 03.7 manual path; scheduled empty/corrupt callback branches remain separate negative tests.
-- [ ] Verify authorization denied/revoked behavior.
+- [x] Verify authorization denied/revoked behavior: revoke resolved to `denied`,
+      cancelled schedules and removed shields without deleting the saved
+      selection; denied re-request stayed unavailable; approval recovery restored
+      `approved / approvedWithDataAccess` and retained the selection.
 - [x] Verify the saved selection remains available after the Debug development relaunch workflow once Metro connectivity is restored.
-- [ ] Verify production/TestFlight bundle behavior after full app termination and direct relaunch without Metro.
-- [ ] Verify Family Controls behavior after device reboot.
+- [x] Verify a signed Release configuration build after full app termination and
+      direct cold launch with Metro completely stopped; bundled JavaScript loaded
+      without `No script URL provided`. This used development provisioning and is
+      not an actual TestFlight validation.
+- [x] Verify Incomplete and Completed Device Activity outcomes while the main app
+      is force-quit, including persisted selection/accountability and
+      `appliedShield` / `skippedCompletedToday` callback evidence.
+- [x] Verify Family Controls behavior after device reboot: an Incomplete one-off
+      schedule applied the shield and persisted authorization, selection and
+      accountability across force-quit plus reboot.
+- [ ] Verify an actual distribution archive and TestFlight build independently of
+      Metro.
 - [ ] Verify daily schedule behavior across time-zone changes and daylight-saving transitions.
 - [ ] Test on the current shipping iOS release before considering the technical risk closed.
 
-Phase 03.7 Debug-build observation: force-quitting and reopening the installed Debug build while Metro was unavailable displayed `No script URL provided`. Restoring Metro and relaunching restored the React Native UI and persisted selection. This is currently a development-bundle workflow observation, not a Family Controls failure; production/TestFlight bundle behavior remains untested.
+Phase 03.7 Debug-build observation: force-quitting and reopening the installed Debug build while Metro was unavailable displayed `No script URL provided`. Restoring Metro and relaunching restored the React Native UI and persisted selection. Phase 03.11 supersedes the release-bundle concern with a signed Release configuration cold-launch pass while Metro was fully stopped. Actual TestFlight behavior remains untested.
 
 Phase 03.8 development status: the repository defines App Group `group.com.temperline.mensdiscipline` for the host and `com.temperline.mensdiscipline.deviceactivitymonitor` extension. After the team login was restored, Automatic Signing produced valid development profiles for both targets containing Family Controls and the App Group. The signed build installed on the paired iPhone 13. Incomplete produced `intervalDidStart / appliedShield` plus Apple's `Restricted` UI with the host inactive; Completed produced `intervalDidStart / skippedCompletedToday` while the same selected app stayed usable. Replacement and final Cancel left both schedules inactive and no diagnostic shield active. This does not validate the extension's separate Distribution entitlement, Release/TestFlight behavior, force-quit/reboot, midnight, timezone, or DST reliability.
+
+Phase 03.11 reliability status: on Clover (iPhone 13, iOS 26.6), the owner passed
+revoke/deny/re-approval recovery, Release/no-Metro cold launch, force-quit
+Incomplete and Completed scheduling, and an Incomplete callback after reboot.
+The extension Distribution capability now shows `Assigned` in the developer
+portal. Midnight, timezone/DST, multi-iOS, distribution archive/profile and
+actual TestFlight behavior remain explicit release gates.
 
 ## 1.2 Family Controls distribution entitlement
 - [x] Preserve the explicit main-app identifier `com.temperline.mensdiscipline`.
 - [x] Register/confirm the explicit Device Activity Monitor App ID `com.temperline.mensdiscipline.deviceactivitymonitor`; Automatic Signing produced its valid development profile. This is the only Screen Time extension introduced in Phase 03.8.
 - [x] Request Family Controls **Distribution** entitlement for the main-app path.
 - [x] Confirm Apple assigned Family Controls (Distribution) to the developer account for the main-app path.
-- [ ] Submit a separate Family Controls **Distribution** entitlement request for `com.temperline.mensdiscipline.deviceactivitymonitor`. No request is needed for unused Report / Shield Action / Shield Configuration extensions because those targets do not exist.
+- [x] Submit the separate Family Controls **Distribution** entitlement request for `com.temperline.mensdiscipline.deviceactivitymonitor`. No request is needed for unused Report / Shield Action / Shield Configuration extensions because those targets do not exist.
+- [x] Confirm Family Controls (Distribution) is `Assigned` in the Apple Developer portal for `com.temperline.mensdiscipline.deviceactivitymonitor`.
 - [ ] Validate the main-app distribution entitlement in the eventual distribution provisioning/archive/TestFlight path before submission.
-- [ ] Confirm Assigned status and required distribution methods for every extension actually used before TestFlight/App Store submission.
+- [ ] Validate the monitor extension entitlement in the eventual distribution provisioning/archive/TestFlight path before submission.
 - [ ] Keep entitlement request explanation consistent with App Store positioning: accountability / focus / wellness, not covert surveillance.
 
 ## 1.3 Monetization-policy review — Guideline 4.10 (P1 review watch item, not a technical blocker)
@@ -83,9 +104,12 @@ These are historical evidence, not Camera production gates. No seven-movement
 Camera validation or Camera reviewer flow is required for MVP.
 
 ### Phase 03 Technical Feasibility exit
-- [ ] Prove guided routine completion → shared accountability completion → selected-app unlock/suppression on a real iPhone.
-- [ ] Verify exactly five sets and 20-second rests without hard-coding one universal repetition target or cadence.
-- [ ] Verify interruption/background recovery cannot falsely strand the user in an incomplete/locked state.
+- [x] Prove guided routine completion → shared accountability completion → selected-app unlock/suppression on a real iPhone.
+- [x] Verify exactly five sets and 20-second rests without hard-coding one universal repetition target or cadence.
+- [x] Verify interruption/background recovery cannot falsely grant completion or
+      strand a denied user behind known shields; Phase 03.11 additionally
+      preserved correct Incomplete/Completed scheduling across force-quit and
+      recovery.
 
 ### Guided Training Engine / before Beta
 - [ ] Define exact repetition target and cadence/tempo separately for each of the seven movements.
@@ -329,11 +353,11 @@ Each permission must have a specific user-facing reason and a denial path.
 - [ ] Routine completion updates accountability state and unlocks/suppresses the selected-app shield without Camera proof.
 
 ## System edge cases
-- [ ] Family Controls permission denied.
-- [ ] Family Controls permission revoked in iOS Settings.
-- [ ] Device reboot.
-- [ ] App killed from memory.
-- [ ] Background/foreground transition.
+- [x] Family Controls permission denied.
+- [x] Family Controls permission revoked in iOS Settings.
+- [x] Device reboot on Clover (iPhone 13, iOS 26.6).
+- [x] App killed from memory for Incomplete and Completed schedule paths.
+- [x] Background/foreground transition for unfinished guided-routine recovery.
 - [ ] Time-zone change.
 - [ ] Daylight-saving transition.
 - [ ] Date crosses midnight during a routine.
@@ -360,8 +384,10 @@ Each permission must have a specific user-facing reason and a denial path.
 
 # 10. App Review package
 
-- [x] Family Controls distribution entitlement Assigned at the developer-account level for the main-app path.
-- [ ] Validate the entitlement in the distribution provisioning/archive/TestFlight path and obtain Assigned status for every extension actually introduced.
+- [x] Family Controls distribution entitlement Assigned at the developer-account
+      level for the main app and the only introduced Screen Time extension.
+- [ ] Validate both entitlements in the distribution
+      provisioning/archive/TestFlight path.
 - [ ] Review Notes explain the exact core loop: selected apps → scheduled accountability lock → guided routine → completion → unlock.
 - [ ] Do not include Camera setup, Camera privacy claims, or pose-counting steps in the MVP reviewer flow.
 - [ ] Explain subscription value and avoid wording that suggests charging for Screen Time API capability itself.

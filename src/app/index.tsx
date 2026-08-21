@@ -130,6 +130,8 @@ export default function HomeScreen() {
   >(null);
   const [familyActivityErrorMessage, setFamilyActivityErrorMessage] =
     useState<string | null>(null);
+  const [authorizationSafetyMessage, setAuthorizationSafetyMessage] =
+    useState<string | null>(null);
   const authorizationCheckGeneration = useRef(0);
   const authorizationCheckingStartedAtMs = useRef<number | null>(null);
   const latestResolvedAuthorizationStatus =
@@ -156,6 +158,12 @@ export default function HomeScreen() {
       const resolvedAtMs = Date.now();
       authorizationCheckGeneration.current += 1;
       latestResolvedAuthorizationStatus.current = sample.status;
+      if (
+        sample.status === 'approved' ||
+        sample.status === 'approvedWithDataAccess'
+      ) {
+        setAuthorizationSafetyMessage(null);
+      }
       setDiagnostic((current) => ({
         ...current,
         status: sample.status,
@@ -286,9 +294,9 @@ export default function HomeScreen() {
       recordAuthorizationTimeline(`request-error ${errorMessage}`);
       setDiagnostic((current) => ({
         ...current,
-        status: 'unknown',
         errorMessage,
       }));
+      await runAuthorizationCheck('request-error-recovery');
     } finally {
       setIsRequesting(false);
     }
@@ -297,6 +305,43 @@ export default function HomeScreen() {
     resolveAuthorizationSample,
     runAuthorizationCheck,
   ]);
+
+  useEffect(() => {
+    if (diagnostic.status !== 'denied') {
+      return;
+    }
+
+    let isCurrent = true;
+    void FamilyControls.reconcileAuthorizationSafety()
+      .then((result) => {
+        if (!isCurrent) {
+          return;
+        }
+        setScheduledLockState(result.schedule);
+        setShieldState(result.shield);
+        setAuthorizationSafetyMessage(
+          result.didCancelMonitoringAndRemoveShields
+            ? 'Authorization is unusable. Monitoring was cancelled and all known shields were removed; the opaque saved selection was preserved for recovery.'
+            : 'Authorization is unusable. Permission-dependent actions remain disabled.'
+        );
+        recordAuthorizationTimeline(
+          `safety-reconcile status=${result.authorizationStatus} ` +
+            `monitoringCancelled=${result.didCancelMonitoringAndRemoveShields} ` +
+            `shieldApplied=${result.shield.isApplied}`
+        );
+      })
+      .catch((error: unknown) => {
+        if (isCurrent) {
+          setAuthorizationSafetyMessage(
+            `Authorization safety reconciliation failed: ${formatError(error)}`
+          );
+        }
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [diagnostic.status, recordAuthorizationTimeline]);
 
   const refreshFamilyActivityState = useCallback(async () => {
     setIsLoadingFamilyActivityState(true);
@@ -709,6 +754,11 @@ export default function HomeScreen() {
         {diagnostic.errorMessage ? (
           <Text selectable style={styles.error}>
             {diagnostic.errorMessage}
+          </Text>
+        ) : null}
+        {authorizationSafetyMessage ? (
+          <Text selectable style={styles.error}>
+            {authorizationSafetyMessage}
           </Text>
         ) : null}
       </View>

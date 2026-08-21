@@ -124,3 +124,12 @@ export type ScheduledLockState = {
   lastCallback: ScheduledLockCallbackRecord | null;
   lastScheduleConfiguredAtMs: number | null;
 };
+
+export type FamilyControlsAuthorizationSafetyResult = {
+  authorizationStatus: FamilyControlsAuthorizationStatus;
+  authorizationUsable: boolean;
+  didCancelMonitoringAndRemoveShields: boolean;
+  selectionPreserved: true;
+  schedule: ScheduledLockState;
+  shield: FamilyControlsShieldState;
+};

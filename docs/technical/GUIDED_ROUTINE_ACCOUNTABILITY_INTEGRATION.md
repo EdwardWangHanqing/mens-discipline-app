@@ -76,8 +76,12 @@ shield stayed removed and the selected app remained accessible.
 
 - final movement list, reps and cadence;
 - final interruption/resume UX and production session persistence;
-- midnight, timezone/DST, reboot, force-quit and multi-version reliability;
-- denied/revoked Family Controls behavior;
-- Release/TestFlight operation without Metro;
-- monitor extension Distribution entitlement;
+- midnight, timezone/DST and multi-version reliability;
+- distribution archive/profile inspection and actual TestFlight operation;
 - production Lock Time, Replace, Grace, Skip and progress behavior.
+
+Phase 03.11 subsequently passed denied/revoked recovery, Release configuration
+operation without Metro, force-quit Incomplete/Completed paths, and reboot on
+Clover. The monitor extension Distribution capability is also Assigned. See
+`docs/technical/FAMILY_CONTROLS_RELIABILITY_RELEASE_BASELINE.md`; those results
+do not constitute an actual TestFlight validation.

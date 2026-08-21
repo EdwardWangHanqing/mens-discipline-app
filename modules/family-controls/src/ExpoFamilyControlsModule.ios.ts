@@ -3,6 +3,7 @@ import { NativeModule, requireNativeModule } from 'expo';
 import type {
   ExpoFamilyControlsEvents,
   FamilyActivityPickerResult,
+  FamilyControlsAuthorizationSafetyResult,
   FamilyControlsAuthorizationSample,
   FamilyControlsAuthorizationStatus,
   FamilyControlsSelectionSummary,
@@ -21,6 +22,7 @@ declare class ExpoFamilyControlsModule extends NativeModule<ExpoFamilyControlsEv
   applyShield(): Promise<FamilyControlsShieldState>;
   removeShield(): Promise<FamilyControlsShieldState>;
   getScheduledLockState(): Promise<ScheduledLockState>;
+  reconcileAuthorizationSafety(): Promise<FamilyControlsAuthorizationSafetyResult>;
   scheduleDailyLock(hour: number, minute: number): Promise<ScheduledLockState>;
   scheduleDiagnosticLock(minutesFromNow: number): Promise<ScheduledLockState>;
   setDiagnosticAccountabilityCompleted(

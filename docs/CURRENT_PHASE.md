@@ -18,6 +18,7 @@ Men's Discipline App
 - 03.8 — Device Activity scheduled-lock proof
 - 03.9 — Camera / Vision / Kneeling Drive feasibility spike
 - 03.10 — Guided Routine → Accountability Unlock Integration
+- 03.11 — Family Controls Reliability & Release Baseline
 
 ## Phase 03.9 Final Result
 
@@ -107,6 +108,24 @@ Real-device acceptance passed on Clover (iOS 26.6) on 2026-08-20:
 
 See `docs/technical/GUIDED_ROUTINE_ACCOUNTABILITY_INTEGRATION.md`.
 
+## Phase 03.11 Final Result
+
+**Status:** Passed
+
+On Clover (iPhone 13, iOS 26.6), the owner verified a signed Release build with
+Metro fully stopped, authorization revoke/deny/re-approval recovery, both
+Incomplete and Completed scheduled callbacks while the main app was force-quit,
+and an Incomplete scheduled callback after device reboot. Selection and shared
+accountability persisted correctly in every applicable path.
+
+The monitor extension App ID
+`com.temperline.mensdiscipline.deviceactivitymonitor` now shows Family Controls
+(Distribution) as `Assigned` in the Apple Developer portal. An actual
+distribution archive/profile and TestFlight build remain unverified.
+
+See
+`docs/technical/FAMILY_CONTROLS_RELIABILITY_RELEASE_BASELINE.md`.
+
 ## Family Controls Accepted Baseline
 
 - Bundle ID: `com.temperline.mensdiscipline`.
@@ -121,17 +140,19 @@ See `docs/technical/GUIDED_ROUTINE_ACCOUNTABILITY_INTEGRATION.md`.
 - Incomplete one-off scheduling produced `intervalDidStart / appliedShield` with
   the host inactive; Completed produced `skippedCompletedToday`; Reset/Cancel
   restored access and left no diagnostic shield active.
-- Main-app Family Controls Distribution is Assigned. The monitor extension still
-  requires its separate Distribution entitlement before TestFlight/App Store.
+- Family Controls (Distribution) is Assigned in the Apple Developer portal for
+  both the main app and the monitor extension. Distribution archive/profile and
+  TestFlight validation are still required.
 - No token contents are logged, reverse-engineered, or exposed to JavaScript.
 
 ## Remaining Phase 03 / Release Risks
 
-- Validate Family Controls denied/revoked behavior.
-- Validate Release/TestFlight bundle launch independently of Metro.
-- Obtain/validate the monitor extension's Distribution entitlement.
-- Later reliability testing still includes force-quit, reboot, midnight,
-  timezone/DST, and supported iOS versions.
+- Validate an actual distribution archive and TestFlight build; the passed
+  no-Metro test used a Release configuration with development provisioning.
+- Later reliability testing still includes midnight, timezone/DST, and supported
+  iOS versions beyond Clover on iOS 26.6.
+- Picker Cancel/interactive-dismiss and corrupt scheduled-selection negative
+  paths remain unverified.
 - Final production Lock Time, Grace Extension, Skip Today, and Replace Movement UX
   remain unbuilt.
 

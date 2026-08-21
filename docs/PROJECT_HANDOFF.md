@@ -4,11 +4,13 @@
 
 **Repository:** `/Users/hanqingwang/Developer/mens-discipline-app`
 
-**Active branch:** `main`
+**Active branch:** `spike/family-controls-reliability`
 
-**Phase 03.10 integration checkpoint:** `main` at `e1e7267447615319fc49630dcfa038c756f842f6`
+**Phase 03.10 integration checkpoint:** `main` at `c398be46e3eac99eef45df3abecaff375f9a9f90`
 
-**Accepted main checkpoint:** `main` at `e1e7267447615319fc49630dcfa038c756f842f6`
+**Accepted main checkpoint:** `main` at `c398be46e3eac99eef45df3abecaff375f9a9f90`
+
+**Phase 03.11 status:** Passed on the feature branch; not merged into `main`
 
 ## Purpose and Authority
 
@@ -99,19 +101,27 @@ remain present; a clean CNG iOS Simulator build passes.
 - A one-off scheduled callback applied a saved-category shield with the host
   inactive when incomplete, and skipped shielding when completed.
 - Schedule replacement and Reset/Cancel recovery left no diagnostic shield.
-- Main-app Family Controls Distribution is Assigned.
-- The monitor extension's separate Distribution entitlement remains required
-  before TestFlight/App Store.
-- Denied/revoked, Release/TestFlight without Metro, reboot, midnight,
-  timezone/DST, and multi-version reliability remain open.
+- Family Controls (Distribution) is `Assigned` in the Apple Developer portal for
+  both the main app and monitor extension.
+- Phase 03.11 passed revoke/denied/re-approval recovery while preserving the
+  opaque saved selection and removing schedules/shields in the denied state.
+- A signed Release configuration build cold-launched directly on Clover while
+  Metro was fully stopped. It used development provisioning, so this is not an
+  actual TestFlight result.
+- Force-quit Incomplete applied the scheduled shield, force-quit Completed
+  skipped it, and force-quit plus reboot Incomplete applied it. Selection,
+  accountability and callback evidence persisted.
+- Midnight, timezone/DST, multi-iOS, distribution archive/profile and actual
+  TestFlight reliability remain open.
 
 No Family Controls capability, entitlement, App Group, Bundle ID, selected-app
 privacy boundary, or existing reliability conclusion changed in Phase 03.10.
 
 ## Current Phase and Next Safe Task
 
-Phase 03 remains active; Phase 03.10 passed its exit criteria and is merged into
-`main` at `e1e7267447615319fc49630dcfa038c756f842f6`.
+Phase 03 remains formally active pending owner acceptance of Phase 03.11 and a
+separate merge decision. Phase 03.10 is merged into `main` at
+`c398be46e3eac99eef45df3abecaff375f9a9f90`.
 
 Phase 03.10 introduced the smallest data-driven guided routine engine and proved
 the full accountability boundary:
@@ -141,10 +151,17 @@ completion. This is a conservative recovery baseline, not a final UX decision.
 Technical details are in
 `docs/technical/GUIDED_ROUTINE_ACCOUNTABILITY_INTEGRATION.md`.
 
-Next safe Phase 03 work is one of the remaining Family Controls/release
-reliability checks (denied/revoked, Release/TestFlight without Metro, reboot,
-midnight/timezone/DST, or supported-version coverage). Do not begin final content
-or polish until the owner selects the next logical unit.
+Phase 03.11 on `spike/family-controls-reliability` adds denied-only native safety
+reconciliation and has owner-confirmed physical-device acceptance for
+Release/no-Metro, revoke/deny/recovery, force-quit Incomplete, force-quit
+Completed and reboot. Its evidence is recorded in
+`docs/technical/FAMILY_CONTROLS_RELIABILITY_RELEASE_BASELINE.md`.
+
+After review, the recommended next decision is for the owner to approve the
+Phase 03.11 merge and close primary Phase 03 Technical Feasibility. Remaining
+midnight, timezone/DST, multi-iOS, distribution archive/profile and TestFlight
+checks should remain tracked beta/release gates rather than being silently
+treated as complete. Do not begin Phase 04 until the owner makes that decision.
 
 ## Release / Privacy State
 
@@ -155,8 +172,12 @@ or polish until the owner selects the next logical unit.
   removed from release gates.
 - Historical spike privacy evidence is retained: raw frames were not recorded,
   persisted, uploaded, or bridged to JavaScript.
-- Family Controls entitlement, privacy, reliability, App Review, and reviewer
-  testability requirements remain unchanged.
+- Family Controls authorization safety changed only for a definitive denied
+  state: known schedules and shields are cleared while the opaque selection is
+  retained. No new data, permission, SDK, capability or App Review behavior was
+  introduced.
+- Monitor extension Family Controls (Distribution) is Assigned, but the actual
+  distribution archive/profile and TestFlight path remain release gates.
 - The first launch remains on the current Individual membership. Incorporation
   and Organization conversion are deferred and are not launch or Phase 03
   blockers.
@@ -165,19 +186,22 @@ or polish until the owner selects the next logical unit.
 
 - Phase 03.9 accepted main baseline: `3d58052cb504de37fb7b4be87206aa2118b66530`.
 - Phase 03.10 merged main checkpoint:
-  `e1e7267447615319fc49630dcfa038c756f842f6`.
+  `c398be46e3eac99eef45df3abecaff375f9a9f90`.
+- Phase 03.11 branch base:
+  `c398be46e3eac99eef45df3abecaff375f9a9f90`.
 - Phase 03.8 branch base: `3333f79`.
 - Live Vision prototype checkpoint: `463e4f2`.
-- To undo the Phase 03.10 checkpoint after review, create a normal revert commit;
-  do not reset, clean, rewrite history, or force-push.
+- To undo an accepted checkpoint after review, create a normal revert commit; do
+  not reset, clean, rewrite history, or force-push.
 
 ## New-Task Startup Instruction
 
-> Open `/Users/hanqingwang/Developer/mens-discipline-app` on
-> `main`. Run `git status --short --branch`, then read
+> Open `/Users/hanqingwang/Developer/mens-discipline-app` on the branch specified
+> above. Run `git status --short --branch`, then read
 > `AGENTS.md`, `docs/PROJECT_HANDOFF.md`, `docs/CURRENT_PHASE.md`,
 > `docs/product/MVP_SCOPE.md`, `docs/DECISIONS.md`, and the release documents.
-> Follow DEC-021 and DEC-022. Phase 03.10 real-device acceptance passed; preserve
-> its guided routine → shared accountability → unlock boundary. Do not treat
-> company incorporation/Organization conversion as a first-launch blocker, and
-> do not merge `main` without explicit owner acceptance.
+> Follow DEC-021 and DEC-022. Phase 03.10 and 03.11 real-device acceptance passed;
+> preserve the guided routine → shared accountability → unlock boundary and the
+> denied-state safety behavior. Do not treat company incorporation/Organization
+> conversion as a first-launch blocker, begin Phase 04, close Phase 03, or merge
+> into `main` without explicit owner acceptance.

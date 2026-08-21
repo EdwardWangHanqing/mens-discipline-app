@@ -127,6 +127,7 @@ public class ExpoFamilyControlsModule: Module {
         "active",
         at: timestampMs
       )
+      self.enforceDeniedAuthorizationSafety(source: "moduleAppBecameActive")
       self.emitCurrentAuthorizationStatus(source: "moduleAppBecameActive")
     }
 
@@ -280,6 +281,23 @@ public class ExpoFamilyControlsModule: Module {
     }
     .runOnQueue(.main)
 
+    AsyncFunction("reconcileAuthorizationSafety") { (promise: Promise) in
+      let status = AuthorizationCenter.shared.authorizationStatus
+      let didRemoveProtection = self.enforceDeniedAuthorizationSafety(
+        status: status,
+        source: "explicitReconciliation"
+      )
+      promise.resolve([
+        "authorizationStatus": authorizationStatusString(status),
+        "authorizationUsable": Self.isAuthorizationUsable(status),
+        "didCancelMonitoringAndRemoveShields": didRemoveProtection,
+        "selectionPreserved": true,
+        "schedule": self.scheduleStore.state(),
+        "shield": self.shieldStore.state(),
+      ])
+    }
+    .runOnQueue(.main)
+
     AsyncFunction("scheduleDailyLock") {
       (hour: Int, minute: Int, promise: Promise) in
       guard Self.isAuthorizationUsable(
@@ -413,8 +431,27 @@ public class ExpoFamilyControlsModule: Module {
     _ status: AuthorizationStatus,
     source: String
   ) {
+    enforceDeniedAuthorizationSafety(status: status, source: source)
     let sample = makeAuthorizationStatusSample(status: status, source: source)
     sendEvent(authorizationStatusChangedEvent, sample)
+  }
+
+  @discardableResult
+  private func enforceDeniedAuthorizationSafety(
+    status: AuthorizationStatus? = nil,
+    source: String
+  ) -> Bool {
+    let currentStatus = status ?? AuthorizationCenter.shared.authorizationStatus
+    guard currentStatus == .denied else {
+      return false
+    }
+
+    _ = scheduleStore.cancelSchedulesAndRemoveShield()
+    print(
+      "[FamilyControlsAuthorizationSafety] source=\(source) status=denied " +
+        "monitoringCancelled=true shieldsRemoved=true selectionPreserved=true"
+    )
+    return true
   }
 
   private func makeAuthorizationStatusSample(

@@ -1,6 +1,7 @@
 import type {
   ExpoFamilyControlsEvents,
   FamilyActivityPickerResult,
+  FamilyControlsAuthorizationSafetyResult,
   FamilyControlsAuthorizationSample,
   FamilyControlsAuthorizationStatus,
   FamilyControlsSelectionSummary,
@@ -109,6 +110,16 @@ export default {
   },
   async getScheduledLockState(): Promise<ScheduledLockState> {
     return unsupportedScheduledLockState;
+  },
+  async reconcileAuthorizationSafety(): Promise<FamilyControlsAuthorizationSafetyResult> {
+    return {
+      authorizationStatus: 'unknown',
+      authorizationUsable: false,
+      didCancelMonitoringAndRemoveShields: false,
+      selectionPreserved: true,
+      schedule: unsupportedScheduledLockState,
+      shield: unsupportedShieldState,
+    };
   },
   async scheduleDailyLock(
     _hour: number,
