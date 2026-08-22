@@ -2,7 +2,7 @@
 
 **Status:** Operational source of truth for iOS release readiness
 
-**Last verified against Apple rules and current device evidence:** 2026-08-20
+**Last verified against Apple rules and current device evidence:** 2026-08-22
 
 **Priority:** latest explicitly accepted decision / `docs/DECISIONS.md` > `docs/product/MVP_SCOPE.md` > `docs/product/MASTER_PRODUCT_PLAN.md` > this operational checklist.
 
@@ -12,9 +12,11 @@
 
 - iOS first; Android later, with cross-platform architecture reserved.
 - First value experience does **not** force login.
-- First complete routine is experienced before the user is asked to save progress / create an account.
+- Exactly one full free routine is completed before the user is asked to create/sign in to an account; earned progress/history remains visible if they decline.
+- Account creation/sign-in is required before starting Trial / Subscription.
 - Account direction: Apple + Google + Email; Phone OTP is not an MVP priority.
-- 3-day free trial is locked; subscription plans are Monthly / 3-Month / Annual.
+- 3-day free trial is locked; subscription plans are Monthly $9.99/month and Annual $39.99/year. Annual is default/recommended; 3-Month is removed.
+- Paywall may be closed. Closing it does not grant ongoing free daily training. No active training entitlement means no active accountability lock.
 - Daily training structure is exactly 1 movement/day, a 7-movement cycle without repetition, exactly 5 sets, typically 15–20 reps/set with exact targets defined per movement, and exactly 20s rest; cadence is movement-specific.
 - MVP uses guided cadence training. Camera/Vision is not an MVP feature, completion path, permission, reviewer flow, or release requirement.
 
@@ -153,9 +155,10 @@ This track runs in parallel with development; it must not block coding.
 # 3. Account architecture and deletion
 
 ## 3.1 Login timing
-- [ ] Preserve Phase 02 decision: first routine/value experience without forced login.
-- [ ] Ask the user to save progress only after the first complete routine.
-- [ ] Document exactly which features require an account (cloud sync, progress recovery, cross-device history, subscription restoration linkage, etc.).
+- [x] Preserve the Phase 04 decision: the first complete product experience, including exactly one full free routine, works without an account.
+- [x] Ask for account creation/sign-in after first routine completion; the user may decline and retain locally earned progress/history in a limited signed-out Home state.
+- [x] Require account creation/sign-in before Trial / Subscription; do not repeatedly force the account screen on app open.
+- [ ] Document and implement which features require an account (paid training, cloud sync, cross-device history, subscription restoration linkage, etc.).
 
 ## 3.2 Login methods
 - [ ] Implement Sign in with Apple.
@@ -181,9 +184,8 @@ This track runs in parallel with development; it must not block coding.
 
 ## 4.1 App Store Connect products
 - [ ] One subscription group for the MVP plans unless a later monetization decision requires otherwise.
-- [ ] Monthly product created.
-- [ ] 3-Month product created.
-- [ ] Annual product created.
+- [ ] Monthly product created at the locked reference price of USD $9.99/month.
+- [ ] Annual product created at the locked reference price of USD $39.99/year and configured as the default/recommended option.
 - [ ] 3-day free trial configured as the intended introductory offer.
 - [ ] Product IDs follow a permanent naming convention and match App Store Connect / RevenueCat / code exactly.
 - [ ] Product display names, descriptions, review screenshots, pricing and availability are complete.
@@ -192,7 +194,7 @@ This track runs in parallel with development; it must not block coding.
 ## 4.2 RevenueCat
 - [ ] Products imported/mapped correctly.
 - [ ] Entitlement naming is stable and simple.
-- [ ] Offering contains the intended Monthly / 3-Month / Annual packages.
+- [ ] Offering contains only the intended Monthly / Annual packages; 3-Month is removed.
 - [ ] App Store Connect API credentials/secrets stored securely and never committed to Git.
 - [ ] Server notifications / subscription-status integration configured as needed.
 - [ ] Production and sandbox configuration are clearly separated.
@@ -209,6 +211,8 @@ This track runs in parallel with development; it must not block coding.
 - [ ] Terms of Use / EULA link works.
 - [ ] Restore Purchases exists and is easy to find.
 - [ ] Existing subscriber sign-in / restore path works.
+- [ ] Paywall can be closed; closing it does not grant ongoing free daily training.
+- [ ] No active training entitlement results in no active accountability lock.
 - [ ] App Store description clearly indicates which showcased functionality requires subscription when relevant.
 
 ## 4.4 Subscription state testing
@@ -216,11 +220,11 @@ Test in local StoreKit **and** real Sandbox/TestFlight.
 - [ ] Eligible free-trial purchase.
 - [ ] Non-eligible trial user.
 - [ ] Monthly purchase.
-- [ ] 3-Month purchase.
 - [ ] Annual purchase.
 - [ ] Restore purchase.
 - [ ] Cancelled but still active until expiration.
 - [ ] Expired.
+- [ ] Restore does not reactivate a fully expired subscription or undo cancellation.
 - [ ] Billing retry / billing issue.
 - [ ] Grace-period behavior if enabled.
 - [ ] Upgrade / downgrade / crossgrade behavior if enabled later.

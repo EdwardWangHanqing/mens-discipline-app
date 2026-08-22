@@ -6,9 +6,13 @@ Men's Discipline App
 
 ## Current Phase
 
-**03 — Technical Feasibility (Closed / Passed)**
+**04 — UX Architecture (Closed / Passed)**
 
-**Next planned phase:** UX Architecture, owner-directed and not yet started
+**Next planned phase:** 05 — Visual System / Figma Design System
+
+Phase 04 is closed and passed. The UX architecture is now the source for
+visual-system work; Phase 05 must translate the locked behavior into visual
+tokens, components, and screens without redesigning product behavior.
 
 ## Completed Sub-phases
 
@@ -186,13 +190,13 @@ complete.
 
 ## Do Not Start Yet
 
-Do not invent or finalize in this checkpoint:
+Do not invent or finalize outside the next approved phase:
 
 - exact repetition/cadence values for all seven movements;
 - final Coach design/assets;
 - final audio/haptic system;
 - final visual progress animation;
-- full production UI or Figma implementation;
+- full production UI implementation;
 - RevenueCat/paywall, analytics, Android, social, or leaderboard work.
 
 The first launch remains on the current Apple Developer Individual membership.
@@ -212,6 +216,27 @@ closure is based on evidence that:
 6. major system failure states are documented and tested within the accepted
    scope.
 
-Phase 04 implementation, Figma work, movement specification, production
-Lock/Grace/Skip/Replace, RevenueCat, auth/backend, analytics, and other new
-feature work have not started.
+Phase 04 UX Architecture is closed / passed. Phase 05 Visual System / Figma
+Design System is next. Full production UI implementation, movement
+specification, production Lock/Grace/Skip/Replace, RevenueCat, auth/backend,
+analytics, and other new feature work remain future implementation work.
+
+## Phase 04 Closure Record
+
+**Status:** Closed / Passed on 2026-08-22 per Owner decision.
+
+Passed coverage includes Home, Train, Locks, the core three-tab cross-state QA,
+onboarding, first full free routine, post-free signed-out behavior, Profile /
+Account / Subscription utility coverage, and the final UX coverage audit.
+
+The final primary navigation is **Home | Train | Locks**. The first complete
+product experience does not require an account: the user can complete exactly
+one full free daily routine (one movement, five sets, four 20-second rests) and
+retain earned progress/history locally. After completion, account creation or
+sign-in is required before starting the 3-Day Free Trial or any subscription.
+
+The locked subscription reference is **USD $9.99/month** and **USD
+$39.99/year**, with Annual selected by default; the 3-Month plan is removed.
+The paywall is closable and includes Restore Purchases, Terms, Privacy, trial
+and renewal disclosure. No active training entitlement means no active
+accountability lock; closing the paywall does not create ongoing free training.

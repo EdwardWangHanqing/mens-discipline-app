@@ -1,10 +1,10 @@
 # Men's Discipline App — Project Handoff
 
-**Last updated:** 2026-08-20 (America/Vancouver)
+**Last updated:** 2026-08-22 (America/Vancouver)
 
 **Repository:** `/Users/hanqingwang/Developer/mens-discipline-app`
 
-**Active branch:** `main`
+**Active branch:** `chore/phase-04-closure-doc-sync` (documentation sync)
 
 **Phase 03.10 integration checkpoint:** `main` at `c398be46ecae5dd9e97c89f2922cb1cb3a73f898`
 
@@ -16,7 +16,9 @@
 
 **Primary Phase 03 status:** Closed / Passed
 
-**Next planned phase:** UX Architecture, owner-directed and not yet started
+**Phase 04 status:** Closed / Passed
+
+**Next planned phase:** Phase 05 — Visual System / Figma Design System
 
 ## Purpose and Authority
 
@@ -28,7 +30,8 @@ When documents conflict, follow:
 1. `AGENTS.md`;
 2. latest accepted decision in `docs/DECISIONS.md`;
 3. `docs/product/MVP_SCOPE.md`;
-4. `docs/product/MASTER_PRODUCT_PLAN.md`.
+4. `docs/product/MASTER_PRODUCT_PLAN.md`;
+5. latest Owner decisions in the current project memory update.
 
 Always start with `git status --short --branch` and preserve existing work. Phase
 03.11 has owner approval and is now fast-forward integrated into `main`.
@@ -123,7 +126,32 @@ remain present; a clean CNG iOS Simulator build passes.
 No Family Controls capability, entitlement, App Group, Bundle ID, selected-app
 privacy boundary, or existing reliability conclusion changed in Phase 03.10.
 
-## Current Phase and Next Safe Task
+## Phase 04 Closure and Next Safe Task
+
+Phase 04 UX Architecture is **closed / passed** as of 2026-08-22. The final
+structure is **Home | Train | Locks**: Home is Today/Momentum/progress, Train
+is training preparation and the guided session, and Locks is accountability
+configuration/current lock state/Grace/Skip. Profile / Settings is reached from
+Home's upper-right entry.
+
+The first complete product experience requires no account. Onboarding includes
+exactly one full free daily routine: one movement, five sets, movement-specific
+reps/cadence, and four 20-second rests. Earned progress/history remains visible
+after completion, including in the signed-out limited Home state. New training
+requires an active entitlement. Account creation/sign-in is required before
+starting Trial/Subscription, using Apple, Google, or Email.
+
+The locked monetization reference is Monthly USD $9.99 and Annual USD $39.99
+(Annual default/recommended); 3-Month is removed. The 3-Day Free Trial remains.
+The paywall may be closed, must expose Restore Purchases / Terms / Privacy and
+clear trial/renewal disclosure, and does not grant ongoing free training when
+closed. Restore Purchases re-checks a valid existing App Store entitlement; it
+does not restart an expired subscription or undo cancellation. An entitlement
+that is still paid-through remains active after auto-renew cancellation.
+
+The accountability safety rule is: **No active training entitlement → No active
+accountability lock.** Account deletion, subscription utility behavior, and
+restore semantics remain release requirements.
 
 Primary Phase 03 Technical Feasibility is **closed / passed**. Phase 03.10 is
 merged into `main` at `c398be46ecae5dd9e97c89f2922cb1cb3a73f898`; Phase 03.11 is
@@ -163,8 +191,9 @@ revoke/deny/recovery, force-quit Incomplete, force-quit Completed and reboot. It
 evidence is recorded in
 `docs/technical/FAMILY_CONTROLS_RELIABILITY_RELEASE_BASELINE.md`.
 
-The next project phase is ready for owner-directed UX Architecture work. This
-task does not begin that work or any Phase 04 implementation.
+The next project phase is ready for Phase 05 Visual System / Figma Design System
+work. This documentation sync does not implement the visual system or product
+code.
 
 ## Release / Privacy State
 
@@ -220,6 +249,6 @@ The remaining Beta / Release gates are:
 > Follow DEC-021 and DEC-022. Primary Phase 03 Technical Feasibility is closed /
 > passed; preserve the guided routine → shared accountability → unlock boundary
 > and denied-state safety behavior. Do not treat company incorporation/
-> Organization conversion as a first-launch blocker. The next phase is
-> owner-directed UX Architecture; do not begin Phase 04 implementation without
-> explicit owner direction.
+> Organization conversion as a first-launch blocker. Phase 04 UX Architecture
+> is closed / passed. The next phase is Phase 05 Visual System / Figma Design
+> System; do not restore superseded UX behavior during visual work.

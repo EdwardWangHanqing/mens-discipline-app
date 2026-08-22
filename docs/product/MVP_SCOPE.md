@@ -429,17 +429,19 @@ Home should not turn into a general fitness dashboard full of:
 
 # 18. Navigation
 
-Current MVP bottom navigation direction:
+Final Phase 04 primary navigation:
 
-- **Locks**
 - **Home**
-- **Me**
+- **Train**
+- **Locks**
 
-This navigation structure is currently tentative rather than permanently locked.
+Home contains Today, Momentum, and accumulated progress. Train contains
+training preparation and the guided session. Locks contains accountability
+configuration, current lock state, Grace, and Skip. Profile / Settings is
+entered from Home's upper-right entry.
 
-It may be refined during UX Architecture if necessary.
-
-Any major restructuring should still be discussed before implementation.
+This structure is locked by the Phase 04 closure decision and must not be
+replaced by an older navigation model during Phase 05 visual work.
 
 ---
 
@@ -447,7 +449,11 @@ Any major restructuring should still be discussed before implementation.
 
 The user's first complete routine should be available as:
 
-**one full free experience**
+**exactly one full free daily routine**
+
+The first routine is production-shaped: exactly one movement, exactly five
+sets, movement-specific repetitions/cadence, exactly four 20-second rests, and
+Set 5 → completion. It is not a shortened tutorial workout.
 
 The user should be able to understand the core product value before being required to start a subscription trial.
 
@@ -457,7 +463,8 @@ This first experience should demonstrate the core loop as much as practical.
 
 # 20. Trial
 
-After the first complete free routine experience, the monetization flow uses:
+After the first complete free routine and account creation/sign-in, the
+monetization flow uses:
 
 **3-Day Free Trial**
 
@@ -467,19 +474,21 @@ Do not silently change this to:
 - 14 days;
 - another trial duration.
 
-The three-day trial was selected intentionally.
+The three-day trial was selected intentionally. A user may decline account
+creation and return to a limited Home state, but cannot start Trial / Subscription
+until signed in.
 
 ---
 
 # 21. Subscription Structure
 
-The planned MVP subscription options are:
+The locked MVP subscription options are:
 
 - Monthly
-- 3-Month
 - Annual
 
-Exact pricing is not locked yet.
+Reference pricing is USD $9.99/month and USD $39.99/year. Annual is the default
+recommended selection. The 3-Month plan is removed.
 
 RevenueCat is planned for subscription entitlement management.
 
@@ -493,11 +502,16 @@ Account creation must NOT be forced as the first thing the user sees when openin
 
 The user should first be able to experience the product.
 
-After the first experience, the user should be encouraged to:
+After the first complete routine, the user should be encouraged to:
 
 **save progress**
 
 through account creation / sign-in.
+
+The user may continue viewing locally earned Momentum, Calendar/history, Total
+Sessions, Cycles Completed, Longest Streak, and the finalized Day 1 outcome
+without an account. New daily training and Trial/Subscription require an
+account; do not repeatedly force the account screen on app open.
 
 ---
 
@@ -557,6 +571,14 @@ path.
 Subscription access must be recoverable after reinstall and on another device where the user's valid App Store purchase can be restored.
 
 Detailed RevenueCat / StoreKit implementation belongs to the monetization phase.
+
+Restore Purchases re-checks and restores an existing valid App Store purchase
+entitlement after reinstall, device change, or entitlement reconciliation. It
+does not restart an expired subscription or undo a cancellation. A cancelled
+auto-renewing subscription remains entitled until its paid-through expiration.
+
+No active training entitlement means no active accountability lock. Closing the
+paywall does not grant ongoing free daily training.
 
 ## In-App Account Deletion
 

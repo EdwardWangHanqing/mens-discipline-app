@@ -266,7 +266,7 @@ A feature is not release-ready merely because it works locally.
 
 ## DEC-013 — Account Creation Requires In-App Account Deletion for Release
 
-**Status:** Proposed — Pending Owner Approval
+**Status:** Accepted owner requirement
 
 The Phase 02 decision remains:
 
@@ -282,7 +282,7 @@ This is a release requirement and does not authorize changing the Phase 02 login
 
 ## DEC-014 — Restore Purchases Is an MVP Release Requirement
 
-**Status:** Proposed — Pending Owner Approval
+**Status:** Accepted owner requirement
 
 Because the MVP uses auto-renewable subscriptions, the released app must provide a clear and functional **Restore Purchases** path.
 
@@ -488,3 +488,41 @@ external Apple requirement creates a concrete blocker.
 The owner chose to keep the verified current Apple account path for the first
 launch and defer legal-entity conversion rather than make it a dependency of
 MVP engineering and release readiness.
+
+---
+
+## DEC-023 — Phase 04 UX Architecture Closure and Monetization Override
+
+**Status:** Accepted owner decision — 2026-08-22
+
+Phase 04 UX Architecture is **Closed / Passed**. The next phase is **Phase 05 —
+Visual System / Figma Design System**. Phase 05 must express the locked UX
+architecture visually and must not restore superseded navigation or product
+behavior.
+
+The final primary navigation is **Home | Train | Locks**. Home contains Today,
+Momentum, and accumulated progress; Train contains training preparation and the
+guided session; Locks contains accountability configuration, current lock
+state, Grace, and Skip. Profile / Settings is entered from Home's upper-right
+entry.
+
+The first complete product experience does not require an account. Onboarding
+offers exactly one full free daily routine: one movement, five sets,
+movement-specific reps/cadence, four 20-second rests, and completion. Earned
+progress/history remains available locally after completion, including for a
+signed-out limited Home state. Account creation/sign-in is required before
+Trial/Subscription. The account options are Apple, Google, and Email.
+
+The locked subscription structure is Monthly **USD $9.99/month** and Annual
+**USD $39.99/year**, with Annual selected by default/recommended. The 3-Month
+plan is removed; the 3-Day Free Trial remains. The paywall can be closed and
+must include Restore Purchases, Terms, Privacy, and clear trial/post-trial/
+auto-renewal/cancellation disclosure. Closing the paywall does not grant
+ongoing free daily training.
+
+Restore Purchases re-checks an existing valid App Store entitlement; it does
+not restart a fully expired subscription or undo cancellation. A cancelled
+subscription remains active until its paid-through expiration. **No active
+training entitlement → No active accountability lock.** Account deletion,
+subscription utility behavior, and purchase restoration remain release
+requirements.

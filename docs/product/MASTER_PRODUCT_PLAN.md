@@ -490,7 +490,11 @@ Account creation should not block the user's first product experience.
 
 The product should allow the user to understand the value first.
 
-After the initial experience, the user can be encouraged to save progress.
+After the first full free routine, the user can be encouraged to save progress.
+The user may decline and retain locally earned progress/history in a limited
+signed-out Home state, but must create/sign in to an account before starting
+Trial or Subscription. Account options are Continue with Apple, Continue with
+Google, and Continue with Email.
 
 Authentication direction includes:
 
@@ -510,13 +514,18 @@ Detailed requirements are defined in `MVP_SCOPE.md`.
 
 The product uses a subscription model.
 
-Current direction:
+Locked Phase 04 direction:
 
 - first full routine experience free;
 - then 3-Day Free Trial;
-- Monthly;
-- 3-Month;
-- Annual.
+- Monthly at USD $9.99/month;
+- Annual at USD $39.99/year, default recommended.
+
+The 3-Month plan is removed. The paywall may be closed; closing it does not
+grant ongoing free training. Restore Purchases, Terms, Privacy, clear trial and
+renewal disclosure, account deletion, and subscription utility behavior are
+release requirements. No active training entitlement means no active
+accountability lock.
 
 RevenueCat is planned for subscription entitlement management.
 
@@ -725,9 +734,9 @@ Current high-level roadmap:
 
 03 — Technical Feasibility
 
-04 — UX Architecture
+04 — UX Architecture (Closed / Passed)
 
-05 — Visual System
+05 — Visual System / Figma Design System (Next)
 
 06 — Full UI Design
 
