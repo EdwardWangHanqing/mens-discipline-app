@@ -209,11 +209,23 @@ The active Phase 05 visual-system file is:
 It preserves earlier exploration by starting a new file and organizes the
 active direction as `00 Cover`, `01 Foundations`, `02 Components`, and
 `03 Screens`. It contains local Precision Graphite color/geometry variables,
-SF Pro text styles, core component families, and four canonical visual states:
-Home, Train Tab, immersive Guided Session, and locked Locks. The Home design
+SF Pro text styles, core component families, and canonical Home, Train Tab,
+immersive Guided Session, guided Rest, and locked Locks states. The Home design
 contains the mandatory monthly calendar; immersive Train intentionally hides
 bottom navigation; Locks uses the locked `3 × 5-minute` non-stackable Grace
 semantics. It contains no Camera/Vision UI or invented performance metrics.
+
+The Fidelity v2 correction pass keeps the original four screens as explicitly
+named Archive frames and adds a separate active comparison set. Fidelity v2
+makes Home vertically scrollable with a fixed three-item navigation bar,
+connects its `5 / 7` weekly ring and seven-cell Weekly Consistency module to
+the same real weekly denominator, uses centered 32 × 32 Calendar Day variants,
+and moves the calendar/lifetime metrics below the first viewport. Train now
+uses an intentional Coach / Media Stage placeholder rather than provisional
+human art, plus five-segment set progress and a 20-second Rest state. Locks now
+uses the stronger Accountability Lock hierarchy, four selected-app rows and
+the clear `3 remaining / Use 5 min` Grace treatment. The v2 state remains
+awaiting Owner visual approval before Phase 06 expansion.
 
 The Coach depiction is a deliberately restrained graphic placeholder / art
 direction marker, not a final production asset. Owner visual approval is needed
