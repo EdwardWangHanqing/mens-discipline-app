@@ -227,21 +227,18 @@ uses the stronger Accountability Lock hierarchy, four selected-app rows and
 the clear `3 remaining / Use 5 min` Grace treatment. The v2 state remains
 awaiting Owner visual approval before Phase 06 expansion.
 
-The active Home-only Fidelity v3 pass is the current preferred Home reference.
-It archives the v2 Home without deletion and uses the Owner-provided Precision
-Graphite Home composition: restrained greeting header with visual/profile
+The active Home-only Fidelity v4 pass is the current preferred Home reference.
+It preserves v3 as an archive and aligns Home to the Owner-provided full-page
+Precision Graphite reference: restrained greeting header with visual/profile
 anchors; one Momentum card with `12 DAYS IN A ROW`, meaningful `5 / 7` weekly
 ring and integrated seven-cell Weekly Consistency; a structured Tonight's
-Routine card with a Coach placeholder, `1 / 5 / 18` metrics and a fixed
-20-second-rest strip; a vertically scrollable premium monthly consistency
-calendar; factual Lifetime Progress; and a fixed Home / Train / Locks bar. It
-does not add an invented duration, performance score, Camera/Vision behavior,
-or fourth tab. The owner-selected Home visual reference is now the aesthetic
-anchor for further Home work.
-
-The Coach depiction is a deliberately restrained graphic placeholder / art
-direction marker, not a final production asset. Owner visual approval is needed
-before broad Phase 06 expansion.
+Routine card with `1 / 5 / 18` metrics and a fixed 20-second-rest strip; a
+vertically scrollable monthly consistency calendar; factual Lifetime Progress;
+and Home / Train / Locks navigation. The actual Owner-provided kneeling coach
+PNG is now uploaded to Figma and used as the left-side image beside `Kneeling
+Drive`, replacing the v3 placeholder. It does not add an invented duration,
+performance score, Camera/Vision behavior, or fourth tab. Owner visual approval
+is still needed before broad Phase 06 expansion.
 
 ## Release / Privacy State
 
