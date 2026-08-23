@@ -250,6 +250,18 @@ now used as the central Coach Media slot. This is explicitly a replaceable
 media container for a later approved GIF or video; no GIF/video behavior,
 camera feature, or new training mechanic was introduced.
 
+Home now also has a component-backed Unrevealed state. The existing locked
+baseline `Scrollable Home content - Locked` remains unchanged as the approved
+Revealed visual source. `Home / Unrevealed / Active Momentum` is a direct
+duplicate with identical 394 × 1324 scroll dimensions and all non-Routine
+layers preserved; its only replacement is a `Routine/Card` instance with
+`State=Unrevealed`. `Routine/Card` is now a two-variant component set:
+`State=Revealed` preserves the approved Kneeling Drive appearance, while
+`State=Unrevealed` uses the Owner-provided restrained dark Coach image, `Your
+movement is ready.`, a `COMPLETE BEFORE 9:00 PM` accountability cue, and
+`REVEAL`. It adds no reveal gamification, new color language, Camera/Vision
+behavior, or product mechanic.
+
 ## Release / Privacy State
 
 - Camera permission and production Vision behavior are not MVP release
