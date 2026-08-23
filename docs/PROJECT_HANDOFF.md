@@ -1,10 +1,10 @@
 # Men's Discipline App — Project Handoff
 
-**Last updated:** 2026-08-22 (America/Vancouver)
+**Last updated:** 2026-08-23 (America/Vancouver)
 
 **Repository:** `/Users/hanqingwang/Developer/mens-discipline-app`
 
-**Active branch:** `chore/add-phase-04-ux-design-handoff` (documentation sync)
+**Active branch:** `chore/phase-05-precision-graphite-figma` (Figma visual-system checkpoint)
 
 **Phase 03.10 integration checkpoint:** `main` at `c398be46ecae5dd9e97c89f2922cb1cb3a73f898`
 
@@ -18,7 +18,7 @@
 
 **Phase 04 status:** Closed / Passed
 
-**Next planned phase:** Phase 05 — Visual System / Figma Design System
+**Phase 05 status:** In progress — first Figma visual-system checkpoint created; awaiting Owner visual approval
 
 ## Purpose and Authority
 
@@ -201,9 +201,23 @@ revoke/deny/recovery, force-quit Incomplete, force-quit Completed and reboot. It
 evidence is recorded in
 `docs/technical/FAMILY_CONTROLS_RELIABILITY_RELEASE_BASELINE.md`.
 
-The next project phase is ready for Phase 05 Visual System / Figma Design System
-work. This documentation sync does not implement the visual system or product
-code.
+The active Phase 05 visual-system file is:
+
+- `Men's Discipline — Precision Graphite`
+- https://www.figma.com/design/4MSAwi2syAr6Hc2P0XEd55
+
+It preserves earlier exploration by starting a new file and organizes the
+active direction as `00 Cover`, `01 Foundations`, `02 Components`, and
+`03 Screens`. It contains local Precision Graphite color/geometry variables,
+SF Pro text styles, core component families, and four canonical visual states:
+Home, Train Tab, immersive Guided Session, and locked Locks. The Home design
+contains the mandatory monthly calendar; immersive Train intentionally hides
+bottom navigation; Locks uses the locked `3 × 5-minute` non-stackable Grace
+semantics. It contains no Camera/Vision UI or invented performance metrics.
+
+The Coach depiction is a deliberately restrained graphic placeholder / art
+direction marker, not a final production asset. Owner visual approval is needed
+before broad Phase 06 expansion.
 
 ## Release / Privacy State
 

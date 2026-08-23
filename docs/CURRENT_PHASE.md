@@ -6,9 +6,12 @@ Men's Discipline App
 
 ## Current Phase
 
-**04 — UX Architecture (Closed / Passed)**
+**05 — Precision Graphite Visual System / Figma Design System (In progress)**
 
-**Next planned phase:** 05 — Visual System / Figma Design System
+**Current checkpoint:** A new active Precision Graphite Figma file now contains
+foundations, local variables, core reusable components, and the first
+high-fidelity Home, Train Tab, immersive Guided Session, and locked Locks
+screens. It awaits Owner visual approval before Phase 06 expansion.
 
 Phase 04 is closed and passed. The UX architecture is now the source for
 visual-system work; Phase 05 must translate the locked behavior into visual
