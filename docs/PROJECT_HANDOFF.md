@@ -240,6 +240,16 @@ Drive`, replacing the v3 placeholder. It does not add an invented duration,
 performance score, Camera/Vision behavior, or fourth tab. Owner visual approval
 is still needed before broad Phase 06 expansion.
 
+The active Train-only Fidelity v4 pass is the current preferred Train-tab
+reference. It preserves all earlier Train variants and translates the
+Owner-provided reference into the Train preparation view: Current Movement,
+Kneeling Drive focus copy, five-segment `SET 3 OF 5` progress, an 8-rep / 20
+second-rest detail card, concise coaching instruction, Start Set action, and
+the Train-selected bottom navigation. The Owner-provided kneeling coach PNG is
+now used as the central Coach Media slot. This is explicitly a replaceable
+media container for a later approved GIF or video; no GIF/video behavior,
+camera feature, or new training mechanic was introduced.
+
 ## Release / Privacy State
 
 - Camera permission and production Vision behavior are not MVP release
