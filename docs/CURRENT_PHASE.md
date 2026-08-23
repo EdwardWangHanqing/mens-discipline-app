@@ -14,6 +14,10 @@ Phase 04 is closed and passed. The UX architecture is now the source for
 visual-system work; Phase 05 must translate the locked behavior into visual
 tokens, components, and screens without redesigning product behavior.
 
+Detailed UX source of truth for Phase 05 Visual System, Phase 06 Full UI Design,
+and later implementation:
+`docs/product/PHASE_04_UX_DESIGN_HANDOFF.md`.
+
 ## Completed Sub-phases
 
 - 03.1 — Project Bootstrap
@@ -222,6 +226,11 @@ specification, production Lock/Grace/Skip/Replace, RevenueCat, auth/backend,
 analytics, and other new feature work remain future implementation work.
 
 ## Phase 04 Closure Record
+
+The complete design-facing UX contract is maintained in
+`docs/product/PHASE_04_UX_DESIGN_HANDOFF.md`. Read it before visual design,
+Figma work, or UI implementation. Phase 05 may design the visual expression,
+but must preserve the locked UX behavior and state semantics.
 
 **Status:** Closed / Passed on 2026-08-22 per Owner decision.
 

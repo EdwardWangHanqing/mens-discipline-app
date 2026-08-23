@@ -4,11 +4,11 @@
 
 **Repository:** `/Users/hanqingwang/Developer/mens-discipline-app`
 
-**Active branch:** `chore/phase-04-closure-doc-sync` (documentation sync)
+**Active branch:** `chore/add-phase-04-ux-design-handoff` (documentation sync)
 
 **Phase 03.10 integration checkpoint:** `main` at `c398be46ecae5dd9e97c89f2922cb1cb3a73f898`
 
-**Accepted main checkpoint:** `main` at `c398be46ecae5dd9e97c89f2922cb1cb3a73f898`
+**Accepted main checkpoint:** `main` at `9a0d9ffcd6887bb64525a0b8933f7edf3efd0c58`
 
 **Phase 03.11 merged checkpoint:** `main` at `5b8cca697b601aff9a7d31759f6ec0309f2d7756`
 
@@ -32,6 +32,10 @@ When documents conflict, follow:
 3. `docs/product/MVP_SCOPE.md`;
 4. `docs/product/MASTER_PRODUCT_PLAN.md`;
 5. latest Owner decisions in the current project memory update.
+
+For UX, visual-design, Figma, or UI-implementation work, also read the detailed
+Phase 04 contract:
+`docs/product/PHASE_04_UX_DESIGN_HANDOFF.md`.
 
 Always start with `git status --short --branch` and preserve existing work. Phase
 03.11 has owner approval and is now fast-forward integrated into `main`.
@@ -127,6 +131,12 @@ No Family Controls capability, entitlement, App Group, Bundle ID, selected-app
 privacy boundary, or existing reliability conclusion changed in Phase 03.10.
 
 ## Phase 04 Closure and Next Safe Task
+
+The permanent design/implementation UX source of truth is
+`docs/product/PHASE_04_UX_DESIGN_HANDOFF.md`. It consolidates the accepted
+Phase 04 behavior for Phase 05 Visual System, Phase 06 Full UI Design, and
+later implementation. Read it before visual work; visual expression may change,
+but UX behavior is locked.
 
 Phase 04 UX Architecture is **closed / passed** as of 2026-08-22. The final
 structure is **Home | Train | Locks**: Home is Today/Momentum/progress, Train

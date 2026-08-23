@@ -16,6 +16,12 @@ Minimum startup reading for meaningful product/technical work:
 4. `docs/DECISIONS.md`
 5. `docs/product/MASTER_PRODUCT_PLAN.md` when broader context is needed
 
+For meaningful UX, visual-design, Figma, or UI-implementation work, also read
+`docs/product/PHASE_04_UX_DESIGN_HANDOFF.md`. It is the detailed locked Phase
+04 UX contract for Phase 05 Visual System, Phase 06 Full UI Design, and later
+implementation. Visual work may change expression, but must not redesign the
+behavior defined there.
+
 Keep `docs/PROJECT_HANDOFF.md` current when a meaningful checkpoint is completed, the active branch or phase changes, validation status changes, a new external blocker appears, or owner intervention changes the development plan. It is a continuity summary, not a replacement for the authoritative product, decision, release, or business documents.
 
 Also read:
