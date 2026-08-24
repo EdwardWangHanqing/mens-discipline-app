@@ -240,15 +240,13 @@ Drive`, replacing the v3 placeholder. It does not add an invented duration,
 performance score, Camera/Vision behavior, or fourth tab. Owner visual approval
 is still needed before broad Phase 06 expansion.
 
-The active Train-only Fidelity v4 pass is the current preferred Train-tab
-reference. It preserves all earlier Train variants and translates the
-Owner-provided reference into the Train preparation view: Current Movement,
-Kneeling Drive focus copy, five-segment `SET 3 OF 5` progress, an 8-rep / 20
-second-rest detail card, concise coaching instruction, Start Set action, and
-the Train-selected bottom navigation. The Owner-provided kneeling coach PNG is
-now used as the central Coach Media slot. This is explicitly a replaceable
-media container for a later approved GIF or video; no GIF/video behavior,
-camera feature, or new training mechanic was introduced.
+The earlier Train-only Fidelity v4 screen is preserved in Figma as
+`REFERENCE ONLY — DO NOT IMPLEMENT — Train — Fidelity v4 (Owner Image
+Reference)`. It is visual source material only and its former manual
+`START SET` interaction is not production UX. The uploaded Kneeling Drive
+Coach image remains the explicitly replaceable central media container for a
+later approved GIF or video; no GIF/video behavior, camera feature, or new
+training mechanic was introduced.
 
 Home now also has a component-backed Unrevealed state. The existing locked
 baseline `Scrollable Home content - Locked` remains unchanged as the approved
@@ -281,11 +279,36 @@ status row. Skipped uses `Skipped today.`, neutral unavailable treatment and
 the momentum-restart hero. No reveal-game, rarity, XP, glow, new color language
 or product mechanic was added.
 
-Train now covers Ready Overview, Active Set 1, Rest Between Sets, Active Mid
-Session, Active Final Set and Complete, all at 393 × 852. Active states use the
-uploaded Kneeling Drive Coach media; rest visibly remains 20 seconds and final
-completion is `ROUTINE COMPLETE.` / `Apps unlocked.` with the back-to-Home
-route. Locks now includes active, unlocked, Grace active, Skip used, no-active
+The Phase 05 Train correction pass now has a distinct, QA-reviewed 14-frame
+state map at 393 × 852: the clearly separated Owner reference; Train Tab
+`Unrevealed`, `Ready / Overview`, `Recoverable`, `Completed / Tab State`,
+`Skipped`, and `Post-Free / No Entitlement`; plus immersive `Session /
+Countdown`, `Active / Set 1`, `Rest / Between Sets`, `Active / Mid Session`,
+`Active / Final Set`, `Paused`, and `Completion / Reward`. Tab states retain
+Home / Train / Locks navigation and have no root Back or Settings controls.
+Immersive states hide the navigation; the guided flow is automatic from
+countdown through five sets with exactly four 20-second rests and no rest after
+Set 5.
+
+Ready starts with five neutral set indicators and a full, informational
+`0:20` rest ring. Active set, completed set, and future set treatments are
+distinct, and the guided-position bars match their shown `8 / 18` and `14 /
+18` values. Rest is labelled `20-SECOND REST` and starts full at `0:20` before
+depleting; it has neither early-start nor skip controls. Pause freezes the
+session and offers Resume, conditional daily Replace, and End Session; the
+resulting Recoverable state preserves completed-set checkpoints and restarts an
+incomplete set. Completion is a separate immersive reward with `CONTINUE`, all
+five segments complete, and no bottom navigation. A local `Train /
+Accountability Outcome` component set supplies contextual `Apps Unlocked`,
+`Clear for Today`, `No Apps Selected`, and `Locks Unavailable` variants. The
+Owner-provided open-lock App Grid image is used only by the Apps Unlocked
+variant, so the design never claims an unlock when that outcome did not occur.
+Completed, Skipped, and No Entitlement are calm normal tab states; No
+Entitlement does not expose a new movement and routes to the three-day trial.
+No external asset, SDK, permission, native capability, privacy, or release
+behavior changed.
+
+Locks now includes active, unlocked, Grace active, Skip used, no-active
 accountability, manage-apps and lock-schedule states plus Grace and Skip bottom
 sheet confirmations. Grace remains 5 minutes, non-stackable, with remaining
 uses; Skip documents its irreversible same-day consequences and hold confirm.
