@@ -262,6 +262,19 @@ movement is ready.`, a `COMPLETE BEFORE 9:00 PM` accountability cue, and
 `REVEAL`. It adds no reveal gamification, new color language, Camera/Vision
 behavior, or product mechanic.
 
+The Phase 05 Home state matrix now also includes `Home / Recoverable / Active
+Momentum`, `Home / Completed / Active Momentum`, and `Home / Skipped / Active
+Momentum`, each copied from `Home / Revealed / Active Momentum` at 394 × 1324.
+All non-Routine/Card layers remain identical to that approved baseline,
+including the graphite surfaces, momentum, weekly consistency, calendar,
+lifetime progress, and bottom navigation. `Routine/Card` is now a five-state
+component set: Revealed, Unrevealed, Recoverable, Completed, and Skipped.
+Recoverable shows 2 of 5 sets completed and `RESUME`; Completed has a restrained
+completion status and resting `WELL DONE` action; Skipped retains neutral
+information and a subdued unavailable action. This is visual-system work only:
+no product flow, permission, native capability, SDK, privacy, or release
+behavior changed.
+
 ## Release / Privacy State
 
 - Camera permission and production Vision behavior are not MVP release
