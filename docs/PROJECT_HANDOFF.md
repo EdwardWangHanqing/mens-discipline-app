@@ -293,8 +293,10 @@ Set 5.
 Ready starts with five neutral set indicators and a full, informational
 `0:20` rest ring. Active set, completed set, and future set treatments are
 distinct, and the guided-position bars match their shown `8 / 18` and `14 /
-18` values. Rest is labelled `20-SECOND REST` and starts full at `0:20` before
-depleting; it has neither early-start nor skip controls. Pause freezes the
+18` values. Rest now shares the Active Set visual hierarchy: Coach media stage,
+five-set progress, the upcoming set's guided `8 / 18` target, matching cadence
+track, a full `0:20` Rest ring, concise coaching cue, and Pause. It transitions
+automatically and has neither early-start nor skip controls. Pause freezes the
 session and offers Resume, conditional daily Replace, and End Session; the
 resulting Recoverable state preserves completed-set checkpoints and restarts an
 incomplete set. Completion is a separate immersive reward with `CONTINUE`, all
