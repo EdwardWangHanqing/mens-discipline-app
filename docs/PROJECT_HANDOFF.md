@@ -18,7 +18,7 @@
 
 **Phase 04 status:** Closed / Passed
 
-**Phase 05 status:** In progress — first Figma visual-system checkpoint created; awaiting Owner visual approval
+**Phase 05 status:** In progress — comprehensive Figma visual-state package complete; awaiting Owner visual approval
 
 ## Purpose and Authority
 
@@ -262,18 +262,43 @@ movement is ready.`, a `COMPLETE BEFORE 9:00 PM` accountability cue, and
 `REVEAL`. It adds no reveal gamification, new color language, Camera/Vision
 behavior, or product mechanic.
 
-The Phase 05 Home state matrix now also includes `Home / Recoverable / Active
-Momentum`, `Home / Completed / Active Momentum`, and `Home / Skipped / Active
-Momentum`, each copied from `Home / Revealed / Active Momentum` at 394 × 1324.
-All non-Routine/Card layers remain identical to that approved baseline,
-including the graphite surfaces, momentum, weekly consistency, calendar,
-lifetime progress, and bottom navigation. `Routine/Card` is now a five-state
-component set: Revealed, Unrevealed, Recoverable, Completed, and Skipped.
-Recoverable shows 2 of 5 sets completed and `RESUME`; Completed has a restrained
-completion status and resting `WELL DONE` action; Skipped retains neutral
-information and a subdued unavailable action. This is visual-system work only:
-no product flow, permission, native capability, SDK, privacy, or release
-behavior changed.
+The Phase 05 comprehensive visual-state package has completed a 31-frame Figma
+pass on `03 Screens`, with visual QA and a structural name audit (31 required /
+31 present). Home now has seven 394 × 1324 scroll states: Revealed,
+Unrevealed, Recoverable, Completed, Skipped, First-Ever Unrevealed and
+Post-Free No Entitlement. All are derived from the approved revealed baseline
+where applicable; unchanged header, momentum, consistency, calendar, lifetime
+progress, navigation, surface and spacing expression are preserved.
+
+`Routine/Card` is now a six-state component set: Revealed, Unrevealed,
+Recoverable, Completed, Skipped and Post-Free. Revealed preserves the approved
+Kneeling Drive appearance. Unrevealed uses the restrained concealed image,
+`Your movement is ready.`, accountability cue and `REVEAL`; First-Ever removes
+earned-momentum treatment; Post-Free shows the entitlement pause and trial
+route. Recoverable exposes `2 OF 5 SETS COMPLETED` and `RESUME`. Completed is
+centered, removes `WELL DONE`, and uses a quiet yellow `MOVEMENT COMPLETE`
+status row. Skipped uses `Skipped today.`, neutral unavailable treatment and
+the momentum-restart hero. No reveal-game, rarity, XP, glow, new color language
+or product mechanic was added.
+
+Train now covers Ready Overview, Active Set 1, Rest Between Sets, Active Mid
+Session, Active Final Set and Complete, all at 393 × 852. Active states use the
+uploaded Kneeling Drive Coach media; rest visibly remains 20 seconds and final
+completion is `ROUTINE COMPLETE.` / `Apps unlocked.` with the back-to-Home
+route. Locks now includes active, unlocked, Grace active, Skip used, no-active
+accountability, manage-apps and lock-schedule states plus Grace and Skip bottom
+sheet confirmations. Grace remains 5 minutes, non-stackable, with remaining
+uses; Skip documents its irreversible same-day consequences and hold confirm.
+
+Supporting screen coverage now includes the closable annual-default paywall
+($39.99/year, $9.99/month, 3-day free trial, disclosure, Restore Purchases,
+Terms and Privacy), account sign-up/sign-in, Profile Overview/History/
+Milestones, and Settings Overview/Notifications/Lock Preferences. Profile and
+Settings do not inherit the primary Home/Train/Locks tab bar. The existing
+uploaded Coach asset was reused; no external asset, SDK, permission, native
+capability, privacy or release behavior changed. The durable state record is
+`/tmp/design-system-state-full-package-2026-08-23.json`; it records completed
+frame IDs and the remaining owner visual review.
 
 ## Release / Privacy State
 
