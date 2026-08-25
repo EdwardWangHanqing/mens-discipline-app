@@ -109,6 +109,10 @@ public class ExpoFamilyControlsModule: Module {
 
     Events(authorizationStatusChangedEvent)
 
+    View(SelectedActivitiesView.self) {
+      ViewName("SelectedActivitiesView")
+    }
+
     OnCreate {
       let timestampMs = Self.currentTimestampMs()
       FamilyControlsAuthorizationTimeline.shared.recordModuleInitialized(

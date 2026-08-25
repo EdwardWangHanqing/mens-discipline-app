@@ -9,7 +9,10 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeIn, FadeInRight, FadeOut, LinearTransition } from 'react-native-reanimated';
+import Svg, { Circle } from 'react-native-svg';
 
+import { SelectedActivitiesView } from '../../modules/family-controls';
 import {
   Body,
   Card,
@@ -35,6 +38,13 @@ import { colors, radii, spacing, typography } from '../theme/designSystem';
 
 export type MainTab = 'home' | 'train' | 'locks';
 export type DailyStatus = 'unrevealed' | 'revealed' | 'inProgress' | 'completed' | 'skipped';
+export type ProgressSummary = {
+  sessions: number;
+  cycles: number;
+  momentumDays: number;
+  longestMomentum: number;
+  completedDates: string[];
+};
 
 type Subscreen =
   | 'main'
@@ -55,24 +65,28 @@ export function MainExperience({
   tab,
   setTab,
   dailyStatus,
+  progress,
   setDailyStatus,
   onFreeRoutineComplete,
   onOpenAccount,
   onOpenPaywall,
   onResetOnboarding,
   onChooseApps,
+  onSkipToday,
 }: {
   nickname: string;
   draft: OnboardingDraft;
   tab: MainTab;
   setTab: (tab: MainTab) => void;
   dailyStatus: DailyStatus;
+  progress: ProgressSummary;
   setDailyStatus: (status: DailyStatus) => void;
   onFreeRoutineComplete: () => void;
   onOpenAccount: () => void;
   onOpenPaywall: () => void;
   onResetOnboarding: () => void;
   onChooseApps: () => void;
+  onSkipToday: () => void;
 }) {
   const [subscreen, setSubscreen] = useState<Subscreen>('main');
   const [session, setSession] = useState<SessionPhase | null>(null);
@@ -164,10 +178,19 @@ export function MainExperience({
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <View style={styles.mainShell}>
+        <Animated.View
+          key={tab}
+          entering={FadeInRight.duration(240)}
+          exiting={FadeOut.duration(120)}
+          layout={LinearTransition.duration(200)}
+          style={styles.tabScene}
+        >
         {tab === 'home' ? (
           <HomeTab
             nickname={nickname}
             dailyStatus={dailyStatus}
+            progress={progress}
+            lockTime={draft.lockTime}
             reveal={() => setDailyStatus('revealed')}
             begin={() => beginSession(true)}
             resume={() => beginSession(false)}
@@ -194,6 +217,7 @@ export function MainExperience({
             openSchedule={() => setSubscreen('lockSchedule')}
           />
         ) : null}
+        </Animated.View>
         <BottomNavigation selected={tab} onSelect={setTab} />
       </View>
       {confirmation ? (
@@ -202,7 +226,7 @@ export function MainExperience({
           onCancel={() => setConfirmation(null)}
           onConfirm={() => {
             if (confirmation === 'grace') setGraceActive(true);
-            if (confirmation === 'skip') setDailyStatus('skipped');
+            if (confirmation === 'skip') onSkipToday();
             setConfirmation(null);
           }}
         />
@@ -259,6 +283,8 @@ export function MainExperience({
 function HomeTab({
   nickname,
   dailyStatus,
+  progress,
+  lockTime,
   reveal,
   begin,
   resume,
@@ -266,12 +292,13 @@ function HomeTab({
 }: {
   nickname: string;
   dailyStatus: DailyStatus;
+  progress: ProgressSummary;
+  lockTime: string;
   reveal: () => void;
   begin: () => void;
   resume: () => void;
   openProfile: () => void;
 }) {
-  const completed = dailyStatus === 'completed';
   return (
     <ScrollView style={styles.tabContent} contentContainerStyle={styles.homeContent} showsVerticalScrollIndicator={false}>
       <View style={styles.homeHeader}>
@@ -284,34 +311,51 @@ function HomeTab({
         </Pressable>
       </View>
 
-      <MomentumCard completed={completed} />
-      <MovementCard dailyStatus={dailyStatus} reveal={reveal} begin={begin} resume={resume} />
-      <CalendarCard completed={completed} skipped={dailyStatus === 'skipped'} />
+      <MomentumCard progress={progress} />
+      <MovementCard dailyStatus={dailyStatus} lockTime={lockTime} reveal={reveal} begin={begin} resume={resume} />
+      <CalendarCard completedDates={progress.completedDates} skipped={dailyStatus === 'skipped'} />
       <Card style={styles.lifetimeCard}>
         <Eyebrow>Lifetime Progress</Eyebrow>
         <View style={styles.metricRow}>
-          <Metric value={completed ? 27 : 26} label="Sessions" />
+          <Metric value={progress.sessions} label="Sessions" />
           <View style={styles.metricDivider} />
-          <Metric value="3" label="Cycles" />
+          <Metric value={progress.cycles} label="Cycles" />
           <View style={styles.metricDivider} />
-          <Metric value="12" label="Longest" />
+          <Metric value={progress.longestMomentum} label="Longest" />
         </View>
       </Card>
     </ScrollView>
   );
 }
 
-function MomentumCard({ completed }: { completed: boolean }) {
+function MomentumCard({ progress }: { progress: ProgressSummary }) {
+  const weekCount = Math.min(7, progress.completedDates.filter(isDateInCurrentWeek).length);
   return (
     <Card style={styles.momentumCard}>
       <View style={styles.momentumTop}>
         <View>
           <Eyebrow>Momentum</Eyebrow>
-          <Text style={styles.momentumValue}>{completed ? 13 : 12}</Text>
+          <Text style={styles.momentumValue}>{progress.momentumDays}</Text>
           <Eyebrow accent>Days of momentum</Eyebrow>
         </View>
         <View style={styles.weekRing}>
-          <Text style={styles.weekRingValue}>{completed ? '6/7' : '5/7'}</Text>
+          <Svg width={112} height={112} style={StyleSheet.absoluteFill}>
+            <Circle cx={56} cy={56} r={48} fill="none" stroke={colors.borderStrong} strokeWidth={9} />
+            <Circle
+              cx={56}
+              cy={56}
+              r={48}
+              fill="none"
+              stroke={colors.accent}
+              strokeWidth={9}
+              strokeLinecap="round"
+              strokeDasharray={`${2 * Math.PI * 48}`}
+              strokeDashoffset={`${2 * Math.PI * 48 * (1 - weekCount / 7)}`}
+              rotation="-90"
+              origin="56, 56"
+            />
+          </Svg>
+          <Text style={styles.weekRingValue}>{weekCount}/7</Text>
           <Text style={styles.weekRingLabel}>WEEK</Text>
         </View>
       </View>
@@ -319,7 +363,9 @@ function MomentumCard({ completed }: { completed: boolean }) {
       <Eyebrow>Weekly Consistency</Eyebrow>
       <View style={styles.weekDays}>
         {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => {
-          const done = index < (completed ? 6 : 5);
+          const dayDate = startOfCurrentWeek();
+          dayDate.setDate(dayDate.getDate() + index);
+          const done = progress.completedDates.includes(localDateKey(dayDate));
           return (
             <View key={`${day}-${index}`} style={[styles.dayCell, done && styles.dayCellDone]}>
               <Text style={[styles.dayLetter, done && styles.dayLetterDone]}>{day}</Text>
@@ -334,11 +380,13 @@ function MomentumCard({ completed }: { completed: boolean }) {
 
 function MovementCard({
   dailyStatus,
+  lockTime,
   reveal,
   begin,
   resume,
 }: {
   dailyStatus: DailyStatus;
+  lockTime: string;
   reveal: () => void;
   begin: () => void;
   resume: () => void;
@@ -387,8 +435,10 @@ function MovementCard({
         <Metric value="20" label="Reps" />
       </View>
       <View style={styles.deadlineRow}>
-        <Icon name="clock" color={colors.secondary} size={16} />
-        <Text style={styles.deadlineText}>Complete before 9:00 PM</Text>
+        <Icon name={completed ? 'checkmark.circle.fill' : 'clock'} color={completed ? colors.accent : colors.secondary} size={16} />
+        <Text style={[styles.deadlineText, completed && styles.deadlineTextComplete]}>
+          {completed ? 'MOVEMENT COMPLETE' : `Complete before ${lockTime}`}
+        </Text>
       </View>
       {!completed && !skipped ? (
         <PrimaryButton
@@ -400,35 +450,48 @@ function MovementCard({
   );
 }
 
-function CalendarCard({ completed, skipped }: { completed: boolean; skipped: boolean }) {
-  const days = Array.from({ length: 30 }, (_, index) => index + 1);
+function CalendarCard({ completedDates, skipped }: { completedDates: string[]; skipped: boolean }) {
+  const today = new Date();
+  const [visibleMonth, setVisibleMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
+  const daysInMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 0).getDate();
+  const days = Array.from({ length: daysInMonth }, (_, index) => index + 1);
+  const mondayOffset = (new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1).getDay() + 6) % 7;
+  const monthTitle = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(visibleMonth).toUpperCase();
   return (
     <View style={styles.calendarSection}>
-      <Text style={styles.calendarTitle}>AUGUST 2026</Text>
+      <View style={styles.calendarHeader}>
+        <Text style={styles.calendarTitle}>{monthTitle}</Text>
+        <View style={styles.calendarArrows}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Previous month" onPress={() => setVisibleMonth((value) => new Date(value.getFullYear(), value.getMonth() - 1, 1))} style={styles.calendarArrow}>
+            <Icon name="chevron.left" color={colors.secondary} size={16} />
+          </Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Next month" onPress={() => setVisibleMonth((value) => new Date(value.getFullYear(), value.getMonth() + 1, 1))} style={styles.calendarArrow}>
+            <Icon name="chevron.right" color={colors.secondary} size={16} />
+          </Pressable>
+        </View>
+      </View>
       <View style={styles.calendarGrid}>
         {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => (
           <Text key={`${day}-${index}`} style={styles.calendarWeekday}>{day}</Text>
         ))}
-        <View style={styles.calendarSpacer} />
-        <View style={styles.calendarSpacer} />
-        <View style={styles.calendarSpacer} />
-        <View style={styles.calendarSpacer} />
-        <View style={styles.calendarSpacer} />
+        {Array.from({ length: mondayOffset }, (_, index) => <View key={`spacer-${index}`} style={styles.calendarSpacer} />)}
         {days.map((day) => {
-          const done = day >= 3 && day <= 10;
-          const today = day === 12;
+          const date = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), day);
+          const dateKey = localDateKey(date);
+          const done = completedDates.includes(dateKey) && date <= today;
+          const isToday = dateKey === localDateKey(today);
           return (
-            <View
-              key={day}
-              style={[
-                styles.calendarDay,
-                done && styles.calendarDayDone,
-                today && styles.calendarDayToday,
-                today && completed && styles.calendarDayDone,
-                today && skipped && styles.calendarDaySkipped,
-              ]}
-            >
-              <Text style={[styles.calendarDayText, done && styles.calendarDayTextDone]}>{day}</Text>
+            <View key={day} style={styles.calendarDaySlot}>
+              <View
+                style={[
+                  styles.calendarDay,
+                  done && styles.calendarDayDone,
+                  isToday && styles.calendarDayToday,
+                  isToday && skipped && styles.calendarDaySkipped,
+                ]}
+              >
+                <Text style={[styles.calendarDayText, done && styles.calendarDayTextDone]}>{day}</Text>
+              </View>
             </View>
           );
         })}
@@ -534,45 +597,28 @@ function LocksTab({
 }) {
   const completed = dailyStatus === 'completed';
   const skipped = dailyStatus === 'skipped';
-  const selectedApps = ['Instagram', 'TikTok', 'Reddit', 'YouTube'].slice(0, selectedAppCount || 0);
+  const appsAvailable = completed || graceActive;
   return (
     <ScrollView style={styles.tabContent} contentContainerStyle={styles.locksContent} showsVerticalScrollIndicator={false}>
-      <Eyebrow>Accountability Lock</Eyebrow>
-      <Card style={styles.lockHero}>
-        <View style={styles.lockHeroCopy}>
-          <Text style={styles.lockHeroTitle}>
-            {!selectedAppCount ? 'NO APPS SELECTED' : completed ? 'CLEAR FOR TODAY' : skipped ? 'SKIP TODAY USED' : graceActive ? 'GRACE ACTIVE' : 'APPS LOCKED'}
-          </Text>
-          <Text style={styles.lockHeroSupport}>
-            {!selectedAppCount
-              ? 'Training still works without accountability.'
-              : completed
-                ? 'Today’s movement is complete.'
-                : skipped
-                  ? 'Accountability is closed until tomorrow.'
-                  : graceActive
-                    ? 'Selected apps are available for 5 minutes.'
-                    : 'Complete today’s movement to unlock.'}
-          </Text>
-          <Eyebrow accent>{completed ? 'Cleared' : graceActive ? '5:00 remaining' : skipped ? 'Closed today' : 'Locked now'}</Eyebrow>
+      <View style={styles.locksHeader}>
+        <View style={styles.locksHeaderCopy}>
+          <Eyebrow>Accountability Lock</Eyebrow>
+          <Text style={styles.locksIntro}>Your apps stay locked{`\n`}until you complete tonight’s routine.</Text>
         </View>
-        <View style={styles.lockShield}>
-          <Icon name={completed ? 'checkmark.shield' : 'lock.shield'} color={colors.accent} size={34} />
+        <View style={styles.headerShield}>
+          <Icon name={completed ? 'checkmark.shield.fill' : 'lock.shield.fill'} color={colors.accent} size={38} />
         </View>
-      </Card>
+      </View>
 
       <SectionTitle title="Selected Apps" action="Manage" onPress={openManageApps} />
       <Card style={styles.appsListCard}>
-        {selectedApps.length ? selectedApps.map((app, index) => (
-          <View key={app}>
-            <View style={styles.appRow}>
-              <Icon name="app" color={colors.secondary} size={18} />
-              <Text style={styles.appName}>{app}</Text>
-              <Text style={styles.appState}>{completed || graceActive ? 'AVAILABLE' : 'LOCKED'}</Text>
-            </View>
-            {index < selectedApps.length - 1 ? <Divider /> : null}
-          </View>
-        )) : (
+        {selectedAppCount ? (
+          <SelectedActivitiesView
+            available={appsAvailable}
+            revision={selectedAppCount}
+            style={{ height: Math.max(48, selectedAppCount * 48) }}
+          />
+        ) : (
           <View style={styles.emptyApps}>
             <Text style={styles.emptyAppsTitle}>No apps selected</Text>
             <Text style={styles.emptyAppsCopy}>Set this up anytime without interrupting training.</Text>
@@ -580,33 +626,50 @@ function LocksTab({
         )}
       </Card>
 
-      <SectionTitle title="Lock Time" action="Edit" onPress={openSchedule} />
       <Pressable accessibilityRole="button" accessibilityLabel={`Edit lock time, currently ${lockTime}`} onPress={openSchedule}>
         <Card style={styles.lockTimeCard}>
-          <Icon name="clock" color={colors.secondary} size={24} />
+          <View style={styles.lockTimeIcon}><Icon name="clock" color={colors.secondary} size={26} /></View>
           <View style={styles.lockTimeCopy}>
+            <Eyebrow>Lock Time</Eyebrow>
             <Text style={styles.lockTimeValue}>{lockTime} — 6:00 AM</Text>
-            <Text style={styles.lockTimeSupport}>Changes take effect tomorrow</Text>
+            <Text style={styles.lockTimeSupport}>EVERY DAY</Text>
           </View>
-          <Icon name="chevron.right" color={colors.tertiary} size={16} />
+          <Icon name="chevron.right" color={colors.secondary} size={16} />
         </Card>
       </Pressable>
+
+      {selectedAppCount ? (
+        <Card style={styles.unlockHero}>
+          <View style={styles.unlockRing}>
+            <Icon name={appsAvailable ? 'lock.open.fill' : 'lock.fill'} color={colors.primary} size={28} />
+          </View>
+          <View style={styles.unlockCopy}>
+            <Text style={styles.unlockKicker}>APPS UNLOCK AFTER</Text>
+            <Text style={styles.unlockTitle}>
+              {completed ? 'TODAY’S ROUTINE' : graceActive ? 'GRACE MODE ENDS' : skipped ? 'TOMORROW' : 'TONIGHT’S ROUTINE'}
+            </Text>
+            <Text style={styles.unlockSupport}>{appsAvailable ? 'Accountability cleared.' : 'Stay locked. Stay focused.'}</Text>
+          </View>
+        </Card>
+      ) : null}
 
       {!completed && !skipped && selectedAppCount ? (
         <>
           <SectionTitle title="Need a Break?" />
           <View style={styles.breakActions}>
             <Pressable accessibilityRole="button" accessibilityLabel="Use five-minute Grace" style={styles.breakCard} onPress={requestGrace}>
-              <Icon name="hourglass" color={colors.secondary} size={23} />
-              <Eyebrow>Grace</Eyebrow>
-              <Text style={styles.breakValue}>3 remaining</Text>
-              <Text style={styles.breakAction}>Use 5 min</Text>
+              <Icon name="hourglass" color={colors.primary} size={24} />
+              <View>
+                <Text style={styles.breakValue}>GRACE MODE</Text>
+                <Text style={styles.breakAction}>5 MIN</Text>
+              </View>
             </Pressable>
             <Pressable accessibilityRole="button" accessibilityLabel="Skip today" style={styles.breakCard} onPress={requestSkip}>
-              <Icon name="lock" color={colors.secondary} size={23} />
-              <Eyebrow>Skip Today</Eyebrow>
-              <Text style={styles.breakValue}>Emergency exit</Text>
-              <Text style={styles.breakSupport}>Hold to confirm</Text>
+              <Icon name="forward.end.fill" color={colors.primary} size={24} />
+              <View>
+                <Text style={styles.breakValue}>SKIP TODAY</Text>
+                <Text style={styles.breakSupport}>ONCE PER DAY</Text>
+              </View>
             </Pressable>
           </View>
         </>
@@ -950,18 +1013,30 @@ function LockScheduleScreen({ lockTime, onBack }: { lockTime: string; onBack: ()
 function ConfirmationSheet({ type, onCancel, onConfirm }: { type: 'grace' | 'skip'; onCancel: () => void; onConfirm: () => void }) {
   const grace = type === 'grace';
   return (
-    <View style={styles.confirmationOverlay}>
+    <Animated.View entering={FadeIn.duration(180)} style={styles.confirmationOverlay}>
       <Pressable accessibilityRole="button" accessibilityLabel="Dismiss confirmation" style={StyleSheet.absoluteFill} onPress={onCancel} />
-      <View style={styles.confirmationSheet}>
+      <Animated.View entering={FadeInRight.duration(260)} style={styles.confirmationSheet}>
         <Eyebrow>{grace ? 'Grace Mode' : 'Skip Today'}</Eyebrow>
-        <Title compact>{grace ? 'Take five minutes.' : 'Close today’s commitment?'}</Title>
-        <Body muted>{grace ? 'Selected apps will be available for 5 minutes, then lock again.' : 'This ends today without completion and pauses your momentum.'}</Body>
+        <Title compact>{grace ? 'Use 5-Minute Grace?' : 'Skip today?'}</Title>
+        <Body muted>{grace ? 'Apps will be available for 5 minutes.\n2 Grace extensions remain today.' : 'This ends today’s training, resets current momentum, and can’t be undone. Your movement stays in the cycle.'}</Body>
         <View style={styles.confirmationActions}>
-          <PrimaryButton label={grace ? 'Use 5 Minutes' : 'Confirm Skip'} onPress={onConfirm} />
-          <SecondaryButton label="Cancel" onPress={onCancel} />
+          {grace ? (
+            <PrimaryButton label="Use 5-Minute Grace" onPress={onConfirm} />
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Hold to confirm skipping today"
+              onLongPress={onConfirm}
+              delayLongPress={800}
+              style={({ pressed }) => [styles.holdButton, pressed && styles.holdButtonPressed]}
+            >
+              <Text style={styles.holdButtonText}>HOLD TO CONFIRM</Text>
+            </Pressable>
+          )}
+          <SecondaryButton label={grace ? 'Not Now' : 'Keep Today'} onPress={onCancel} />
         </View>
-      </View>
-    </View>
+      </Animated.View>
+    </Animated.View>
   );
 }
 
@@ -1010,9 +1085,33 @@ function SettingToggle({ icon, title, support, initial = false }: { icon: Parame
   );
 }
 
+function localDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function startOfCurrentWeek() {
+  const date = new Date();
+  const mondayOffset = (date.getDay() + 6) % 7;
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() - mondayOffset);
+  return date;
+}
+
+function isDateInCurrentWeek(dateKey: string) {
+  const date = new Date(`${dateKey}T12:00:00`);
+  const start = startOfCurrentWeek();
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7);
+  return date >= start && date < end;
+}
+
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.canvas },
   mainShell: { flex: 1 },
+  tabScene: { flex: 1 },
   tabContent: { flex: 1 },
   homeContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.xxl, gap: spacing.xxxl },
   homeHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.lg },
@@ -1023,7 +1122,7 @@ const styles = StyleSheet.create({
   momentumCard: { gap: spacing.lg, padding: spacing.lg },
   momentumTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   momentumValue: { color: colors.primary, fontSize: 54, lineHeight: 62, fontWeight: '700', marginVertical: spacing.xs },
-  weekRing: { width: 112, height: 112, borderRadius: 56, borderWidth: 10, borderColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
+  weekRing: { width: 112, height: 112, borderRadius: 56, alignItems: 'center', justifyContent: 'center' },
   weekRingValue: { color: colors.primary, fontSize: 25, fontWeight: '700' },
   weekRingLabel: { color: colors.secondary, fontSize: 11, letterSpacing: 1.4, marginTop: 2 },
   weekDays: { flexDirection: 'row', gap: spacing.sm },
@@ -1043,12 +1142,17 @@ const styles = StyleSheet.create({
   metricDivider: { width: StyleSheet.hairlineWidth, backgroundColor: colors.border, marginVertical: spacing.sm },
   deadlineRow: { minHeight: 48, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
   deadlineText: { ...typography.eyebrow, color: colors.secondary },
+  deadlineTextComplete: { color: colors.accent },
   calendarSection: { gap: spacing.xl },
+  calendarHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   calendarTitle: { color: colors.secondary, fontSize: 18, letterSpacing: 2.6 },
+  calendarArrows: { flexDirection: 'row', gap: spacing.sm },
+  calendarArrow: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   calendarGrid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: spacing.md },
   calendarWeekday: { width: '14.285%', color: colors.secondary, fontSize: 12, textAlign: 'center' },
   calendarSpacer: { width: '14.285%', height: 34 },
-  calendarDay: { width: '14.285%', height: 34, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', borderRadius: 17 },
+  calendarDaySlot: { width: '14.285%', height: 34, alignItems: 'center', justifyContent: 'center' },
+  calendarDay: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 17 },
   calendarDayDone: { backgroundColor: colors.accent },
   calendarDayToday: { borderWidth: 1, borderColor: colors.primary },
   calendarDaySkipped: { borderColor: colors.danger },
@@ -1081,27 +1185,33 @@ const styles = StyleSheet.create({
   outcomeCopy: { flex: 1, gap: spacing.xs },
   outcomeTitle: { color: colors.primary, fontSize: 16, fontWeight: '700' },
   outcomeSupport: { color: colors.secondary, fontSize: 13 },
-  locksContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.xxl, paddingBottom: spacing.xxl, gap: spacing.lg },
-  lockHero: { minHeight: 134, flexDirection: 'row', alignItems: 'center', padding: spacing.xl },
-  lockHeroCopy: { flex: 1, gap: spacing.sm },
-  lockHeroTitle: { color: colors.primary, fontSize: 23, fontWeight: '700' },
-  lockHeroSupport: { color: colors.secondary, fontSize: 14, lineHeight: 20 },
-  lockShield: { width: 74, height: 74, borderRadius: 37, borderColor: colors.accent, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  locksContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.xxl, paddingBottom: spacing.xxl, gap: spacing.md },
+  locksHeader: { minHeight: 120, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.lg },
+  locksHeaderCopy: { flex: 1, gap: spacing.md },
+  locksIntro: { color: colors.secondary, fontSize: 14, lineHeight: 21 },
+  headerShield: { width: 72, height: 78, alignItems: 'center', justifyContent: 'center', borderColor: colors.accent, borderWidth: 1.5, borderRadius: 22, backgroundColor: '#11140E' },
   sectionTitle: { marginTop: spacing.sm, minHeight: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  appsListCard: { paddingVertical: spacing.xs },
+  appsListCard: { padding: 0, overflow: 'hidden' },
   appRow: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   appName: { color: colors.primary, fontSize: 16, fontWeight: '600', flex: 1 },
   appState: { color: colors.accent, fontSize: 10, fontWeight: '700', letterSpacing: 1.1 },
   emptyApps: { paddingVertical: spacing.lg, gap: spacing.sm },
   emptyAppsTitle: { color: colors.primary, fontSize: 16, fontWeight: '700' },
   emptyAppsCopy: { color: colors.secondary, fontSize: 13 },
-  lockTimeCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  lockTimeCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, minHeight: 90, marginTop: spacing.sm },
+  lockTimeIcon: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, borderColor: colors.secondary, alignItems: 'center', justifyContent: 'center' },
   lockTimeCopy: { flex: 1, gap: spacing.xs },
   lockTimeValue: { color: colors.primary, fontSize: 18, fontWeight: '600' },
-  lockTimeSupport: { color: colors.tertiary, fontSize: 12 },
+  lockTimeSupport: { color: colors.tertiary, fontSize: 10, letterSpacing: 1.1 },
+  unlockHero: { minHeight: 122, flexDirection: 'row', alignItems: 'center', gap: spacing.xl, borderColor: colors.borderStrong, marginTop: spacing.sm },
+  unlockRing: { width: 82, height: 82, borderRadius: 41, borderWidth: 3, borderColor: colors.accent, alignItems: 'center', justifyContent: 'center', shadowColor: colors.accent, shadowOpacity: 0.34, shadowRadius: 10, shadowOffset: { width: 0, height: 0 } },
+  unlockCopy: { flex: 1, gap: spacing.xs },
+  unlockKicker: { color: colors.primary, fontSize: 12, letterSpacing: 1.1 },
+  unlockTitle: { color: colors.accent, fontSize: 17, fontWeight: '800', letterSpacing: 1 },
+  unlockSupport: { color: colors.secondary, fontSize: 13 },
   breakActions: { flexDirection: 'row', gap: spacing.md },
-  breakCard: { flex: 1, minHeight: 128, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, backgroundColor: colors.surface, padding: spacing.lg, gap: spacing.sm },
-  breakValue: { color: colors.primary, fontSize: 14, fontWeight: '700', textTransform: 'uppercase' },
+  breakCard: { flex: 1, minHeight: 94, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, backgroundColor: colors.surface, padding: spacing.lg, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  breakValue: { color: colors.primary, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' },
   breakAction: { color: colors.accent, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
   breakSupport: { color: colors.tertiary, fontSize: 12 },
   sessionHeader: { paddingTop: spacing.xxl, gap: spacing.sm },
@@ -1168,6 +1278,9 @@ const styles = StyleSheet.create({
   scheduleTime: { color: colors.primary, fontSize: 44, fontWeight: '700' },
   scheduleSupport: { color: colors.secondary, fontSize: 13 },
   confirmationOverlay: { position: 'absolute', inset: 0, backgroundColor: colors.scrim, justifyContent: 'flex-end' },
-  confirmationSheet: { backgroundColor: colors.surfaceRaised, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl, padding: spacing.xl, paddingBottom: spacing.xxxl, gap: spacing.md },
-  confirmationActions: { gap: spacing.md, marginTop: spacing.lg },
+  confirmationSheet: { minHeight: '66%', backgroundColor: colors.surfaceRaised, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl, borderWidth: 1, borderColor: colors.borderStrong, padding: spacing.xl, paddingBottom: spacing.xxxl, gap: spacing.lg },
+  confirmationActions: { gap: spacing.md, marginTop: 'auto' },
+  holdButton: { minHeight: 58, borderRadius: radii.md, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
+  holdButtonPressed: { opacity: 0.82, transform: [{ scale: 0.99 }] },
+  holdButtonText: { color: colors.accentInk, fontSize: 16, fontWeight: '800', letterSpacing: 0.6 },
 });

@@ -252,3 +252,23 @@ $39.99/year**, with Annual selected by default; the 3-Month plan is removed.
 The paywall is closable and includes Restore Purchases, Terms, Privacy, trial
 and renewal disclosure. No active training entitlement means no active
 accountability lock; closing the paywall does not create ongoing free training.
+
+## Phase 05 Simulator UI — Owner Revision 02 (2026-08-24)
+
+The approved Simulator UI branch now includes the Owner-requested first-ever
+Home and Locks revision:
+
+- new-user Home starts at 0 momentum, 0/7 weekly consistency and 0 lifetime;
+- calendar uses the device-local month/date, true circular day markers and
+  previous/next month navigation;
+- completion changes the deadline row to `MOVEMENT COMPLETE` and records the
+  current local date once;
+- the Home deadline uses the exact onboarding Lock Time;
+- onboarding uses the native iOS time wheel rather than preset times;
+- Home/onboarding/tab changes use short native-feeling transitions;
+- concealed movement media uses the Owner-provided black flower asset; and
+- Locks, Grace and Skip follow the supplied visual references, including
+  Apple-native privacy-safe selected activity labels and icons.
+
+Visual comparison evidence and the pass record are in `design-qa.md` and
+`docs/ui-audit/round-02/`.

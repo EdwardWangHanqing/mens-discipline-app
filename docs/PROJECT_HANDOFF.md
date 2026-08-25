@@ -268,3 +268,21 @@ The remaining Beta / Release gates are:
 > Organization conversion as a first-launch blocker. Phase 04 UX Architecture
 > is closed / passed. The next phase is Phase 05 Visual System / Figma Design
 > System; do not restore superseded UX behavior during visual work.
+
+## Latest Simulator UI Checkpoint — 2026-08-24
+
+Owner Revision 02 is implemented on `feature/simulator-ready-ui`. The handed-off
+Simulator install launches at the first onboarding screen with local user
+progress reset to zero. After onboarding, Home opens in the First-Ever /
+Unrevealed state; subsequent progress and setup persist locally across launches.
+
+The checkpoint includes dynamic device-local calendar behavior, exact Lock Time
+display, a native iOS wheel picker, zero-based progress accumulation, smoother
+screen changes, the Owner black-flower concealed asset, and the redesigned
+Locks / Grace / Skip experience. Selected Screen Time activities are rendered
+inside a native SwiftUI view using Apple's opaque tokens, so names and icons can
+appear without exposing private token contents to React Native.
+
+Verification completed with TypeScript, Expo lint, guided-routine tests, a full
+iOS Simulator build/run, runtime UI inspection, and source-vs-implementation
+visual comparison. See `design-qa.md`.

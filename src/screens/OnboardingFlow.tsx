@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
+import { DateTimePicker } from '@expo/ui/community/datetime-picker';
+import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
 
 import {
   Body,
@@ -34,8 +36,6 @@ const barriers = [
   'I forget',
   'I want more structure',
 ];
-
-const lockTimes = ['8:00 PM', '9:00 PM', '10:00 PM'];
 
 export type OnboardingDraft = {
   nickname: string;
@@ -97,7 +97,14 @@ export function OnboardingFlow({
     <Screen scroll testID={`onboarding-step-${step}`}>
       <TopBar onBack={goBack} />
       <StepProgress current={step} total={11} />
-      <View style={styles.stepBody}>{renderStep()}</View>
+      <Animated.View
+        key={step}
+        entering={FadeInRight.duration(260)}
+        exiting={FadeOutLeft.duration(180)}
+        style={styles.stepBody}
+      >
+        {renderStep()}
+      </Animated.View>
     </Screen>
   );
 
@@ -192,15 +199,18 @@ export function OnboardingFlow({
             support="This becomes your recurring daily Lock Time."
             action={<PrimaryButton label="Confirm Lock Time" onPress={goNext} />}
           >
-            <View style={styles.choiceList}>
-              {lockTimes.map((lockTime) => (
-                <ChoiceCard
-                  key={lockTime}
-                  label={lockTime}
-                  selected={draft.lockTime === lockTime}
-                  onPress={() => updateDraft({ lockTime })}
-                />
-              ))}
+            <View style={styles.timePickerCard}>
+              <DateTimePicker
+                value={dateFromLockTime(draft.lockTime)}
+                mode="time"
+                display="spinner"
+                themeVariant="dark"
+                accentColor={colors.accent}
+                style={styles.timePicker}
+                onValueChange={(_, date) => updateDraft({ lockTime: formatLockTime(date) })}
+                testID="lock-time-wheel"
+              />
+              <Text style={styles.timePickerValue}>{draft.lockTime}</Text>
             </View>
           </StepLayout>
         );
@@ -295,7 +305,7 @@ export function OnboardingFlow({
             support="Simple enough to repeat. Structured enough to keep you honest."
             action={
               <View style={styles.stackedActions}>
-                <PrimaryButton label="Reveal Today’s Movement" onPress={goNext} />
+                <PrimaryButton label="Continue to Home" onPress={goNext} />
                 <Text style={styles.reassurance}>Your first full session is on us.</Text>
               </View>
             }
@@ -413,6 +423,27 @@ function SetupRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function dateFromLockTime(value: string) {
+  const match = value.match(/^(\d{1,2}):(\d{2})\s(AM|PM)$/i);
+  const date = new Date();
+  if (!match) {
+    date.setHours(21, 0, 0, 0);
+    return date;
+  }
+  let hour = Number(match[1]) % 12;
+  if (match[3].toUpperCase() === 'PM') hour += 12;
+  date.setHours(hour, Number(match[2]), 0, 0);
+  return date;
+}
+
+function formatLockTime(date: Date) {
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(date);
+}
+
 const styles = StyleSheet.create({
   brandTop: { paddingTop: spacing.md },
   brandHero: { flex: 1, justifyContent: 'center', gap: spacing.lg, paddingBottom: spacing.xxxl },
@@ -435,6 +466,18 @@ const styles = StyleSheet.create({
   },
   bottomActions: { gap: spacing.sm, paddingBottom: spacing.xl },
   stepBody: { flex: 1 },
+  timePickerCard: {
+    minHeight: 250,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timePicker: { width: '100%', height: 200 },
+  timePickerValue: { ...typography.eyebrow, color: colors.accent, marginBottom: spacing.lg },
   stepLayout: { flex: 1, minHeight: 720 },
   stepHeader: { gap: spacing.md, paddingTop: spacing.xxxl },
   stepContent: { flex: 1, paddingTop: spacing.xxxl },
