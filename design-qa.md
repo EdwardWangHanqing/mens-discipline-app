@@ -1,28 +1,42 @@
-# Phase 05 UI Revision — Design QA
+# Design QA — Round 03
 
-Date: 2026-08-24  
-Simulator: iPhone 17 Pro, iOS 26.5  
-Reference sources: Figma `Home / First-Ever / Unrevealed` (`54:80`) and Owner-provided Locks / Grace / Skip images.
+**Date:** 2026-08-24
 
-## Compared evidence
+**Viewport:** iPhone 17 Pro Simulator
+**Final result:** passed
 
-- Locks side-by-side: `docs/ui-audit/round-02/locks-comparison.png`
-- Skip Today side-by-side: `docs/ui-audit/round-02/skip-comparison.png`
-- Raw implementation captures: `docs/ui-audit/round-02/locks-implementation.png`, `docs/ui-audit/round-02/skip-implementation.png`
-- Grace reference: `docs/ui-audit/round-02/grace-reference.png`
+## Evidence reviewed
 
-## QA result
+- Owner references: Locks, Grace, Skip, skipped Home/Train, completed Home/Train, and supplied lock/action assets.
+- Current-run pre-fix capture: `docs/ui-audit/round-03/pre-fix/locks-current.png`.
+- Current-run accepted captures: `docs/ui-audit/round-03/post-fix/`.
+- Reference and implementation captures were inspected in paired visual-comparison inputs at the same product state.
 
-| Area | Result | Notes |
-| --- | --- | --- |
-| First-ever Home | Passed | 0 momentum, empty 0/7 ring, no consistency checks, unrevealed Owner image, 0 lifetime values. |
-| Calendar | Passed | Phone-local month/date, circular today outline, circular completion marker, previous/next navigation, no synthetic future completion. |
-| Lock Time | Passed | Native iOS wheel supports minute-level selection; Home deadline reads the selected value. |
-| Completed Home state | Passed | Deadline row becomes `MOVEMENT COMPLETE`; progress updates once per completed local date and persists locally. |
-| Tab/onboarding motion | Passed | Short native-feeling fade/slide transitions remove abrupt page swaps. |
-| Locks main screen | Passed | Hierarchy, selected-app card, lock schedule, unlock hero, and break actions match the supplied direction. |
-| Selected app identity | Passed | Apple-owned `Label(token)` renders privacy-safe selected names and icons without exposing token contents to JavaScript. |
-| Grace sheet | Passed | 5-minute copy, remaining allowance, primary and secondary actions match the supplied sheet. |
-| Skip sheet | Passed | Consequence copy, hold-to-confirm interaction, and Keep Today escape match the supplied sheet. |
+## Audit steps
 
-Final result: **passed**.
+1. **New-user truth** — Passed. Home, Profile, History, Milestones, weekly consistency, calendar, momentum, and lifetime progress now begin at zero without fake achievements.
+2. **Skip outcome consistency** — Passed. Home, Train, Locks, calendar, and momentum use the same skipped state; no completion deadline remains after Skip.
+3. **Completion outcome consistency** — Passed. Completion is recorded at the valid final set, Home and Train show the completed state, and the supplied unlock asset is used.
+4. **Grace lifecycle** — Passed. Three daily uses, five-minute persisted timer, native shield removal, automatic shield restoration, and visible remaining-use count are implemented.
+5. **Destructive confirmation** — Passed. Skip requires a continuous two-second hold, uses a left-to-right progress fill, cancels on early release, and produces tactile feedback on completion.
+6. **Locks fidelity** — Passed. Supplied shield, lock-ring, hourglass, and Skip assets are used. Selected native app/category labels are shown in a bounded list with overflow summary.
+7. **Lock schedule** — Passed. The row opens a native iPhone-style time wheel and saves the new schedule to app state and the Screen Time schedule bridge when available.
+8. **Motion** — Passed. Tabs, Profile/subscreens, Reveal state, sheets, and calendar month transitions animate; calendar supports horizontal swipe.
+9. **Visual hierarchy and accessibility** — Passed. Primary actions remain visible, destructive intent is explicit, touch targets have accessibility labels, and state colors retain the graphite/yellow system.
+10. **Regression** — Passed. TypeScript, lint, state/routine tests, native Simulator build, launch, and screenshot review completed successfully.
+
+## Accepted screenshots
+
+- `home-current-state.png` — skipped Home
+- `train-skipped.png` — skipped Train
+- `train-completed.png` — completed Train
+- `locks-compact.png` — bounded selected-app list and supplied icon assets
+- `grace-three.png` — first Grace confirmation showing three uses
+- `grace-active.png` — active Grace countdown and two remaining uses
+- `grace-ended.png` — lock and actions restored after Grace expiry
+- `lock-time-edit.png` — editable native time wheel
+- `profile-zero.png` and `history-empty.png` — truthful new-user progress
+
+## Residual boundary
+
+Coach imagery remains a replaceable media placeholder by Owner decision. Future per-movement Coach animation and audio replacement does not require a layout redesign.

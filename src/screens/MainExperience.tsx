@@ -1,18 +1,35 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Image,
+  PanResponder,
   Pressable,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
+  Vibration,
   View,
 } from 'react-native';
+import { DateTimePicker } from '@expo/ui/community/datetime-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeIn, FadeInRight, FadeOut, LinearTransition } from 'react-native-reanimated';
+import Animated, {
+  cancelAnimation,
+  FadeIn,
+  FadeInDown,
+  FadeInLeft,
+  FadeInRight,
+  FadeOut,
+  FadeOutLeft,
+  LinearTransition,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 
-import { SelectedActivitiesView } from '../../modules/family-controls';
+import FamilyControls, { SelectedActivitiesView } from '../../modules/family-controls';
 import {
   Body,
   Card,
@@ -35,6 +52,7 @@ import {
 } from '../data/movements';
 import type { OnboardingDraft } from './OnboardingFlow';
 import { colors, radii, spacing, typography } from '../theme/designSystem';
+import { consumeGrace, expireGrace, greetingForHour } from '../state/dailyState';
 
 export type MainTab = 'home' | 'train' | 'locks';
 export type DailyStatus = 'unrevealed' | 'revealed' | 'inProgress' | 'completed' | 'skipped';
@@ -44,7 +62,9 @@ export type ProgressSummary = {
   momentumDays: number;
   longestMomentum: number;
   completedDates: string[];
+  skippedDates: string[];
 };
+export type GraceState = { dateKey: string; remaining: number; activeUntil: number | null };
 
 type Subscreen =
   | 'main'
@@ -66,13 +86,17 @@ export function MainExperience({
   setTab,
   dailyStatus,
   progress,
+  grace,
+  setGrace,
   setDailyStatus,
-  onFreeRoutineComplete,
+  onRoutineCompleted,
+  onCompletionContinue,
   onOpenAccount,
   onOpenPaywall,
   onResetOnboarding,
   onChooseApps,
   onSkipToday,
+  onUpdateLockTime,
 }: {
   nickname: string;
   draft: OnboardingDraft;
@@ -80,13 +104,17 @@ export function MainExperience({
   setTab: (tab: MainTab) => void;
   dailyStatus: DailyStatus;
   progress: ProgressSummary;
+  grace: GraceState;
+  setGrace: (value: GraceState | ((current: GraceState) => GraceState)) => void;
   setDailyStatus: (status: DailyStatus) => void;
-  onFreeRoutineComplete: () => void;
+  onRoutineCompleted: () => void;
+  onCompletionContinue: () => void;
   onOpenAccount: () => void;
   onOpenPaywall: () => void;
   onResetOnboarding: () => void;
   onChooseApps: () => void;
   onSkipToday: () => void;
+  onUpdateLockTime: (lockTime: string) => void;
 }) {
   const [subscreen, setSubscreen] = useState<Subscreen>('main');
   const [session, setSession] = useState<SessionPhase | null>(null);
@@ -96,7 +124,27 @@ export function MainExperience({
   const [countdown, setCountdown] = useState(3);
   const [phaseBeforePause, setPhaseBeforePause] = useState<'active' | 'rest'>('active');
   const [confirmation, setConfirmation] = useState<'grace' | 'skip' | null>(null);
-  const [graceActive, setGraceActive] = useState(false);
+  const [clock, setClock] = useState(0);
+  const graceActive = grace.activeUntil !== null && grace.activeUntil > clock;
+
+  useEffect(() => {
+    const initialTimer = setTimeout(() => setClock(Date.now()), 0);
+    if (!grace.activeUntil) return () => clearTimeout(initialTimer);
+    const timer = setInterval(() => setClock(Date.now()), 1000);
+    return () => {
+      clearTimeout(initialTimer);
+      clearInterval(timer);
+    };
+  }, [grace.activeUntil]);
+
+  useEffect(() => {
+    if (grace.activeUntil && grace.activeUntil <= clock) {
+      setGrace((current) => expireGrace(current, clock));
+      if (dailyStatus !== 'completed' && dailyStatus !== 'skipped') {
+        void FamilyControls.applyShield().catch(() => undefined);
+      }
+    }
+  }, [clock, dailyStatus, grace.activeUntil, setGrace]);
 
   useEffect(() => {
     if (session !== 'countdown') return;
@@ -120,7 +168,7 @@ export function MainExperience({
       if (nextReps >= REPS_PER_SET) {
         if (setNumber === DAILY_SET_COUNT) {
           setSession('complete');
-          setDailyStatus('completed');
+          onRoutineCompleted();
         } else {
           setRestSeconds(REST_SECONDS);
           setSession('rest');
@@ -128,7 +176,7 @@ export function MainExperience({
       }
     }, 650);
     return () => clearTimeout(timer);
-  }, [reps, session, setDailyStatus, setNumber]);
+  }, [onRoutineCompleted, reps, session, setNumber]);
 
   useEffect(() => {
     if (session !== 'rest') return;
@@ -165,14 +213,18 @@ export function MainExperience({
         }}
         onContinue={() => {
           setSession(null);
-          onFreeRoutineComplete();
+          onCompletionContinue();
         }}
       />
     );
   }
 
   if (subscreen !== 'main') {
-    return renderSubscreen();
+    return (
+      <Animated.View key={subscreen} entering={FadeInRight.duration(300)} exiting={FadeOutLeft.duration(180)} style={styles.fullScene}>
+        {renderSubscreen()}
+      </Animated.View>
+    );
   }
 
   return (
@@ -211,6 +263,8 @@ export function MainExperience({
             lockTime={draft.lockTime}
             dailyStatus={dailyStatus}
             graceActive={graceActive}
+            graceRemaining={grace.remaining}
+            graceSeconds={graceActive ? Math.max(0, Math.ceil(((grace.activeUntil ?? clock) - clock) / 1000)) : 0}
             requestGrace={() => setConfirmation('grace')}
             requestSkip={() => setConfirmation('skip')}
             openManageApps={() => setSubscreen('manageApps')}
@@ -223,9 +277,13 @@ export function MainExperience({
       {confirmation ? (
         <ConfirmationSheet
           type={confirmation}
+          graceRemaining={grace.remaining}
           onCancel={() => setConfirmation(null)}
           onConfirm={() => {
-            if (confirmation === 'grace') setGraceActive(true);
+            if (confirmation === 'grace' && grace.remaining > 0) {
+              void FamilyControls.removeShield().catch(() => undefined);
+              setGrace((current) => consumeGrace(current, Date.now()));
+            }
             if (confirmation === 'skip') onSkipToday();
             setConfirmation(null);
           }}
@@ -250,6 +308,7 @@ export function MainExperience({
       return (
         <ProfileScreen
           nickname={nickname}
+          progress={progress}
           onBack={() => setSubscreen('main')}
           openHistory={() => setSubscreen('history')}
           openMilestones={() => setSubscreen('milestones')}
@@ -258,8 +317,8 @@ export function MainExperience({
         />
       );
     }
-    if (subscreen === 'history') return <HistoryScreen onBack={back} />;
-    if (subscreen === 'milestones') return <MilestonesScreen onBack={back} />;
+    if (subscreen === 'history') return <HistoryScreen progress={progress} onBack={back} />;
+    if (subscreen === 'milestones') return <MilestonesScreen progress={progress} onBack={back} />;
     if (subscreen === 'settings') {
       return (
         <SettingsScreen
@@ -276,7 +335,16 @@ export function MainExperience({
     if (subscreen === 'manageApps') {
       return <ManageAppsScreen count={draft.selectedAppCount} onBack={() => setSubscreen('main')} onChooseApps={onChooseApps} />;
     }
-    return <LockScheduleScreen lockTime={draft.lockTime} onBack={() => setSubscreen('main')} />;
+    return (
+      <LockScheduleScreen
+        lockTime={draft.lockTime}
+        onSave={(value) => {
+          onUpdateLockTime(value);
+          setSubscreen('main');
+        }}
+        onBack={() => setSubscreen('main')}
+      />
+    );
   }
 }
 
@@ -299,11 +367,23 @@ function HomeTab({
   resume: () => void;
   openProfile: () => void;
 }) {
+  const [greeting, setGreeting] = useState('Good evening');
+
+  useEffect(() => {
+    const updateGreeting = () => setGreeting(greetingForHour(new Date().getHours()));
+    const initialUpdate = setTimeout(updateGreeting, 0);
+    const interval = setInterval(updateGreeting, 60_000);
+    return () => {
+      clearTimeout(initialUpdate);
+      clearInterval(interval);
+    };
+  }, []);
+
   return (
     <ScrollView style={styles.tabContent} contentContainerStyle={styles.homeContent} showsVerticalScrollIndicator={false}>
       <View style={styles.homeHeader}>
         <View style={styles.homeGreeting}>
-          <Text style={styles.greeting}>Good evening, {nickname || 'Edward'}.</Text>
+          <Text style={styles.greeting}>{greeting}, {nickname || 'Edward'}.</Text>
           <Text style={styles.support}>Stay disciplined. Own your day.</Text>
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel="Open profile" onPress={openProfile} style={styles.profileButton}>
@@ -311,9 +391,9 @@ function HomeTab({
         </Pressable>
       </View>
 
-      <MomentumCard progress={progress} />
+      <MomentumCard progress={progress} dailyStatus={dailyStatus} />
       <MovementCard dailyStatus={dailyStatus} lockTime={lockTime} reveal={reveal} begin={begin} resume={resume} />
-      <CalendarCard completedDates={progress.completedDates} skipped={dailyStatus === 'skipped'} />
+      <CalendarCard completedDates={progress.completedDates} skippedDates={progress.skippedDates} />
       <Card style={styles.lifetimeCard}>
         <Eyebrow>Lifetime Progress</Eyebrow>
         <View style={styles.metricRow}>
@@ -328,17 +408,27 @@ function HomeTab({
   );
 }
 
-function MomentumCard({ progress }: { progress: ProgressSummary }) {
+function MomentumCard({ progress, dailyStatus }: { progress: ProgressSummary; dailyStatus: DailyStatus }) {
   const weekCount = Math.min(7, progress.completedDates.filter(isDateInCurrentWeek).length);
+  const skipped = dailyStatus === 'skipped';
   return (
     <Card style={styles.momentumCard}>
       <View style={styles.momentumTop}>
-        <View>
+        <View style={styles.momentumCopy}>
           <Eyebrow>Momentum</Eyebrow>
-          <Text style={styles.momentumValue}>{progress.momentumDays}</Text>
-          <Eyebrow accent>Days of momentum</Eyebrow>
+          {skipped ? (
+            <Animated.View entering={FadeInDown.duration(360)}>
+              <Text style={styles.momentumRecovery}>Momentum starts again tomorrow.</Text>
+              <Text style={styles.momentumRecoverySupport}>Your history is still yours.</Text>
+            </Animated.View>
+          ) : (
+            <>
+              <Text style={styles.momentumValue}>{progress.momentumDays}</Text>
+              <Eyebrow accent>{progress.momentumDays === 1 ? 'Day of momentum' : 'Days of momentum'}</Eyebrow>
+            </>
+          )}
         </View>
-        <View style={styles.weekRing}>
+        {!skipped ? <View style={styles.weekRing}>
           <Svg width={112} height={112} style={StyleSheet.absoluteFill}>
             <Circle cx={56} cy={56} r={48} fill="none" stroke={colors.borderStrong} strokeWidth={9} />
             <Circle
@@ -357,7 +447,7 @@ function MomentumCard({ progress }: { progress: ProgressSummary }) {
           </Svg>
           <Text style={styles.weekRingValue}>{weekCount}/7</Text>
           <Text style={styles.weekRingLabel}>WEEK</Text>
-        </View>
+        </View> : null}
       </View>
       <Divider />
       <Eyebrow>Weekly Consistency</Eyebrow>
@@ -397,7 +487,7 @@ function MovementCard({
   const inProgress = dailyStatus === 'inProgress';
   return (
     <Card style={styles.movementCard}>
-      <View style={styles.movementHeader}>
+      <Animated.View key={dailyStatus} entering={FadeInDown.duration(420).springify()} style={styles.movementHeader}>
         <View style={styles.movementThumbnail}>
           {hidden ? (
             <Image source={require('../../assets/images/reveal-cover.png')} style={styles.coverImage} />
@@ -411,22 +501,22 @@ function MovementCard({
             {hidden
               ? 'Your movement is ready.'
               : completed
-                ? 'Routine complete.'
+                ? 'Completed today.'
                 : skipped
-                  ? 'Today is closed.'
+                  ? 'Skipped today.'
                   : todayMovement.displayName}
           </Text>
           <Text style={styles.movementSupport}>
             {hidden
               ? 'It will be revealed once you’re ready to train.'
               : completed
-                ? 'You showed up. Accountability cleared.'
+                ? 'You showed up.'
                 : skipped
-                  ? 'Skip Today was used. Momentum is paused.'
-                  : '4 of 7 completed'}
+                  ? 'Back tomorrow.'
+                  : 'Ready for today'}
           </Text>
         </View>
-      </View>
+      </Animated.View>
       <View style={styles.metricRow}>
         <Metric value="1" label="Movement" />
         <View style={styles.metricDivider} />
@@ -434,12 +524,13 @@ function MovementCard({
         <View style={styles.metricDivider} />
         <Metric value="20" label="Reps" />
       </View>
-      <View style={styles.deadlineRow}>
-        <Icon name={completed ? 'checkmark.circle.fill' : 'clock'} color={completed ? colors.accent : colors.secondary} size={16} />
+      <View style={[styles.deadlineRow, skipped && styles.skippedInfoRow]}>
+        <Icon name={completed ? 'checkmark.circle.fill' : skipped ? 'info.circle' : 'clock'} color={completed ? colors.accent : colors.secondary} size={16} />
         <Text style={[styles.deadlineText, completed && styles.deadlineTextComplete]}>
-          {completed ? 'MOVEMENT COMPLETE' : `Complete before ${lockTime}`}
+          {completed ? 'MOVEMENT COMPLETE' : skipped ? 'TODAY’S MOVEMENT WAS SKIPPED' : `Complete before ${lockTime}`}
         </Text>
       </View>
+      {skipped ? <View style={styles.noActionRow}><Text style={styles.noActionText}>NO ACTION AVAILABLE TODAY</Text></View> : null}
       {!completed && !skipped ? (
         <PrimaryButton
           label={hidden ? 'Reveal' : inProgress ? 'Resume' : 'Begin'}
@@ -450,9 +541,21 @@ function MovementCard({
   );
 }
 
-function CalendarCard({ completedDates, skipped }: { completedDates: string[]; skipped: boolean }) {
+function CalendarCard({ completedDates, skippedDates }: { completedDates: string[]; skippedDates: string[] }) {
   const today = new Date();
   const [visibleMonth, setVisibleMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
+  const [direction, setDirection] = useState<-1 | 1>(1);
+  const changeMonth = (delta: -1 | 1) => {
+    setDirection(delta);
+    setVisibleMonth((value) => new Date(value.getFullYear(), value.getMonth() + delta, 1));
+  };
+  const panResponder = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dx) > 16 && Math.abs(gesture.dx) > Math.abs(gesture.dy),
+    onPanResponderRelease: (_, gesture) => {
+      if (gesture.dx < -44) changeMonth(1);
+      if (gesture.dx > 44) changeMonth(-1);
+    },
+  }), []);
   const daysInMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 0).getDate();
   const days = Array.from({ length: daysInMonth }, (_, index) => index + 1);
   const mondayOffset = (new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1).getDay() + 6) % 7;
@@ -462,15 +565,20 @@ function CalendarCard({ completedDates, skipped }: { completedDates: string[]; s
       <View style={styles.calendarHeader}>
         <Text style={styles.calendarTitle}>{monthTitle}</Text>
         <View style={styles.calendarArrows}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Previous month" onPress={() => setVisibleMonth((value) => new Date(value.getFullYear(), value.getMonth() - 1, 1))} style={styles.calendarArrow}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Previous month" onPress={() => changeMonth(-1)} style={styles.calendarArrow}>
             <Icon name="chevron.left" color={colors.secondary} size={16} />
           </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="Next month" onPress={() => setVisibleMonth((value) => new Date(value.getFullYear(), value.getMonth() + 1, 1))} style={styles.calendarArrow}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Next month" onPress={() => changeMonth(1)} style={styles.calendarArrow}>
             <Icon name="chevron.right" color={colors.secondary} size={16} />
           </Pressable>
         </View>
       </View>
-      <View style={styles.calendarGrid}>
+      <Animated.View
+        key={`${visibleMonth.getFullYear()}-${visibleMonth.getMonth()}`}
+        entering={(direction > 0 ? FadeInRight : FadeInLeft).duration(260)}
+        style={styles.calendarGrid}
+        {...panResponder.panHandlers}
+      >
         {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => (
           <Text key={`${day}-${index}`} style={styles.calendarWeekday}>{day}</Text>
         ))}
@@ -479,6 +587,7 @@ function CalendarCard({ completedDates, skipped }: { completedDates: string[]; s
           const date = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), day);
           const dateKey = localDateKey(date);
           const done = completedDates.includes(dateKey) && date <= today;
+          const skipped = skippedDates.includes(dateKey) && date <= today;
           const isToday = dateKey === localDateKey(today);
           return (
             <View key={day} style={styles.calendarDaySlot}>
@@ -487,7 +596,7 @@ function CalendarCard({ completedDates, skipped }: { completedDates: string[]; s
                   styles.calendarDay,
                   done && styles.calendarDayDone,
                   isToday && styles.calendarDayToday,
-                  isToday && skipped && styles.calendarDaySkipped,
+                  skipped && styles.calendarDaySkipped,
                 ]}
               >
                 <Text style={[styles.calendarDayText, done && styles.calendarDayTextDone]}>{day}</Text>
@@ -495,7 +604,7 @@ function CalendarCard({ completedDates, skipped }: { completedDates: string[]; s
             </View>
           );
         })}
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -517,35 +626,35 @@ function TrainTab({
   const inProgress = dailyStatus === 'inProgress';
   if (hidden) {
     return (
-      <View style={styles.trainEmpty}>
-        <View style={styles.concealedIcon}>
+      <Animated.View entering={FadeIn.duration(260)} exiting={FadeOut.duration(160)} style={styles.trainEmpty}>
+        <Animated.View entering={FadeInDown.duration(500).springify()} style={styles.concealedIcon}>
           <Icon name="eye.slash" color={colors.accent} size={34} />
-        </View>
+        </Animated.View>
         <Eyebrow>Today&apos;s Movement</Eyebrow>
         <Title compact>Ready when you are.</Title>
         <Body muted>Reveal the movement selected for today. Revealing does not change the draw.</Body>
         <View style={styles.trainEmptyButton}>
           <PrimaryButton label="Reveal Movement" onPress={reveal} />
         </View>
-      </View>
+      </Animated.View>
     );
   }
+  if (completed || skipped) return <OutcomeTrainTab skipped={skipped} />;
   return (
     <ScrollView style={styles.tabContent} contentContainerStyle={styles.trainContent} showsVerticalScrollIndicator={false}>
       <View style={styles.trainHeading}>
-        <Eyebrow>{completed ? 'Routine Complete' : skipped ? 'Today Closed' : 'Current Movement'}</Eyebrow>
-        <Text style={styles.trainTitle}>{completed ? 'You showed up.' : skipped ? 'Training skipped.' : todayMovement.displayName}</Text>
+        <Eyebrow>Current Movement</Eyebrow>
+        <Text style={styles.trainTitle}>{todayMovement.displayName}</Text>
         <Text style={styles.trainFocus}>{todayMovement.focus.toUpperCase()}</Text>
       </View>
       <View style={styles.coachStage}>
         <Image source={todayMovement.coachImage} style={styles.coachImage} resizeMode="contain" />
       </View>
       <Text style={styles.setSummary}>
-        {completed ? '5 OF 5 SETS COMPLETE' : `${DAILY_SET_COUNT} SETS · ${REPS_PER_SET} REPS`}
+        {`${DAILY_SET_COUNT} SETS · ${REPS_PER_SET} REPS`}
       </Text>
-      <SetSegments current={completed ? 5 : inProgress ? 1 : 0} />
-      {!completed && !skipped ? (
-        <Card style={styles.trainDetailCard}>
+      <SetSegments current={inProgress ? 1 : 0} />
+      <Card style={styles.trainDetailCard}>
           <View style={styles.metricRow}>
             <Metric value="20" label="Reps" />
             <View style={styles.metricDivider} />
@@ -558,20 +667,32 @@ function TrainTab({
             <Icon name="bolt" color={colors.accent} size={18} />
             <Text numberOfLines={2} style={styles.instructionText}>{todayMovement.instruction}</Text>
           </View>
-        </Card>
-      ) : null}
-      {completed ? (
-        <Card style={styles.outcomeCard}>
-          <Icon name="lock.open" color={colors.accent} size={25} />
-          <View style={styles.outcomeCopy}>
-            <Text style={styles.outcomeTitle}>APPS UNLOCKED</Text>
-            <Text style={styles.outcomeSupport}>Accountability cleared for today.</Text>
-          </View>
-        </Card>
-      ) : null}
-      {!completed && !skipped ? (
-        <PrimaryButton label={inProgress ? 'Resume Session' : 'Begin'} onPress={inProgress ? resume : begin} />
-      ) : null}
+      </Card>
+      <PrimaryButton label={inProgress ? 'Resume Session' : 'Begin'} onPress={inProgress ? resume : begin} />
+    </ScrollView>
+  );
+}
+
+function OutcomeTrainTab({ skipped }: { skipped: boolean }) {
+  return (
+    <ScrollView style={styles.tabContent} contentContainerStyle={styles.outcomeTrainContent} showsVerticalScrollIndicator={false}>
+      <Animated.View entering={FadeInDown.duration(420)} style={styles.outcomeTrainHeader}>
+        <Text style={styles.outcomeTrainEyebrow}>TODAY&apos;S TRAINING</Text>
+        <Text style={styles.outcomeTrainTitle}>{skipped ? 'SKIPPED TODAY' : 'COMPLETED TODAY'}</Text>
+        <Text style={styles.outcomeTrainSupport}>{skipped ? 'Back tomorrow.' : 'You showed up.'}</Text>
+      </Animated.View>
+      <Animated.Image entering={FadeIn.duration(520)} source={todayMovement.coachImage} style={styles.outcomeTrainCoach} resizeMode="contain" />
+      <View style={styles.outcomeTrainProgress}>
+        <Text style={styles.outcomeTrainSummary}>{skipped ? 'NO ACTION AVAILABLE TODAY' : '5 OF 5 SETS COMPLETE'}</Text>
+        <SetSegments current={skipped ? 0 : 5} />
+      </View>
+      <Card style={styles.outcomeTrainCard}>
+        {!skipped ? <Image source={require('../../assets/icons/apps-unlocked.png')} style={styles.outcomeUnlockAsset} resizeMode="contain" /> : null}
+        <View style={styles.outcomeCopy}>
+          <Text style={styles.outcomeTitle}>{skipped ? 'TODAY’S MOVEMENT REMAINS IN YOUR CYCLE.' : 'CLEAR FOR TODAY'}</Text>
+          {!skipped ? <Text style={styles.outcomeSupport}>Your routine is complete.</Text> : null}
+        </View>
+      </Card>
     </ScrollView>
   );
 }
@@ -581,6 +702,8 @@ function LocksTab({
   lockTime,
   dailyStatus,
   graceActive,
+  graceRemaining,
+  graceSeconds,
   requestGrace,
   requestSkip,
   openManageApps,
@@ -590,6 +713,8 @@ function LocksTab({
   lockTime: string;
   dailyStatus: DailyStatus;
   graceActive: boolean;
+  graceRemaining: number;
+  graceSeconds: number;
   requestGrace: () => void;
   requestSkip: () => void;
   openManageApps: () => void;
@@ -605,19 +730,20 @@ function LocksTab({
           <Eyebrow>Accountability Lock</Eyebrow>
           <Text style={styles.locksIntro}>Your apps stay locked{`\n`}until you complete tonight’s routine.</Text>
         </View>
-        <View style={styles.headerShield}>
-          <Icon name={completed ? 'checkmark.shield.fill' : 'lock.shield.fill'} color={colors.accent} size={38} />
-        </View>
+        <Image source={require('../../assets/icons/lock-shield.png')} style={styles.headerShieldAsset} resizeMode="contain" />
       </View>
 
       <SectionTitle title="Selected Apps" action="Manage" onPress={openManageApps} />
       <Card style={styles.appsListCard}>
         {selectedAppCount ? (
-          <SelectedActivitiesView
-            available={appsAvailable}
-            revision={selectedAppCount}
-            style={{ height: Math.max(48, selectedAppCount * 48) }}
-          />
+          <>
+            <SelectedActivitiesView
+              available={appsAvailable}
+              revision={selectedAppCount}
+              style={{ height: Math.max(48, Math.min(selectedAppCount, 4) * 48) }}
+            />
+            {selectedAppCount > 4 ? <Text style={styles.moreAppsText}>+{selectedAppCount - 4} MORE SELECTED · MANAGE TO EDIT</Text> : null}
+          </>
         ) : (
           <View style={styles.emptyApps}>
             <Text style={styles.emptyAppsTitle}>No apps selected</Text>
@@ -640,15 +766,15 @@ function LocksTab({
 
       {selectedAppCount ? (
         <Card style={styles.unlockHero}>
-          <View style={styles.unlockRing}>
-            <Icon name={appsAvailable ? 'lock.open.fill' : 'lock.fill'} color={colors.primary} size={28} />
-          </View>
+          <Image source={require('../../assets/icons/lock-ring.png')} style={styles.unlockRingAsset} resizeMode="contain" />
           <View style={styles.unlockCopy}>
             <Text style={styles.unlockKicker}>APPS UNLOCK AFTER</Text>
             <Text style={styles.unlockTitle}>
               {completed ? 'TODAY’S ROUTINE' : graceActive ? 'GRACE MODE ENDS' : skipped ? 'TOMORROW' : 'TONIGHT’S ROUTINE'}
             </Text>
-            <Text style={styles.unlockSupport}>{appsAvailable ? 'Accountability cleared.' : 'Stay locked. Stay focused.'}</Text>
+            <Text style={styles.unlockSupport}>
+              {graceActive ? `${Math.floor(graceSeconds / 60)}:${String(graceSeconds % 60).padStart(2, '0')} remaining` : appsAvailable ? 'Accountability cleared.' : 'Stay locked. Stay focused.'}
+            </Text>
           </View>
         </Card>
       ) : null}
@@ -657,15 +783,22 @@ function LocksTab({
         <>
           <SectionTitle title="Need a Break?" />
           <View style={styles.breakActions}>
-            <Pressable accessibilityRole="button" accessibilityLabel="Use five-minute Grace" style={styles.breakCard} onPress={requestGrace}>
-              <Icon name="hourglass" color={colors.primary} size={24} />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={graceRemaining ? 'Use five-minute Grace' : 'No Grace extensions remaining'}
+              accessibilityState={{ disabled: graceRemaining === 0 || graceActive }}
+              disabled={graceRemaining === 0 || graceActive}
+              style={[styles.breakCard, (graceRemaining === 0 || graceActive) && styles.breakCardDisabled]}
+              onPress={requestGrace}
+            >
+              <Image source={require('../../assets/icons/grace-hourglass.png')} style={styles.breakAsset} resizeMode="contain" />
               <View>
                 <Text style={styles.breakValue}>GRACE MODE</Text>
-                <Text style={styles.breakAction}>5 MIN</Text>
+                <Text style={styles.breakAction}>{graceRemaining ? `${graceRemaining} LEFT` : 'NONE LEFT'}</Text>
               </View>
             </Pressable>
             <Pressable accessibilityRole="button" accessibilityLabel="Skip today" style={styles.breakCard} onPress={requestSkip}>
-              <Icon name="forward.end.fill" color={colors.primary} size={24} />
+              <Image source={require('../../assets/icons/skip-today.png')} style={styles.breakAsset} resizeMode="contain" />
               <View>
                 <Text style={styles.breakValue}>SKIP TODAY</Text>
                 <Text style={styles.breakSupport}>ONCE PER DAY</Text>
@@ -742,18 +875,18 @@ function SessionScreen({
       <Screen testID="routine-complete">
         <View style={styles.completeScreen}>
           <View style={styles.completeHeader}>
-            <Eyebrow>Routine Complete</Eyebrow>
-            <Title>Routine complete.</Title>
+            <Eyebrow>Today&apos;s Training</Eyebrow>
+            <Title>Completed today.</Title>
             <Body muted>You showed up.</Body>
           </View>
           <Image source={todayMovement.coachImage} style={styles.completeCoach} resizeMode="contain" />
           <Text style={styles.completeSets}>5 OF 5 SETS COMPLETE</Text>
           <SetSegments current={5} />
           <Card style={styles.outcomeCard}>
-            <Icon name="lock.open" color={colors.accent} size={25} />
+            <Image source={require('../../assets/icons/apps-unlocked.png')} style={styles.sessionUnlockAsset} resizeMode="contain" />
             <View style={styles.outcomeCopy}>
-              <Text style={styles.outcomeTitle}>APPS UNLOCKED</Text>
-              <Text style={styles.outcomeSupport}>Accountability cleared for today.</Text>
+              <Text style={styles.outcomeTitle}>CLEAR FOR TODAY</Text>
+              <Text style={styles.outcomeSupport}>Your routine is complete.</Text>
             </View>
           </Card>
           <PrimaryButton label="Continue" onPress={onContinue} />
@@ -819,6 +952,7 @@ function SessionScreen({
 
 function ProfileScreen({
   nickname,
+  progress,
   onBack,
   openHistory,
   openMilestones,
@@ -826,6 +960,7 @@ function ProfileScreen({
   openAccount,
 }: {
   nickname: string;
+  progress: ProgressSummary;
   onBack: () => void;
   openHistory: () => void;
   openMilestones: () => void;
@@ -850,11 +985,11 @@ function ProfileScreen({
       </View>
       <Card>
         <View style={styles.metricRow}>
-          <Metric value="26" label="Sessions" />
+          <Metric value={progress.sessions} label="Sessions" />
           <View style={styles.metricDivider} />
-          <Metric value="3" label="Cycles" />
+          <Metric value={progress.cycles} label="Cycles" />
           <View style={styles.metricDivider} />
-          <Metric value="12" label="Momentum" />
+          <Metric value={progress.momentumDays} label="Momentum" />
         </View>
       </Card>
       <View style={styles.menuGroup}>
@@ -867,7 +1002,9 @@ function ProfileScreen({
   );
 }
 
-function HistoryScreen({ onBack }: { onBack: () => void }) {
+function HistoryScreen({ progress, onBack }: { progress: ProgressSummary; onBack: () => void }) {
+  const recent = [...progress.completedDates].sort().reverse().slice(0, 8);
+  const weekValues = lastEightWeekCounts(progress.completedDates);
   return (
     <Screen scroll>
       <TopBar title="History & Progress" onBack={onBack} />
@@ -875,9 +1012,9 @@ function HistoryScreen({ onBack }: { onBack: () => void }) {
       <Card style={styles.historyChart}>
         <Eyebrow>Last 8 Weeks</Eyebrow>
         <View style={styles.bars}>
-          {[4, 5, 4, 6, 5, 7, 5, 6].map((value, index) => (
+          {weekValues.map((value, index) => (
             <View key={index} style={styles.barColumn}>
-              <View style={[styles.bar, { height: value * 18 }]} />
+              <View style={[styles.bar, { height: Math.max(3, value * 18), opacity: value ? 1 : 0.18 }]} />
               <Text style={styles.barLabel}>W{index + 1}</Text>
             </View>
           ))}
@@ -885,30 +1022,30 @@ function HistoryScreen({ onBack }: { onBack: () => void }) {
       </Card>
       <SectionTitle title="Recent Sessions" />
       <Card>
-        {['Kneeling Drive', 'Movement 07', 'Movement 03'].map((name, index) => (
-          <View key={name}>
+        {recent.length ? recent.map((dateKey, index) => (
+          <View key={dateKey}>
             <View style={styles.historyRow}>
               <View style={styles.historyCheck}><Icon name="checkmark" color={colors.accentInk} size={12} weight="bold" /></View>
-              <View style={styles.historyCopy}><Text style={styles.historyTitle}>{name}</Text><Text style={styles.historyDate}>August {10 - index}, 2026 · 5 × 20</Text></View>
+              <View style={styles.historyCopy}><Text style={styles.historyTitle}>{todayMovement.displayName}</Text><Text style={styles.historyDate}>{formatHistoryDate(dateKey)} · 5 × 20</Text></View>
             </View>
-            {index < 2 ? <Divider /> : null}
+            {index < recent.length - 1 ? <Divider /> : null}
           </View>
-        ))}
+        )) : <View style={styles.emptyHistory}><Icon name="calendar.badge.clock" color={colors.tertiary} size={26} /><Text style={styles.emptyAppsTitle}>No sessions yet</Text><Text style={styles.emptyAppsCopy}>Your completed routines will appear here.</Text></View>}
       </Card>
     </Screen>
   );
 }
 
-function MilestonesScreen({ onBack }: { onBack: () => void }) {
+function MilestonesScreen({ progress, onBack }: { progress: ProgressSummary; onBack: () => void }) {
   return (
     <Screen scroll>
       <TopBar title="Milestones" onBack={onBack} />
       <View style={styles.pageHeader}><Eyebrow>Earned Quietly</Eyebrow><Title compact>Built by showing up.</Title></View>
       <View style={styles.milestoneGrid}>
-        <Milestone icon="flame" title="First Week" support="7 sessions" earned />
-        <Milestone icon="repeat" title="Full Cycle" support="7 movements" earned />
-        <Milestone icon="shield" title="Held the Line" support="7 locks cleared" earned />
-        <Milestone icon="calendar" title="One Month" support="30 sessions" />
+        <Milestone icon="flame" title="First Week" support="7 sessions" earned={progress.sessions >= 7} />
+        <Milestone icon="repeat" title="Full Cycle" support="7 movements" earned={progress.cycles >= 1} />
+        <Milestone icon="shield" title="Held the Line" support="7 locks cleared" earned={progress.sessions >= 7} />
+        <Milestone icon="calendar" title="One Month" support="30 sessions" earned={progress.sessions >= 30} />
       </View>
     </Screen>
   );
@@ -973,7 +1110,7 @@ function LockPreferencesScreen({ onBack }: { onBack: () => void }) {
       <Card>
         <SettingToggle icon="lock.shield" title="Daily Accountability" support="Tie selected apps to completion" initial />
         <Divider />
-        <SettingToggle icon="hourglass" title="Grace Availability" support="Three 5-minute uses per cycle" initial />
+        <SettingToggle icon="hourglass" title="Grace Availability" support="Three 5-minute uses per day" initial />
       </Card>
       <Text style={styles.settingsFootnote}>Changes to active lock rules take effect tomorrow.</Text>
     </Screen>
@@ -995,22 +1132,33 @@ function ManageAppsScreen({ count, onBack, onChooseApps }: { count: number; onBa
   );
 }
 
-function LockScheduleScreen({ lockTime, onBack }: { lockTime: string; onBack: () => void }) {
+function LockScheduleScreen({ lockTime, onBack, onSave }: { lockTime: string; onBack: () => void; onSave: (value: string) => void }) {
+  const [selectedTime, setSelectedTime] = useState(lockTime);
   return (
     <Screen>
       <TopBar title="Lock Schedule" onBack={onBack} />
-      <View style={styles.pageHeader}><Eyebrow>Daily Deadline</Eyebrow><Title compact>Done by {lockTime}.</Title><Body muted>This commitment repeats every day. Changes take effect tomorrow.</Body></View>
+      <View style={styles.pageHeader}><Eyebrow>Daily Deadline</Eyebrow><Title compact>Done by {selectedTime}.</Title><Body muted>This commitment repeats every day. Changes take effect tomorrow.</Body></View>
       <Card style={styles.scheduleCard}>
         <Icon name="clock" color={colors.accent} size={32} />
-        <Text style={styles.scheduleTime}>{lockTime}</Text>
+        <DateTimePicker
+          value={dateFromLockTime(selectedTime)}
+          mode="time"
+          display="spinner"
+          themeVariant="dark"
+          accentColor={colors.accent}
+          style={styles.schedulePicker}
+          onValueChange={(_, date) => setSelectedTime(formatLockTime(date))}
+          testID="lock-schedule-wheel"
+        />
+        <Text style={styles.scheduleTime}>{selectedTime}</Text>
         <Text style={styles.scheduleSupport}>Unlock window ends at 6:00 AM</Text>
       </Card>
-      <View style={styles.pageBottom}><PrimaryButton label="Save Schedule" onPress={onBack} /></View>
+      <View style={styles.pageBottom}><PrimaryButton label="Save Schedule" onPress={() => onSave(selectedTime)} /></View>
     </Screen>
   );
 }
 
-function ConfirmationSheet({ type, onCancel, onConfirm }: { type: 'grace' | 'skip'; onCancel: () => void; onConfirm: () => void }) {
+function ConfirmationSheet({ type, graceRemaining, onCancel, onConfirm }: { type: 'grace' | 'skip'; graceRemaining: number; onCancel: () => void; onConfirm: () => void }) {
   const grace = type === 'grace';
   return (
     <Animated.View entering={FadeIn.duration(180)} style={styles.confirmationOverlay}>
@@ -1018,25 +1166,48 @@ function ConfirmationSheet({ type, onCancel, onConfirm }: { type: 'grace' | 'ski
       <Animated.View entering={FadeInRight.duration(260)} style={styles.confirmationSheet}>
         <Eyebrow>{grace ? 'Grace Mode' : 'Skip Today'}</Eyebrow>
         <Title compact>{grace ? 'Use 5-Minute Grace?' : 'Skip today?'}</Title>
-        <Body muted>{grace ? 'Apps will be available for 5 minutes.\n2 Grace extensions remain today.' : 'This ends today’s training, resets current momentum, and can’t be undone. Your movement stays in the cycle.'}</Body>
+        <Body muted>{grace ? `Apps will be available for 5 minutes.\n${graceRemaining} Grace ${graceRemaining === 1 ? 'extension' : 'extensions'} remain today.` : 'This ends today’s training, resets current momentum, and can’t be undone. Your movement stays in the cycle.'}</Body>
         <View style={styles.confirmationActions}>
           {grace ? (
             <PrimaryButton label="Use 5-Minute Grace" onPress={onConfirm} />
           ) : (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Hold to confirm skipping today"
-              onLongPress={onConfirm}
-              delayLongPress={800}
-              style={({ pressed }) => [styles.holdButton, pressed && styles.holdButtonPressed]}
-            >
-              <Text style={styles.holdButtonText}>HOLD TO CONFIRM</Text>
-            </Pressable>
+            <HoldToConfirmButton onConfirm={onConfirm} />
           )}
           <SecondaryButton label={grace ? 'Not Now' : 'Keep Today'} onPress={onCancel} />
         </View>
       </Animated.View>
     </Animated.View>
+  );
+}
+
+function HoldToConfirmButton({ onConfirm }: { onConfirm: () => void }) {
+  const progress = useSharedValue(0);
+  const fillStyle = useAnimatedStyle(() => ({ transform: [{ scaleX: progress.value }] }));
+
+  const complete = () => {
+    Vibration.vibrate(12);
+    onConfirm();
+  };
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Hold for two seconds to confirm skipping today"
+      onPressIn={() => {
+        cancelAnimation(progress);
+        progress.set(withTiming(1, { duration: 2000 }, (finished) => {
+          if (finished) runOnJS(complete)();
+        }));
+      }}
+      onPressOut={() => {
+        cancelAnimation(progress);
+        progress.set(withSpring(0, { damping: 18, stiffness: 180 }));
+      }}
+      style={styles.holdButton}
+    >
+      <Animated.View style={[styles.holdButtonFill, fillStyle]} />
+      <Text style={styles.holdButtonText}>HOLD TO CONFIRM</Text>
+    </Pressable>
   );
 }
 
@@ -1108,8 +1279,42 @@ function isDateInCurrentWeek(dateKey: string) {
   return date >= start && date < end;
 }
 
+function lastEightWeekCounts(completedDates: string[]) {
+  const counts = Array(8).fill(0) as number[];
+  const currentStart = startOfCurrentWeek();
+  completedDates.forEach((dateKey) => {
+    const date = new Date(`${dateKey}T12:00:00`);
+    const diffDays = Math.floor((currentStart.getTime() - date.getTime()) / 86_400_000);
+    const weeksAgo = diffDays < 0 ? 0 : Math.floor(diffDays / 7);
+    if (weeksAgo >= 0 && weeksAgo < 8) counts[7 - weeksAgo] += 1;
+  });
+  return counts;
+}
+
+function formatHistoryDate(dateKey: string) {
+  return new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(`${dateKey}T12:00:00`));
+}
+
+function dateFromLockTime(lockTime: string) {
+  const date = new Date();
+  const match = lockTime.match(/^(\d{1,2}):(\d{2})\s(AM|PM)$/i);
+  if (!match) {
+    date.setHours(21, 0, 0, 0);
+    return date;
+  }
+  let hour = Number(match[1]) % 12;
+  if (match[3].toUpperCase() === 'PM') hour += 12;
+  date.setHours(hour, Number(match[2]), 0, 0);
+  return date;
+}
+
+function formatLockTime(date: Date) {
+  return new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).format(date);
+}
+
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.canvas },
+  fullScene: { flex: 1, backgroundColor: colors.canvas },
   mainShell: { flex: 1 },
   tabScene: { flex: 1 },
   tabContent: { flex: 1 },
@@ -1121,7 +1326,10 @@ const styles = StyleSheet.create({
   profileButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   momentumCard: { gap: spacing.lg, padding: spacing.lg },
   momentumTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  momentumCopy: { flex: 1 },
   momentumValue: { color: colors.primary, fontSize: 54, lineHeight: 62, fontWeight: '700', marginVertical: spacing.xs },
+  momentumRecovery: { color: colors.primary, fontSize: 25, lineHeight: 32, fontWeight: '700', marginTop: spacing.xxl, maxWidth: 290 },
+  momentumRecoverySupport: { color: colors.secondary, fontSize: 14, marginTop: spacing.xxl },
   weekRing: { width: 112, height: 112, borderRadius: 56, alignItems: 'center', justifyContent: 'center' },
   weekRingValue: { color: colors.primary, fontSize: 25, fontWeight: '700' },
   weekRingLabel: { color: colors.secondary, fontSize: 11, letterSpacing: 1.4, marginTop: 2 },
@@ -1143,6 +1351,9 @@ const styles = StyleSheet.create({
   deadlineRow: { minHeight: 48, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
   deadlineText: { ...typography.eyebrow, color: colors.secondary },
   deadlineTextComplete: { color: colors.accent },
+  skippedInfoRow: { borderColor: colors.borderStrong },
+  noActionRow: { minHeight: 52, borderWidth: 1, borderColor: colors.borderStrong, borderRadius: radii.md, alignItems: 'center', justifyContent: 'center' },
+  noActionText: { ...typography.eyebrow, color: colors.secondary },
   calendarSection: { gap: spacing.xl },
   calendarHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   calendarTitle: { color: colors.secondary, fontSize: 18, letterSpacing: 2.6 },
@@ -1185,11 +1396,21 @@ const styles = StyleSheet.create({
   outcomeCopy: { flex: 1, gap: spacing.xs },
   outcomeTitle: { color: colors.primary, fontSize: 16, fontWeight: '700' },
   outcomeSupport: { color: colors.secondary, fontSize: 13 },
+  outcomeTrainContent: { flexGrow: 1, paddingHorizontal: spacing.xl, paddingTop: spacing.xxxl, paddingBottom: spacing.xxl, gap: spacing.xxl },
+  outcomeTrainHeader: { alignItems: 'center', gap: spacing.md },
+  outcomeTrainEyebrow: { color: colors.secondary, fontSize: 15, letterSpacing: 3.2 },
+  outcomeTrainTitle: { color: colors.primary, fontSize: 31, lineHeight: 38, fontWeight: '800', letterSpacing: 1.2, textAlign: 'center' },
+  outcomeTrainSupport: { color: colors.secondary, fontSize: 18, letterSpacing: 2.2 },
+  outcomeTrainCoach: { width: '100%', height: 330 },
+  outcomeTrainProgress: { gap: spacing.md },
+  outcomeTrainSummary: { color: colors.primary, fontSize: 18, lineHeight: 24, fontWeight: '700', letterSpacing: 1.5, textAlign: 'center' },
+  outcomeTrainCard: { minHeight: 100, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
+  outcomeUnlockAsset: { width: 72, height: 72 },
   locksContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.xxl, paddingBottom: spacing.xxl, gap: spacing.md },
   locksHeader: { minHeight: 120, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.lg },
   locksHeaderCopy: { flex: 1, gap: spacing.md },
   locksIntro: { color: colors.secondary, fontSize: 14, lineHeight: 21 },
-  headerShield: { width: 72, height: 78, alignItems: 'center', justifyContent: 'center', borderColor: colors.accent, borderWidth: 1.5, borderRadius: 22, backgroundColor: '#11140E' },
+  headerShieldAsset: { width: 86, height: 86 },
   sectionTitle: { marginTop: spacing.sm, minHeight: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   appsListCard: { padding: 0, overflow: 'hidden' },
   appRow: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
@@ -1198,6 +1419,7 @@ const styles = StyleSheet.create({
   emptyApps: { paddingVertical: spacing.lg, gap: spacing.sm },
   emptyAppsTitle: { color: colors.primary, fontSize: 16, fontWeight: '700' },
   emptyAppsCopy: { color: colors.secondary, fontSize: 13 },
+  moreAppsText: { color: colors.secondary, fontSize: 10, fontWeight: '700', letterSpacing: 1.1, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   lockTimeCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, minHeight: 90, marginTop: spacing.sm },
   lockTimeIcon: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, borderColor: colors.secondary, alignItems: 'center', justifyContent: 'center' },
   lockTimeCopy: { flex: 1, gap: spacing.xs },
@@ -1205,12 +1427,15 @@ const styles = StyleSheet.create({
   lockTimeSupport: { color: colors.tertiary, fontSize: 10, letterSpacing: 1.1 },
   unlockHero: { minHeight: 122, flexDirection: 'row', alignItems: 'center', gap: spacing.xl, borderColor: colors.borderStrong, marginTop: spacing.sm },
   unlockRing: { width: 82, height: 82, borderRadius: 41, borderWidth: 3, borderColor: colors.accent, alignItems: 'center', justifyContent: 'center', shadowColor: colors.accent, shadowOpacity: 0.34, shadowRadius: 10, shadowOffset: { width: 0, height: 0 } },
+  unlockRingAsset: { width: 94, height: 94 },
   unlockCopy: { flex: 1, gap: spacing.xs },
   unlockKicker: { color: colors.primary, fontSize: 12, letterSpacing: 1.1 },
   unlockTitle: { color: colors.accent, fontSize: 17, fontWeight: '800', letterSpacing: 1 },
   unlockSupport: { color: colors.secondary, fontSize: 13 },
   breakActions: { flexDirection: 'row', gap: spacing.md },
   breakCard: { flex: 1, minHeight: 94, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, backgroundColor: colors.surface, padding: spacing.lg, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  breakCardDisabled: { opacity: 0.42 },
+  breakAsset: { width: 31, height: 31 },
   breakValue: { color: colors.primary, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' },
   breakAction: { color: colors.accent, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
   breakSupport: { color: colors.tertiary, fontSize: 12 },
@@ -1236,6 +1461,7 @@ const styles = StyleSheet.create({
   completeHeader: { alignItems: 'center', gap: spacing.sm },
   completeCoach: { flex: 1, width: '100%', maxHeight: 350 },
   completeSets: { color: colors.primary, fontSize: 17, fontWeight: '700', letterSpacing: 1.1 },
+  sessionUnlockAsset: { width: 64, height: 64 },
   profileHero: { alignItems: 'center', paddingVertical: spacing.xxxl, gap: spacing.sm },
   avatar: { width: 84, height: 84, borderRadius: 42, backgroundColor: colors.surfaceRaised, borderWidth: 1, borderColor: colors.accent, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
   avatarText: { color: colors.primary, fontSize: 32, fontWeight: '700' },
@@ -1256,6 +1482,7 @@ const styles = StyleSheet.create({
   historyCopy: { flex: 1, gap: spacing.xs },
   historyTitle: { color: colors.primary, fontSize: 15, fontWeight: '600' },
   historyDate: { color: colors.secondary, fontSize: 12 },
+  emptyHistory: { minHeight: 160, alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
   milestoneGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   milestone: { width: '48%', minHeight: 180, justifyContent: 'flex-end', gap: spacing.sm },
   milestoneEarned: { borderColor: colors.accent },
@@ -1275,12 +1502,14 @@ const styles = StyleSheet.create({
   appsLabel: { ...typography.eyebrow, color: colors.accent, marginTop: spacing.xs },
   pageBottom: { marginTop: 'auto', paddingBottom: spacing.xl },
   scheduleCard: { alignItems: 'center', paddingVertical: spacing.xxxl, gap: spacing.md },
+  schedulePicker: { width: '100%', height: 180 },
   scheduleTime: { color: colors.primary, fontSize: 44, fontWeight: '700' },
   scheduleSupport: { color: colors.secondary, fontSize: 13 },
   confirmationOverlay: { position: 'absolute', inset: 0, backgroundColor: colors.scrim, justifyContent: 'flex-end' },
   confirmationSheet: { minHeight: '66%', backgroundColor: colors.surfaceRaised, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl, borderWidth: 1, borderColor: colors.borderStrong, padding: spacing.xl, paddingBottom: spacing.xxxl, gap: spacing.lg },
   confirmationActions: { gap: spacing.md, marginTop: 'auto' },
-  holdButton: { minHeight: 58, borderRadius: radii.md, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
+  holdButton: { minHeight: 58, borderRadius: radii.md, backgroundColor: colors.accentPressed, borderWidth: 1, borderColor: colors.accent, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  holdButtonFill: { position: 'absolute', inset: 0, backgroundColor: colors.accent, transformOrigin: 'left center' },
   holdButtonPressed: { opacity: 0.82, transform: [{ scale: 0.99 }] },
   holdButtonText: { color: colors.accentInk, fontSize: 16, fontWeight: '800', letterSpacing: 0.6 },
 });

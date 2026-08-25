@@ -15,15 +15,17 @@ struct SelectedActivitiesView: ExpoSwiftUI.View {
 
     Group {
       if let selection = storedSelection.selection, !storedSelection.isEmpty {
+        let rows = selection.applicationTokens.map { token in
+          AnyView(activityRow(Label(token)))
+        } + selection.categoryTokens.map { token in
+          AnyView(activityRow(Label(token)))
+        } + selection.webDomainTokens.map { token in
+          AnyView(activityRow(Label(token)))
+        }
+
         VStack(spacing: 0) {
-          ForEach(Array(selection.applicationTokens), id: \.self) { token in
-            activityRow(Label(token))
-          }
-          ForEach(Array(selection.categoryTokens), id: \.self) { token in
-            activityRow(Label(token))
-          }
-          ForEach(Array(selection.webDomainTokens), id: \.self) { token in
-            activityRow(Label(token))
+          ForEach(Array(rows.prefix(4).enumerated()), id: \.offset) { _, row in
+            row
           }
         }
       } else {
@@ -31,6 +33,7 @@ struct SelectedActivitiesView: ExpoSwiftUI.View {
       }
     }
     .background(Color.clear)
+    .environment(\.colorScheme, .dark)
   }
 
   private func activityRow<Content: View>(_ label: Content) -> some View {

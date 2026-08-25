@@ -272,3 +272,25 @@ Home and Locks revision:
 
 Visual comparison evidence and the pass record are in `design-qa.md` and
 `docs/ui-audit/round-02/`.
+
+## Phase 05 Simulator UI — Owner Revision 03 (2026-08-24)
+
+The current feature branch also includes the Owner-requested state and motion
+closure pass:
+
+- Profile, History and Milestones now use real zero-based progress instead of
+  preview data;
+- Grace has three daily uses, a persisted five-minute timer, automatic native
+  shield restoration and visible remaining-use states;
+- Skip requires a continuous two-second animated hold and tactile confirmation;
+- skipped and completed Home/Train screens are distinct and match the supplied
+  state references;
+- the supplied Locks and completion assets are integrated;
+- selected Screen Time labels are bounded to four visible rows with an overflow
+  summary so Locks remains usable for large selections;
+- Lock Time opens an editable native wheel and reschedules the native daily lock;
+- Reveal, Profile/subscreens, tabs, sheets and calendar navigation animate; and
+- the calendar accepts horizontal swipe as well as arrow input.
+
+Round 03 Simulator evidence and the pass record are in `design-qa.md` and
+`docs/ui-audit/round-03/`.

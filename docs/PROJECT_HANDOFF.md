@@ -286,3 +286,17 @@ appear without exposing private token contents to React Native.
 Verification completed with TypeScript, Expo lint, guided-routine tests, a full
 iOS Simulator build/run, runtime UI inspection, and source-vs-implementation
 visual comparison. See `design-qa.md`.
+
+### Owner Revision 03
+
+The branch now closes the audited state inconsistencies around new-user
+progress, Grace expiry/counting, destructive Skip confirmation, completed and
+skipped Home/Train outcomes, bounded native selected-activity rows, editable
+Lock Time, daily rollover, and interaction motion. Routine completion now writes
+the native shared completion boundary as soon as set five reaches its valid
+final state; the later Continue action only advances the account flow.
+
+Grace uses the existing native shield bridge without adding a dependency,
+permission, capability, or new data collection. Supplied bitmap assets are
+local app resources; Coach media remains explicitly replaceable. Round 03
+evidence is in `docs/ui-audit/round-03/`.

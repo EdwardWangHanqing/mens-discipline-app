@@ -10,6 +10,7 @@ import { AccountScreen, PaywallScreen } from '../screens/AccountAndPaywall';
 import {
   MainExperience,
   type DailyStatus,
+  type GraceState,
   type MainTab,
   type ProgressSummary,
 } from '../screens/MainExperience';
@@ -18,6 +19,7 @@ import {
   type OnboardingDraft,
 } from '../screens/OnboardingFlow';
 import { colors } from '../theme/designSystem';
+import { calculateCurrentMomentum, createGraceBudget } from '../state/dailyState';
 
 type RootScreen = 'onboarding' | 'main' | 'account' | 'paywall';
 const appStateStorageKey = 'mens-discipline.app-state.v1';
@@ -37,7 +39,12 @@ const initialProgress: ProgressSummary = {
   momentumDays: 0,
   longestMomentum: 0,
   completedDates: [],
+  skippedDates: [],
 };
+
+function initialGraceState(): GraceState {
+  return createGraceBudget(localDateKey(new Date()));
+}
 
 export default function AppExperience() {
   const [screen, setScreen] = useState<RootScreen>('onboarding');
@@ -49,8 +56,10 @@ export default function AppExperience() {
   const [authorizationBusy, setAuthorizationBusy] = useState(false);
   const [pickerBusy, setPickerBusy] = useState(false);
   const [progress, setProgress] = useState(initialProgress);
+  const [grace, setGrace] = useState<GraceState>(initialGraceState);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [activeDateKey, setActiveDateKey] = useState(() => localDateKey(new Date()));
 
   useEffect(() => {
     void SystemUI.setBackgroundColorAsync(colors.canvas);
@@ -67,17 +76,35 @@ export default function AppExperience() {
 
   useEffect(() => {
     if (!hydrated) return;
+    const reconcileDate = () => {
+      const nextDateKey = localDateKey(new Date());
+      if (nextDateKey === activeDateKey) return;
+      setActiveDateKey(nextDateKey);
+      setDailyStatus('unrevealed');
+      setGrace(initialGraceState());
+      setProgress((current) => ({
+        ...current,
+        momentumDays: calculateCurrentMomentum(current.completedDates, new Date()),
+      }));
+    };
+    const timer = setInterval(reconcileDate, 30_000);
+    return () => clearInterval(timer);
+  }, [activeDateKey, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
     void AsyncStorage.setItem(
       appStateStorageKey,
       JSON.stringify({
         draft,
         progress,
+        grace,
         dailyStatus,
         onboardingCompleted,
-        dateKey: localDateKey(new Date()),
+        dateKey: activeDateKey,
       })
     );
-  }, [dailyStatus, draft, hydrated, onboardingCompleted, progress]);
+  }, [activeDateKey, dailyStatus, draft, grace, hydrated, onboardingCompleted, progress]);
 
   return (
     <SafeAreaProvider>
@@ -107,8 +134,14 @@ export default function AppExperience() {
           setTab={setTab}
           dailyStatus={dailyStatus}
           progress={progress}
+          grace={grace}
+          setGrace={setGrace}
           setDailyStatus={setDailyStatus}
-          onFreeRoutineComplete={completeFreeRoutine}
+          onRoutineCompleted={completeRoutine}
+          onCompletionContinue={() => {
+            setAccountMode('signUp');
+            setScreen('account');
+          }}
           onOpenAccount={() => {
             setAccountMode('signIn');
             setScreen('account');
@@ -118,6 +151,7 @@ export default function AppExperience() {
             void AsyncStorage.removeItem(appStateStorageKey);
             setDraft(initialDraft);
             setProgress(initialProgress);
+            setGrace(initialGraceState());
             setDailyStatus('unrevealed');
             setTab('home');
             setOnboardingCompleted(false);
@@ -127,8 +161,16 @@ export default function AppExperience() {
           onChooseApps={chooseApps}
           onSkipToday={() => {
             setDailyStatus('skipped');
-            setProgress((current) => ({ ...current, momentumDays: 0 }));
+            const dateKey = localDateKey(new Date());
+            setProgress((current) => ({
+              ...current,
+              momentumDays: 0,
+              skippedDates: current.skippedDates.includes(dateKey)
+                ? current.skippedDates
+                : [...current.skippedDates, dateKey],
+            }));
           }}
+          onUpdateLockTime={updateLockTime}
         />
       ) : null}
       {hydrated && screen === 'account' ? (
@@ -155,6 +197,7 @@ export default function AppExperience() {
     setTab('home');
     setOnboardingCompleted(true);
     setScreen('main');
+    void updateLockTime(draft.lockTime);
   }
 
   async function requestScreenTime() {
@@ -200,24 +243,31 @@ export default function AppExperience() {
     }
   }
 
-  function completeFreeRoutine() {
+  function completeRoutine() {
     void FamilyControls.completeRoutineToday().catch(() => undefined);
     setDailyStatus('completed');
     const dateKey = localDateKey(new Date());
     setProgress((current) => {
       if (current.completedDates.includes(dateKey)) return current;
       const sessions = current.sessions + 1;
-      const momentumDays = current.momentumDays + 1;
+      const completedDates = [...current.completedDates, dateKey];
+      const momentumDays = calculateCurrentMomentum(completedDates, new Date());
       return {
         sessions,
         cycles: Math.floor(sessions / 7),
         momentumDays,
         longestMomentum: Math.max(current.longestMomentum, momentumDays),
-        completedDates: [...current.completedDates, dateKey],
+        completedDates,
+        skippedDates: current.skippedDates.filter((date) => date !== dateKey),
       };
     });
-    setAccountMode('signUp');
-    setScreen('account');
+  }
+
+  async function updateLockTime(lockTime: string) {
+    setDraft((current) => ({ ...current, lockTime }));
+    const parsed = parseLockTime(lockTime);
+    if (!parsed || !draft.screenTimeConnected || draft.selectedAppCount === 0) return;
+    await FamilyControls.scheduleDailyLock(parsed.hour, parsed.minute).catch(() => undefined);
   }
 
   async function restoreLocalState() {
@@ -227,13 +277,20 @@ export default function AppExperience() {
       const saved = JSON.parse(raw) as {
         draft?: Partial<OnboardingDraft>;
         progress?: Partial<ProgressSummary>;
+        grace?: GraceState;
         dailyStatus?: DailyStatus;
         onboardingCompleted?: boolean;
         dateKey?: string;
       };
       const completed = Boolean(saved.onboardingCompleted);
       setDraft({ ...initialDraft, ...saved.draft });
-      setProgress({ ...initialProgress, ...saved.progress });
+      const restoredProgress = { ...initialProgress, ...saved.progress };
+      setProgress({
+        ...restoredProgress,
+        momentumDays: calculateCurrentMomentum(restoredProgress.completedDates, new Date()),
+      });
+      const todayKey = localDateKey(new Date());
+      setGrace(saved.grace?.dateKey === todayKey ? saved.grace : initialGraceState());
       setDailyStatus(saved.dateKey === localDateKey(new Date()) ? saved.dailyStatus ?? 'unrevealed' : 'unrevealed');
       setOnboardingCompleted(completed);
       setScreen(completed ? 'main' : 'onboarding');
@@ -243,6 +300,15 @@ export default function AppExperience() {
       setHydrated(true);
     }
   }
+}
+
+function parseLockTime(value: string) {
+  const match = /^(\d{1,2}):(\d{2})\s(AM|PM)$/.exec(value);
+  if (!match) return null;
+  const [, rawHour, rawMinute, meridiem] = match;
+  let hour = Number(rawHour) % 12;
+  if (meridiem === 'PM') hour += 12;
+  return { hour, minute: Number(rawMinute) };
 }
 
 function localDateKey(date: Date) {
