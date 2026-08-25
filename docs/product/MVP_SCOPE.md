@@ -151,19 +151,16 @@ The daily movement is performed for exactly:
 
 **5 sets**
 
-Each set typically contains:
+Each set contains exactly:
 
-**15–20 repetitions**
+**20 guided repetitions**
 
 Rest between sets is exactly:
 
 **20 seconds**
 
-Exact repetition targets are NOT yet globally locked.
-
-They will be determined later on a movement-by-movement basis.
-
-Do not automatically assign the same repetition target to all seven movements.
+The repetition target is globally locked by DEC-024 and applies to all seven
+movements.
 
 Rep cadence / tempo is also movement-specific and will be defined with each
 movement and Coach asset. Do not assign one universal cadence or total session
@@ -236,13 +233,14 @@ Movement demonstration
 
 → accountability satisfied / unlock.
 
-The app guides the user through movement-specific repetitions and tempo. MVP does
+The app guides the user through the shared 20-rep target and movement-specific
+tempo. MVP does
 not attempt to cryptographically or visually prove every repetition was
 performed. Do not replace Camera/Vision with manual tapping,
 hardware-volume-button counting, or another counting workaround.
 
 Set transitions, the rest timer, and routine completion must be clear and
-reliable. Exact per-movement repetition targets, cadence values, Coach assets,
+reliable. Cadence values, Coach assets,
 audio behavior, and final visual progress treatment remain later decisions.
 
 ---
@@ -452,7 +450,8 @@ The user's first complete routine should be available as:
 **exactly one full free daily routine**
 
 The first routine is production-shaped: exactly one movement, exactly five
-sets, movement-specific repetitions/cadence, exactly four 20-second rests, and
+sets, exactly 20 guided repetitions per set, movement-specific cadence, exactly
+four 20-second rests, and
 Set 5 → completion. It is not a shortened tutorial workout.
 
 The user should be able to understand the core product value before being required to start a subscription trial.
@@ -645,7 +644,7 @@ The following are not permission for Codex to invent answers.
 
 They are intentionally pending later decisions or technical validation:
 
-- exact repetition target and cadence/tempo for each movement;
+- exact cadence/tempo for each movement;
 - detailed Skip Today friction;
 - detailed Grace Extension UX;
 - detailed Replace Movement behavior;
@@ -706,7 +705,7 @@ The current structure is defined by:
 
 - one movement per day;
 - exactly five sets;
-- typically 15–20 reps per set, defined per movement;
+- exactly 20 guided reps per set;
 - exactly 20 seconds rest between sets.
 
 Exact duration will depend on the movement.

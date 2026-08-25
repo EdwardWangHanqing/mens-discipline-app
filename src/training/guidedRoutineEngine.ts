@@ -1,5 +1,8 @@
 export const GUIDED_ROUTINE_SET_COUNT = 5;
-export const INTER_SET_REST_DURATION_MS = 20_000;
+export const REPS_PER_SET = 20;
+export const REST_SECONDS = 20;
+export const INTER_SET_REST_DURATION_MS = REST_SECONDS * 1_000;
+export const TOTAL_DAILY_REPS = GUIDED_ROUTINE_SET_COUNT * REPS_PER_SET;
 
 export type MovementCadence = {
   repDurationMs: number;
@@ -8,7 +11,6 @@ export type MovementCadence = {
 export type GuidedMovementSpecification = {
   id: string;
   displayName: string;
-  repsPerSet: number;
   cadence: MovementCadence;
   demonstrationDurationMs: number;
   countdownDurationMs: number;
@@ -39,7 +41,6 @@ export type GuidedRoutineState = {
 export const representativeMovementSpecification: GuidedMovementSpecification = {
   id: 'representative-guided-movement',
   displayName: 'Representative guided movement',
-  repsPerSet: 5,
   cadence: { repDurationMs: 1_000 },
   demonstrationDurationMs: 3_000,
   countdownDurationMs: 3_000,
@@ -71,7 +72,6 @@ export function validateMovementSpecification(
   if (!specification.id.trim() || !specification.displayName.trim()) {
     throw new Error('Movement id and display name are required.');
   }
-  assertPositiveInteger(specification.repsPerSet, 'repsPerSet');
   assertPositiveInteger(
     specification.cadence.repDurationMs,
     'cadence.repDurationMs'
@@ -117,7 +117,7 @@ export function phaseDurationMs(
     case 'countdown':
       return specification.countdownDurationMs;
     case 'guidedSet':
-      return specification.repsPerSet * specification.cadence.repDurationMs;
+      return REPS_PER_SET * specification.cadence.repDurationMs;
     case 'rest':
       return INTER_SET_REST_DURATION_MS;
     default:
@@ -145,14 +145,14 @@ function enterNextPhase(
         return {
           ...state,
           phase: 'awaitingAccountability',
-          repetitionsCompleted: specification.repsPerSet,
+          repetitionsCompleted: REPS_PER_SET,
           phaseElapsedMs: 0,
         };
       }
       return {
         ...state,
         phase: 'rest',
-        repetitionsCompleted: specification.repsPerSet,
+        repetitionsCompleted: REPS_PER_SET,
         phaseElapsedMs: 0,
       };
     case 'rest':
@@ -198,7 +198,7 @@ export function advanceRoutine(
       repetitionsCompleted:
         next.phase === 'guidedSet'
           ? Math.min(
-              specification.repsPerSet,
+              REPS_PER_SET,
               Math.floor(phaseElapsedMs / specification.cadence.repDurationMs)
             )
           : next.repetitionsCompleted,

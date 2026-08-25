@@ -526,3 +526,35 @@ subscription remains active until its paid-through expiration. **No active
 training entitlement → No active accountability lock.** Account deletion,
 subscription utility behavior, and purchase restoration remain release
 requirements.
+
+---
+
+## DEC-024 — All Seven MVP Movements Use Five Sets of Twenty Guided Repetitions
+
+**Status:** Accepted owner override — 2026-08-24
+
+All seven MVP movements use the same production training quantity:
+
+- exactly one movement per daily routine;
+- exactly five sets;
+- exactly twenty guided repetitions per set;
+- exactly four 20-second rests between Sets 1–4;
+- Set 5 transitions directly to Completion;
+- exactly 100 guided repetitions per completed daily routine.
+
+This decision supersedes every older `movement-specific reps`, `15–20 reps`,
+`18 reps`, `8 / 18`, and representative production-copy example. Active guided
+progress uses `X / 20`; Home and Train summaries use `5 sets · 20 reps`.
+
+The seven movements remain data-driven and may still differ in name,
+instructional copy, Coach media, future animation, future audio, and approved
+movement-specific cadence. The shared set/rep/rest constants must not be copied
+into seven independent screen implementations.
+
+Reveal remains a shared daily state: the system determines today's movement
+before Reveal, Reveal only exposes that result, and Home/Train must show the same
+movement without rerolling.
+
+Current static Coach images, future movement animations, and future voice/music
+assets are replaceable media. Missing final media must not block full UI closure
+or Simulator-ready end-to-end validation.

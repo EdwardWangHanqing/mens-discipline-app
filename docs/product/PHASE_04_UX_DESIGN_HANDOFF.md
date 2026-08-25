@@ -38,6 +38,8 @@ Important supersessions already reflected in this document:
 - Annual is default/recommended.
 - 3-Month plan is removed.
 - No active training entitlement means no active accountability lock.
+- All seven movements use exactly **5 sets × 20 guided reps**; older
+  movement-specific-rep and `18 reps` examples are superseded by DEC-024.
 
 ---
 
@@ -137,7 +139,7 @@ MVP daily training is locked as:
 
 - exactly **1 movement per day**;
 - exactly **5 sets**;
-- typically 15–20 reps per set, but exact targets are movement-specific;
+- exactly **20 guided reps per set** for all seven movements;
 - cadence/tempo is movement-specific;
 - exactly **20 seconds rest between sets**;
 - exactly **four rests**;
@@ -151,7 +153,7 @@ Guided flow:
 
 > **Preparation → Countdown → Set 1 → Rest → Set 2 → Rest → Set 3 → Rest → Set 4 → Rest → Set 5 → Completion**
 
-The displayed rep position, e.g. `8 / 18`, represents guided position in the cadence, not verified real-world repetition count.
+The displayed rep position, e.g. `8 / 20`, represents guided position in the cadence, not verified real-world repetition count.
 
 ---
 
@@ -357,7 +359,7 @@ Show:
 
 - movement name;
 - movement visual / thumbnail / Coach preview;
-- `5 sets · [movement-specific reps]`;
+- `5 sets · 20 reps`;
 - `X of 7 completed`;
 - **Begin**;
 - contextual accountability status.
@@ -583,7 +585,7 @@ Show:
 
 - movement;
 - Coach preview;
-- `5 sets · x reps`;
+- `5 sets · 20 reps`;
 - cycle progress;
 - **Begin**;
 - **Replace Movement** when quota is available.
@@ -627,14 +629,14 @@ If the user already tapped Begin from Home, do not ask them to press another Sta
 Show:
 
 - `SET X OF 5`;
-- guided position such as `8 / 18`;
+- guided position such as `8 / 20`;
 - Coach;
 - cadence/progress treatment;
 - Pause.
 
 Important:
 
-> **8 / 18 is guided position, not verified reps.**
+> **8 / 20 is guided position, not verified reps.**
 
 ## 14.3 Rest
 
@@ -1532,7 +1534,7 @@ First movement shows:
 
 - movement;
 - Coach preview;
-- `5 sets · movement-specific reps`;
+- `5 sets · 20 reps`;
 - Begin.
 
 May retain:
@@ -2101,7 +2103,7 @@ It must not alter:
 - account-before-subscription rule;
 - subscription structure;
 - entitlement/accountability safety dependency;
-- locked training structure.
+- locked training structure, including 5 sets × 20 guided reps.
 
 If a visual solution appears to require changing UX behavior:
 
@@ -2239,7 +2241,7 @@ The expected progression is:
 - UX is locked.
 - Primary tabs: **Home | Train | Locks**.
 - Home = Momentum + Today + Calendar + lifetime progress.
-- Train = guided one-movement / five-set session.
+- Train = guided one-movement / five-set / 20-rep-per-set session.
 - Locks = accountability config/state + Grace/Skip.
 - One daily state is shared everywhere.
 - 7 movements, random-without-repeat cycle.

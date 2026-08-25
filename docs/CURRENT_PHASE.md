@@ -6,9 +6,11 @@ Men's Discipline App
 
 ## Current Phase
 
-**04 — UX Architecture (Closed / Passed)**
+**05 — Visual System / Full UI Closure (Active)**
 
-**Next planned phase:** 05 — Visual System / Figma Design System
+**Owner-approved execution milestone:** repair and complete the existing visual
+system and all MVP UI, implement the shared state-driven experience, then repeat
+Simulator visual QA until the app is ready for owner end-to-end use.
 
 Phase 04 is closed and passed. The UX architecture is now the source for
 visual-system work; Phase 05 must translate the locked behavior into visual
@@ -75,10 +77,11 @@ Locked structure:
 
 - exactly one movement per day;
 - exactly five sets;
-- typically 15–20 repetitions per set, with exact targets defined per movement;
+- exactly 20 guided repetitions per set for all seven movements;
 - exactly 20 seconds of rest between sets;
 - cadence/tempo defined per movement with its Coach asset;
-- no universal repetition target, cadence, or total session duration;
+- the repetition target is universal; cadence and total duration may remain
+  movement-specific;
 - no camera proof, manual-tap counting, hardware-button counting, or substitute
   proof workaround.
 
@@ -196,7 +199,7 @@ complete.
 
 Do not invent or finalize outside the next approved phase:
 
-- exact repetition/cadence values for all seven movements;
+- final movement names and movement-specific cadence values for all seven movements;
 - final Coach design/assets;
 - final audio/haptic system;
 - final visual progress animation;

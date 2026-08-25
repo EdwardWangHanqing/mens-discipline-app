@@ -53,7 +53,7 @@ entitlement, SDK, bundle identifier or collected-data category changed.
 
 Automated and build verification:
 
-- six deterministic Node tests for sequencing, movement-specific configuration,
+- six deterministic Node tests for sequencing, the global 20-rep target plus movement-specific cadence,
   five sets, four 20-second rests, no fifth rest, no premature completion,
   interruption and duplicate-safe final acknowledgement;
 - strict TypeScript check;
@@ -74,7 +74,7 @@ shield stayed removed and the selected app remained accessible.
 
 ## Deferred risks
 
-- final movement list, reps and cadence;
+- final movement list and movement-specific cadence;
 - final interruption/resume UX and production session persistence;
 - midnight, timezone/DST and multi-version reliability;
 - distribution archive/profile inspection and actual TestFlight operation;

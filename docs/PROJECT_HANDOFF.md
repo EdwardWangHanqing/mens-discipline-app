@@ -1,10 +1,10 @@
 # Men's Discipline App — Project Handoff
 
-**Last updated:** 2026-08-22 (America/Vancouver)
+**Last updated:** 2026-08-24 (America/Vancouver)
 
-**Repository:** `/Users/hanqingwang/Developer/mens-discipline-app`
+**Repository:** `/Users/hanqingwang/Desktop/mens-discipline-app`
 
-**Active branch:** `chore/add-phase-04-ux-design-handoff` (documentation sync)
+**Active branch:** `feature/simulator-ready-ui`
 
 **Phase 03.10 integration checkpoint:** `main` at `c398be46ecae5dd9e97c89f2922cb1cb3a73f898`
 
@@ -18,7 +18,11 @@
 
 **Phase 04 status:** Closed / Passed
 
-**Next planned phase:** Phase 05 — Visual System / Figma Design System
+**Current phase:** Phase 05 — Visual System / Full UI Closure (Active)
+
+**Owner-approved outcome:** continue from repair of the existing UI through
+missing-state design, implementation, Simulator screenshot QA, correction,
+re-test, commit/push, and owner-ready end-to-end handoff.
 
 ## Purpose and Authority
 
@@ -72,10 +76,11 @@ Movement demonstration → countdown → guided repetitions → set completion �
 
 - exactly one movement per day;
 - exactly five sets;
-- typically 15–20 reps/set, exact target defined per movement later;
+- exactly 20 guided reps/set for every movement;
 - exactly 20 seconds rest between sets;
 - movement-specific cadence/tempo defined with each movement and Coach asset;
-- no universal repetition count, cadence, or total session duration.
+- repetition count is universal; cadence and total session duration may remain
+  movement-specific.
 
 Do not invent final movement targets, cadence values, Coach design/assets,
 audio/haptics, or visual progress animation during the next architecture task.
@@ -145,9 +150,10 @@ configuration/current lock state/Grace/Skip. Profile / Settings is reached from
 Home's upper-right entry.
 
 The first complete product experience requires no account. Onboarding includes
-exactly one full free daily routine: one movement, five sets, movement-specific
-reps/cadence, and four 20-second rests. Earned progress/history remains visible
-after completion, including in the signed-out limited Home state. New training
+exactly one full free daily routine: one movement, five sets, exactly 20 reps
+per set, movement-specific cadence, and four 20-second rests. Earned
+progress/history remains visible after completion, including in the signed-out
+limited Home state. New training
 requires an active entitlement. Account creation/sign-in is required before
 starting Trial/Subscription, using Apple, Google, or Email.
 

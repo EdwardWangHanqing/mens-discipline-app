@@ -17,7 +17,7 @@
 - Account direction: Apple + Google + Email; Phone OTP is not an MVP priority.
 - 3-day free trial is locked; subscription plans are Monthly $9.99/month and Annual $39.99/year. Annual is default/recommended; 3-Month is removed.
 - Paywall may be closed. Closing it does not grant ongoing free daily training. No active training entitlement means no active accountability lock.
-- Daily training structure is exactly 1 movement/day, a 7-movement cycle without repetition, exactly 5 sets, typically 15–20 reps/set with exact targets defined per movement, and exactly 20s rest; cadence is movement-specific.
+- Daily training structure is exactly 1 movement/day, a 7-movement cycle without repetition, exactly 5 sets, exactly 20 guided reps/set, and exactly 20s rest; cadence is movement-specific.
 - MVP uses guided cadence training. Camera/Vision is not an MVP feature, completion path, permission, reviewer flow, or release requirement.
 
 ---
@@ -114,7 +114,8 @@ Camera validation or Camera reviewer flow is required for MVP.
       recovery.
 
 ### Guided Training Engine / before Beta
-- [ ] Define exact repetition target and cadence/tempo separately for each of the seven movements.
+- [x] Lock the repetition target at exactly 20 guided reps per set for every movement.
+- [ ] Define cadence/tempo separately for each of the seven movements.
 - [ ] Validate demonstration, countdown, set transitions, 20-second rests, routine completion, and recovery for all seven movement specifications.
 - [ ] Validate approved Coach assets, audio/haptics, and visual progress behavior after those decisions are made.
 

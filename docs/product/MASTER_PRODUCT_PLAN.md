@@ -362,7 +362,7 @@ The completion experience should feel satisfying without becoming game-like.
 
 The MVP uses a low-friction guided session rather than camera-assisted movement
 verification. The Coach demonstrates the movement, the app counts down, guides
-movement-specific repetitions and tempo across five sets, provides 20-second
+the shared 20-rep target and movement-specific tempo across five sets, provides 20-second
 rests, then records routine completion for accountability.
 
 MVP does not claim to prove every repetition. It must not replace Vision with a
@@ -768,7 +768,7 @@ Some phases may overlap where appropriate.
 
 For the MVP training workstream, Phase 07/09 should build the data-driven guided
 training engine, demonstration/countdown flow, five-set state machine, 20-second
-rests, and movement-specific repetition/cadence specifications. Phase 10 supplies
+rests, and the shared 20-rep target plus movement-specific cadence specifications. Phase 10 supplies
 the approved movement/Coach assets, Phase 11 defines the final audio/haptic
 system, and Phase 12 defines the visual progress/completion treatment. Do not
 redirect this roadmap toward productionizing Camera/Vision across seven
