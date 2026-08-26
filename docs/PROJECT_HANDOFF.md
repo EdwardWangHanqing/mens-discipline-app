@@ -352,12 +352,12 @@ active, and keeps the system audio mixing mode automatic. The player does not
 claim the system audio route, run in the background, or publish a now-playing
 notification.
 
-The existing 20-second rest ring is one reusable presentation: it remains
-small in the Coach stage's lower-right corner during countdown/active training,
-then softly expands and moves to the central Rest state as the Coach stage
-fades. It continuously decreases through the Rest interval, then returns to
-the lower-right while Coach video reappears for the next set. The locked
-five-set/four-rest state machine is unchanged, including no Rest after Set 5.
+The owner later replaced the Coach-stage timer layout. In both Active and Rest,
+the same 20-second ring now sits beside the repetition readout in the session
+metrics card. It remains continuously decreasing through Rest, while the
+Active display stays at the full 20-second rest value. Rest still hides the
+Coach and the locked five-set/four-rest state machine remains unchanged,
+including no Rest after Set 5.
 
 Expo lint, TypeScript validation, audio-track inspection, and a fresh iPhone
 17e Simulator build passed. Runtime visual QA covered Home/ready asset, active
@@ -379,7 +379,8 @@ player configuration also uses `muted = true` and `volume = 0`, no native
 controls/PiP, automatic audio mixing, no background playback, and no
 now-playing notification.
 
-The Active timer stays in the lower-right of the Coach stage, but its horizontal
-motion is clamped to a safe interior inset across compact and larger iPhone
-widths. The Rest morph remains intact: Coach fades out, the same ring
-expands centrally and decreases continuously, then returns before the next set.
+The newest owner visual direction supersedes the previous lower-right/central
+timer morph. All session timers sit beside the repetition count inside the
+metrics card, so the ring remains fully visible on compact iPhone widths. The
+instruction row now uses the supplied lightning treatment at its leading edge;
+Rest remains Coach-free and continues to decrease automatically.

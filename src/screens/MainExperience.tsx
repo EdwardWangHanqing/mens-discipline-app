@@ -22,7 +22,6 @@ import Animated, {
   FadeInRight,
   FadeOut,
   FadeOutLeft,
-  interpolate,
   LinearTransition,
   runOnJS,
   useAnimatedStyle,
@@ -729,6 +728,7 @@ function TrainTab({
   resume: () => void;
 }) {
   const { height: viewportHeight } = useWindowDimensions();
+  const restPreviewProgress = useSharedValue(1);
   const compactHeight = viewportHeight < 900;
   const hidden = dailyStatus === 'unrevealed';
   const completed = dailyStatus === 'completed';
@@ -773,8 +773,7 @@ function TrainTab({
             <Metric value={movement.repsPerSet} label="Reps" />
             <View style={styles.metricDivider} />
             <View style={styles.restMetric}>
-              <Text style={styles.restValue}>0:20</Text>
-              <Eyebrow>Rest</Eyebrow>
+              <RestCountdownRing size={96} seconds={REST_SECONDS} progress={restPreviewProgress} />
             </View>
           </View>
           <View style={styles.instructionRow}>
@@ -1054,7 +1053,7 @@ function RestCountdownRing({
           animatedProps={animatedProps}
         />
       </Svg>
-      <Text style={styles.restCountdown}>{String(seconds)}</Text>
+      <Text style={styles.restCountdown}>0:{String(seconds).padStart(2, '0')}</Text>
       <Eyebrow>Rest</Eyebrow>
     </View>
   );
@@ -1122,42 +1121,6 @@ function CoachStage({ movement, visible }: { movement: Movement; visible: boolea
       ) : (
         <Image source={movement.coachImage} style={styles.sessionCoach} resizeMode="contain" />
       )}
-    </Animated.View>
-  );
-}
-
-function RestTimerMorph({
-  resting,
-  seconds,
-  progress,
-}: {
-  resting: boolean;
-  seconds: number;
-  progress: SharedValue<number>;
-}) {
-  const { width } = useWindowDimensions();
-  const size = 220;
-  const morph = useSharedValue(resting ? 1 : 0);
-  const activeOffsetX = Math.max(72, Math.min(96, (width - spacing.xl * 2) / 2 - 56 - spacing.md));
-  const activeOffsetY = 84;
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: interpolate(morph.value, [0, 1], [activeOffsetX, 0]) },
-      { translateY: interpolate(morph.value, [0, 1], [activeOffsetY, 0]) },
-      { scale: interpolate(morph.value, [0, 1], [0.36, 1]) },
-    ],
-  }));
-
-  useEffect(() => {
-    morph.set(withTiming(resting ? 1 : 0, {
-      duration: resting ? 380 : 320,
-      easing: Easing.out(Easing.cubic),
-    }));
-  }, [morph, resting]);
-
-  return (
-    <Animated.View pointerEvents="none" style={[styles.restTimerMorph, animatedStyle]}>
-      <RestCountdownRing size={size} seconds={seconds} progress={progress} />
     </Animated.View>
   );
 }
@@ -1243,6 +1206,7 @@ function SessionScreen({
 }) {
   const displayPhase = phase === 'paused' ? pausedPhase : phase;
   const isRest = displayPhase === 'rest';
+  const sessionRingSize = 104;
   if (phase === 'finishing') {
     return <CompletionTransitionScreen />;
   }
@@ -1280,10 +1244,11 @@ function SessionScreen({
         <Text style={styles.sessionSet}>{isRest ? 'REST' : `SET ${setNumber} OF ${DAILY_SET_COUNT}`}</Text>
         {isRest ? <Text style={styles.sessionSupport}>SET {setNumber} COMPLETE · SET {setNumber + 1} NEXT</Text> : null}
       </View>
-      <View style={styles.sessionMediaArea}>
-        <CoachStage movement={movement} visible={!isRest} />
-        <RestTimerMorph resting={isRest} seconds={isRest ? restSeconds : REST_SECONDS} progress={restProgress} />
-      </View>
+      {!isRest ? (
+        <View style={styles.sessionMediaArea}>
+          <CoachStage movement={movement} visible />
+        </View>
+      ) : null}
       <SetSegments
         currentSet={isRest ? setNumber + 1 : setNumber}
         progress={isRest ? undefined : repProgress}
@@ -1295,20 +1260,28 @@ function SessionScreen({
             <Text style={styles.countdownValue}>{countdown || 'GO'}</Text>
             <Text style={styles.sessionInstruction}>Follow the coach. Control every repetition.</Text>
           </View>
-        ) : isRest ? (
-          <View style={styles.restDetail}>
-            <Eyebrow>Rest recovery</Eyebrow>
-            <Text style={styles.restDetailValue}>SET {setNumber} COMPLETE</Text>
-            <Text style={styles.restDetailSupport}>Breathe, reset, and prepare for set {setNumber + 1}.</Text>
-          </View>
         ) : (
-          <>
+          <View style={styles.sessionMetricsCard}>
+            <View style={styles.sessionMetricsRow}>
             <View style={styles.repReadout}>
-              <Text style={styles.repValue}>{`${reps} / ${movement.repsPerSet}`}</Text>
-              <Eyebrow>Guided reps</Eyebrow>
-              <LiquidProgressBar progress={repProgress} />
+                <Text style={styles.repValue}>{isRest ? `${movement.repsPerSet} / ${movement.repsPerSet}` : `${reps} / ${movement.repsPerSet}`}</Text>
+                <Eyebrow>{isRest ? 'Set reps' : 'Guided reps'}</Eyebrow>
+                <LiquidProgressBar progress={repProgress} complete={isRest} />
+              </View>
+              <View style={styles.sessionMetricDivider} />
+              <RestCountdownRing
+                size={sessionRingSize}
+                seconds={isRest ? restSeconds : REST_SECONDS}
+                progress={restProgress}
+              />
             </View>
-          </>
+            {!isRest ? (
+              <View style={styles.sessionInstructionRow}>
+                <Image source={require('../../assets/icons/train-lightning.png')} style={styles.sessionLightningIcon} resizeMode="contain" />
+                <Text style={styles.sessionInstructionRowText}>{movement.instruction.toUpperCase()}</Text>
+              </View>
+            ) : null}
+          </View>
         )}
       </View>
       {isRest ? (
@@ -1316,8 +1289,6 @@ function SessionScreen({
           <RestWindIcon />
           <Text style={styles.restCueText}>BREATHE. RESET. THE NEXT SET IS READY.</Text>
         </View>
-      ) : displayPhase !== 'countdown' ? (
-        <Text style={styles.sessionInstruction}>{movement.instruction.toUpperCase()}</Text>
       ) : null}
       {phase === 'active' || phase === 'rest' ? <SecondaryButton label="Pause" onPress={onPause} icon="pause" /> : null}
       {phase === 'paused' ? (
@@ -1838,17 +1809,19 @@ const styles = StyleSheet.create({
   sessionCoachMedia: { flex: 1 },
   sessionCoach: { width: '100%', height: '100%' },
   sessionCoachFallback: { position: 'absolute', inset: 0, width: '100%', height: '100%' },
-  restTimerMorph: { position: 'absolute', width: 220, height: 220, left: '50%', top: '50%', marginLeft: -110, marginTop: -110, alignItems: 'center', justifyContent: 'center' },
-  sessionReadout: { minHeight: 126, alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.xl, paddingHorizontal: spacing.md },
+  sessionReadout: { minHeight: 126, alignItems: 'stretch', justifyContent: 'center', paddingTop: spacing.lg, paddingHorizontal: spacing.md },
+  sessionMetricsCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing.lg, gap: spacing.md },
+  sessionMetricsRow: { minHeight: 116, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   repReadout: { flex: 1, minWidth: 0, alignItems: 'center', gap: spacing.sm },
-  repValue: { color: colors.primary, fontSize: 46, fontWeight: '700' },
+  repValue: { color: colors.primary, fontSize: 42, fontWeight: '700' },
   repTrack: { width: '80%', height: 8, borderRadius: 4, borderWidth: 1, borderColor: colors.borderStrong, overflow: 'hidden', marginTop: spacing.md },
   repFill: { position: 'absolute', inset: 0, backgroundColor: colors.accent, transformOrigin: 'left center' },
+  sessionMetricDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: colors.border },
   restReadout: { flexShrink: 0, alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
-  restCountdown: { color: colors.primary, fontSize: 54, fontWeight: '700', lineHeight: 58 },
-  restDetail: { alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.lg },
-  restDetailValue: { color: colors.primary, fontSize: 18, fontWeight: '700', letterSpacing: 1.1 },
-  restDetailSupport: { color: colors.secondary, fontSize: 13, lineHeight: 19, textAlign: 'center' },
+  restCountdown: { color: colors.primary, fontSize: 24, fontWeight: '700', lineHeight: 28 },
+  sessionInstructionRow: { minHeight: 38, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.border, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, gap: spacing.sm },
+  sessionLightningIcon: { width: 15, height: 19 },
+  sessionInstructionRowText: { color: colors.secondary, fontSize: 10, lineHeight: 14, letterSpacing: 0.75, flex: 1 },
   countdownBlock: { alignItems: 'center', gap: spacing.md },
   countdownValue: { color: colors.primary, fontSize: 64, fontWeight: '800' },
   sessionInstruction: { color: colors.secondary, fontSize: 12, lineHeight: 18, textAlign: 'center', letterSpacing: 0.8, marginBottom: spacing.xl },
