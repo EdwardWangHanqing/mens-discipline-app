@@ -93,6 +93,18 @@ Planned direction:
 The MVP uses guided cadence training. The Phase 03.9 Apple Vision prototype is
 retained only as a post-MVP R&D reference.
 
+## Development Design QA Preview
+
+Run `npm run qa:web`, then open `http://localhost:8081/design-qa`.
+
+The route is available only in Development builds. It renders the existing
+React Native screens and shared design system with deterministic Home, Train,
+Locks, Onboarding, account, paywall, profile and settings states. Web-only
+Family Controls actions are explicit preview mocks; the existing iOS native
+implementation remains the production path.
+
+See `docs/ui-audit/DESIGN_QA_PREVIEW.md` for the state catalog and controls.
+
 Exact architecture and versions are intentionally not locked in this README yet.
 
 They will be decided during Phase 03 Technical Feasibility.

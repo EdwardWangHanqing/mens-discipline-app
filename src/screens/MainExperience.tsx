@@ -69,7 +69,7 @@ export type ProgressSummary = {
 };
 export type GraceState = { dateKey: string; remaining: number; activeUntil: number | null };
 
-type Subscreen =
+export type MainExperienceSubscreen =
   | 'main'
   | 'profile'
   | 'history'
@@ -80,7 +80,16 @@ type Subscreen =
   | 'manageApps'
   | 'lockSchedule';
 
-type SessionPhase = 'countdown' | 'active' | 'rest' | 'paused' | 'complete';
+export type SessionPhase = 'countdown' | 'active' | 'rest' | 'paused' | 'complete';
+export type MainExperiencePreviewState = {
+  subscreen?: MainExperienceSubscreen;
+  session?: SessionPhase | null;
+  setNumber?: number;
+  reps?: number;
+  restSeconds?: number;
+  countdown?: number;
+  frozen?: boolean;
+};
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 export function MainExperience({
@@ -104,6 +113,7 @@ export function MainExperience({
   onSkipToday,
   onUpdateLockTime,
   onReplaceMovement,
+  previewState,
 }: {
   nickname: string;
   draft: OnboardingDraft;
@@ -125,13 +135,16 @@ export function MainExperience({
   onSkipToday: () => void;
   onUpdateLockTime: (lockTime: string) => void;
   onReplaceMovement: () => void;
+  previewState?: MainExperiencePreviewState;
 }) {
-  const [subscreen, setSubscreen] = useState<Subscreen>('main');
-  const [session, setSession] = useState<SessionPhase | null>(null);
-  const [setNumber, setSetNumber] = useState(1);
-  const [reps, setReps] = useState(0);
-  const [restSeconds, setRestSeconds] = useState(REST_SECONDS);
-  const [countdown, setCountdown] = useState(3);
+  const designPreview = previewState !== undefined;
+  const previewFrozen = previewState?.frozen ?? false;
+  const [subscreen, setSubscreen] = useState<MainExperienceSubscreen>(previewState?.subscreen ?? 'main');
+  const [session, setSession] = useState<SessionPhase | null>(previewState?.session ?? null);
+  const [setNumber, setSetNumber] = useState(previewState?.setNumber ?? 1);
+  const [reps, setReps] = useState(previewState?.reps ?? 0);
+  const [restSeconds, setRestSeconds] = useState(previewState?.restSeconds ?? REST_SECONDS);
+  const [countdown, setCountdown] = useState(previewState?.countdown ?? 3);
   const [phaseBeforePause, setPhaseBeforePause] = useState<'active' | 'rest'>('active');
   const [confirmation, setConfirmation] = useState<'grace' | 'skip' | null>(null);
   const [clock, setClock] = useState(0);
@@ -150,15 +163,17 @@ export function MainExperience({
   }, [grace.activeUntil]);
 
   useEffect(() => {
+    if (designPreview) return;
     if (grace.activeUntil && grace.activeUntil <= clock) {
       setGrace((current) => expireGrace(current, clock));
       if (dailyStatus !== 'completed' && dailyStatus !== 'skipped') {
         void FamilyControls.applyShield().catch(() => undefined);
       }
     }
-  }, [clock, dailyStatus, grace.activeUntil, setGrace]);
+  }, [clock, dailyStatus, designPreview, grace.activeUntil, setGrace]);
 
   useEffect(() => {
+    if (previewFrozen) return;
     if (session !== 'countdown') return;
     const timer = setTimeout(() => {
       if (countdown <= 1) {
@@ -170,9 +185,10 @@ export function MainExperience({
       }
     }, 1000);
     return () => clearTimeout(timer);
-  }, [countdown, session]);
+  }, [countdown, previewFrozen, session]);
 
   useEffect(() => {
+    if (previewFrozen) return;
     if (session !== 'active') return;
     const timer = setTimeout(() => {
       const nextReps = reps + 1;
@@ -188,7 +204,7 @@ export function MainExperience({
       }
     }, movement.cadence.repDurationMs);
     return () => clearTimeout(timer);
-  }, [movement.cadence.repDurationMs, movement.repsPerSet, onRoutineCompleted, reps, session, setNumber]);
+  }, [movement.cadence.repDurationMs, movement.repsPerSet, onRoutineCompleted, previewFrozen, reps, session, setNumber]);
 
   useEffect(() => {
     if (session !== 'active') {
@@ -196,6 +212,7 @@ export function MainExperience({
       return;
     }
     repProgress.value = reps / movement.repsPerSet;
+    if (previewFrozen) return;
     repProgress.value = withTiming(1, {
       duration: Math.max(1, (movement.repsPerSet - reps) * movement.cadence.repDurationMs),
       easing: Easing.linear,
@@ -203,9 +220,10 @@ export function MainExperience({
     return () => cancelAnimation(repProgress);
     // Integer rep updates intentionally do not restart the UI-thread animation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [movement.cadence.repDurationMs, movement.id, movement.repsPerSet, session, setNumber]);
+  }, [movement.cadence.repDurationMs, movement.id, movement.repsPerSet, previewFrozen, session, setNumber]);
 
   useEffect(() => {
+    if (previewFrozen) return;
     if (session !== 'rest') return;
     const timer = setTimeout(() => {
       if (restSeconds <= 1) {
@@ -219,7 +237,7 @@ export function MainExperience({
       }
     }, 1000);
     return () => clearTimeout(timer);
-  }, [repProgress, restSeconds, session]);
+  }, [previewFrozen, repProgress, restSeconds, session]);
 
   useEffect(() => {
     if (session !== 'rest') {
@@ -227,6 +245,7 @@ export function MainExperience({
       return;
     }
     restProgress.value = restSeconds / REST_SECONDS;
+    if (previewFrozen) return;
     restProgress.value = withTiming(0, {
       duration: Math.max(1, restSeconds * 1000),
       easing: Easing.linear,
@@ -234,7 +253,7 @@ export function MainExperience({
     return () => cancelAnimation(restProgress);
     // The ring stays continuous while the displayed seconds update discretely.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, setNumber]);
+  }, [previewFrozen, session, setNumber]);
 
   if (session) {
     return (
@@ -338,7 +357,7 @@ export function MainExperience({
           onCancel={() => setConfirmation(null)}
           onConfirm={() => {
             if (confirmation === 'grace' && grace.remaining > 0) {
-              void FamilyControls.removeShield().catch(() => undefined);
+              if (!designPreview) void FamilyControls.removeShield().catch(() => undefined);
               setGrace((current) => consumeGrace(current, Date.now()));
             }
             if (confirmation === 'skip') onSkipToday();
@@ -501,8 +520,7 @@ function MomentumCard({ progress, dailyStatus }: { progress: ProgressSummary; da
               strokeLinecap="round"
               strokeDasharray={`${2 * Math.PI * 48}`}
               strokeDashoffset={`${2 * Math.PI * 48 * (1 - weekCount / 7)}`}
-              rotation="-90"
-              origin="56, 56"
+              transform="rotate(-90 56 56)"
             />
           </Svg>
           <Text style={styles.weekRingValue}>{weekCount}/7</Text>
@@ -1008,8 +1026,7 @@ function RestCountdownRing({
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={[circumference, circumference]}
-          rotation="-90"
-          origin={`${size / 2}, ${size / 2}`}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
           animatedProps={animatedProps}
         />
       </Svg>

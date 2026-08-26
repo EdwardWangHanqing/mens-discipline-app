@@ -317,3 +317,22 @@ actions above the bottom navigation, and the Rest ring remains inside the safe
 right boundary. Automated verification includes Expo lint, TypeScript, and 15
 passing logic/state-machine tests. Real Apple/Google/email provider credentials
 and backend remain an honest release boundary rather than a simulated success.
+
+## Development Design QA Preview — 2026-08-25
+
+The existing React Native implementation now has a development-only Web Design
+QA route at `/design-qa`. It reuses the production screens, design tokens,
+movement definitions and session presentation while injecting deterministic
+preview state through an optional `MainExperience` boundary. It does not add a
+parallel HTML prototype or change the production route.
+
+The preview includes direct Home, Train, Locks, all Onboarding steps, Profile,
+Settings, History, Milestones, Notifications, lock configuration, Paywall and
+account entries. Controls cover phase, set, reps, Rest time, frozen/live motion,
+completion, unlock, Grace, Skip and reset states. Family Controls and Device
+Activity actions remain native on iOS; their Web equivalents only mutate local
+preview state and are labeled as mocks.
+
+Run `npm run qa:web` and open `http://localhost:8081/design-qa`. Detailed usage
+and architecture boundaries are recorded in
+`docs/ui-audit/DESIGN_QA_PREVIEW.md`.
