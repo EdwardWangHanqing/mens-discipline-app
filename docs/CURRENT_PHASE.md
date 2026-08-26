@@ -2,7 +2,7 @@
 
 ## Project
 
-Men's Discipline App
+VAEL
 
 ## Current Phase
 
@@ -77,11 +77,10 @@ Locked structure:
 
 - exactly one movement per day;
 - exactly five sets;
-- exactly 20 guided repetitions per set for all seven movements;
+- movement-specific repetitions and cadence across the ten-movement library;
 - exactly 20 seconds of rest between sets;
+- seven unique randomly sampled movements per persisted seven-day cycle;
 - cadence/tempo defined per movement with its Coach asset;
-- the repetition target is universal; cadence and total duration may remain
-  movement-specific;
 - no camera proof, manual-tap counting, hardware-button counting, or substitute
   proof workaround.
 
@@ -195,11 +194,20 @@ complete.
 - production Lock Time / Grace / Skip / Replace behavior; and
 - final session recovery UX.
 
-## Do Not Start Yet
+## Owner Update — 2026-08-25
+
+DEC-025 and the owner-supplied implementation package authorize and define the
+production movement library, movement-specific timing, seven-day reveal cycle,
+VAEL brand, startup animation, continuous progress motion, onboarding polish,
+and complete authentication UI/integration boundaries. These are no longer
+items in the historical list below. Real provider/backend authentication
+remains unconfigured and must not be represented as live.
+
+## Historical Do Not Start Yet
 
 Do not invent or finalize outside the next approved phase:
 
-- final movement names and movement-specific cadence values for all seven movements;
+- historical pre-DEC-025 movement and cadence definition work;
 - final Coach design/assets;
 - final audio/haptic system;
 - final visual progress animation;

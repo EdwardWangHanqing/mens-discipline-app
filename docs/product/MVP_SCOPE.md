@@ -113,9 +113,9 @@ The user does not perform several different movements in the same daily routine.
 
 The MVP movement library contains:
 
-**7 movements**
+**10 movements**
 
-A cycle contains all seven movements.
+A seven-day cycle contains seven unique movements sampled from the full pool.
 
 Within one cycle:
 
@@ -127,17 +127,17 @@ Within one cycle:
 
 Home contains a daily movement card draw.
 
-At the beginning of a cycle:
-
-7 movement cards are available.
+At the beginning of a cycle, seven unique movements are randomly sampled from
+the ten-movement pool and ordered for the cycle.
 
 Each day:
 
-1. Home randomly selects one movement from the remaining cards.
+1. Home reveals the movement already assigned to the current cycle day.
 2. That movement becomes today's movement.
-3. After the user completes it, the card is removed from the current cycle.
-4. The next day is drawn only from the remaining cards.
-5. After all seven movements are completed, a new cycle begins with all seven cards available again.
+3. The result is persisted and cannot reroll after relaunching the app.
+4. The next daily session advances to the next unique movement in the cycle.
+5. After day seven, a new random seven-movement cycle is sampled from the full
+   ten-movement pool.
 
 Therefore:
 
@@ -153,19 +153,14 @@ The daily movement is performed for exactly:
 
 Each set contains exactly:
 
-**20 guided repetitions**
+**12, 15, 16, or 20 guided repetitions, depending on the movement**
 
 Rest between sets is exactly:
 
 **20 seconds**
 
-The repetition target is globally locked by DEC-024 and applies to all seven
-movements.
-
-Rep cadence / tempo is also movement-specific and will be defined with each
-movement and Coach asset. Do not assign one universal cadence or total session
-duration across all seven movements; duration follows from each movement's
-approved repetitions and cadence plus the fixed rests.
+Repetitions and cadence are both movement-specific and are locked by DEC-025.
+Do not assign one universal repetition target, cadence, or total duration.
 
 ---
 
@@ -450,8 +445,7 @@ The user's first complete routine should be available as:
 **exactly one full free daily routine**
 
 The first routine is production-shaped: exactly one movement, exactly five
-sets, exactly 20 guided repetitions per set, movement-specific cadence, exactly
-four 20-second rests, and
+sets, movement-specific guided repetitions and cadence, exactly four 20-second rests, and
 Set 5 → completion. It is not a shortened tutorial workout.
 
 The user should be able to understand the core product value before being required to start a subscription trial.
@@ -689,7 +683,7 @@ This has been superseded.
 
 Current MVP:
 
-**7 movements.**
+**10 movements, with seven unique movements sampled per cycle.**
 
 ---
 
@@ -705,7 +699,7 @@ The current structure is defined by:
 
 - one movement per day;
 - exactly five sets;
-- exactly 20 guided reps per set;
+- movement-specific guided reps and cadence from DEC-025;
 - exactly 20 seconds rest between sets.
 
 Exact duration will depend on the movement.
@@ -790,7 +784,8 @@ next day draws from remaining cards
 
 →
 
-after all seven movements are completed, a new cycle begins.
+after the seventh daily session, a new seven-movement sample is drawn from the
+ten-movement library.
 
 ---
 

@@ -1,15 +1,12 @@
-export {
-  GUIDED_ROUTINE_SET_COUNT as DAILY_SET_COUNT,
-  REPS_PER_SET,
+import {
+  GUIDED_ROUTINE_SET_COUNT,
   REST_SECONDS,
-  TOTAL_DAILY_REPS,
 } from '../training/guidedRoutineEngine';
+import { movementDefinitions, type MovementDefinition } from './movementLibrary';
 
-export type Movement = {
-  id: string;
-  displayName: string;
-  focus: string;
-  instruction: string;
+export { GUIDED_ROUTINE_SET_COUNT as DAILY_SET_COUNT, REST_SECONDS };
+
+export type Movement = MovementDefinition & {
   coachImage: number;
   coachAnimationAsset?: string;
   audioAsset?: string;
@@ -17,24 +14,17 @@ export type Movement = {
 
 const canonicalCoach = require('../../assets/images/coach-kneeling-drive.png');
 
-// The first movement is the approved canonical visual example. The remaining
-// entries preserve the seven-card data architecture until final names/media are
-// supplied; no screen or training quantity is duplicated per movement.
-export const movements: Movement[] = [
-  {
-    id: 'kneeling-drive',
-    displayName: 'Kneeling Drive',
-    focus: 'Glutes · hips · pelvic control',
-    instruction: 'Control the drive. Squeeze and hold.',
-    coachImage: canonicalCoach,
-  },
-  ...Array.from({ length: 6 }, (_, index) => ({
-    id: `movement-${index + 2}`,
-    displayName: `Movement ${String(index + 2).padStart(2, '0')}`,
-    focus: 'Guided control · lower-body strength',
-    instruction: 'Stay controlled. Follow the coach.',
-    coachImage: canonicalCoach,
-  })),
-];
+// Production movement quantities are sourced from the Owner's
+// "Movement Pool and Reveal Update". Coach media remains replaceable.
+export const movements: Movement[] = movementDefinitions.map((definition) => ({
+  ...definition,
+  coachImage: canonicalCoach,
+}));
 
-export const todayMovement = movements[0];
+export function movementById(id: string | undefined): Movement {
+  return movements.find((candidate) => candidate.id === id) ?? movements[0];
+}
+
+export function totalMovementReps(movementValue: Movement) {
+  return GUIDED_ROUTINE_SET_COUNT * movementValue.repsPerSet;
+}

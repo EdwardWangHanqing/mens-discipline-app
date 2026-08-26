@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { DateTimePicker } from '@expo/ui/community/datetime-picker';
 import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 import {
   Body,
@@ -19,8 +20,7 @@ import {
   TopBar,
 } from '../components/ui';
 import { colors, radii, spacing, typography } from '../theme/designSystem';
-
-const revealCover = require('../../assets/images/reveal-cover.png');
+import { VaelMark } from '../components/Brand';
 
 const goals = [
   'Better control',
@@ -73,14 +73,18 @@ export function OnboardingFlow({
     return (
       <Screen testID="onboarding-brand">
         <View style={styles.brandTop}>
-          <Eyebrow>MEN&apos;S DISCIPLINE</Eyebrow>
+          <Eyebrow accent>VAEL</Eyebrow>
         </View>
         <View style={styles.brandHero}>
           <View style={styles.brandImageWell}>
-            <Image source={revealCover} style={styles.brandImage} resizeMode="cover" />
-            <View style={styles.brandMark}>
-              <Icon name="figure.strengthtraining.traditional" color={colors.accent} size={38} />
-            </View>
+            <Svg width="100%" height="100%" viewBox="0 0 340 310" style={StyleSheet.absoluteFill}>
+              <Path d="M-20 250 L122 92 L238 214 L360 62" fill="none" stroke={colors.borderStrong} strokeWidth={1} />
+              <Path d="M-20 282 L122 124 L238 246 L360 94" fill="none" stroke={colors.border} strokeWidth={1} />
+              <Circle cx={274} cy={74} r={4} fill={colors.accent} />
+            </Svg>
+            <View style={styles.brandMark}><VaelMark size={128} strokeWidth={2.6} /></View>
+            <Text style={styles.brandWordmark}>VAEL</Text>
+            <Text style={styles.brandAttributes}>FOCUSED · DISCIPLINED · PRIVATE</Text>
           </View>
           <Title>Train what most men ignore.</Title>
           <Body muted>Short, private training built for men&apos;s performance and consistency.</Body>
@@ -238,7 +242,7 @@ export function OnboardingFlow({
           <StepLayout
             eyebrow="APPLE SCREEN TIME"
             title="Connect Screen Time"
-            support="Men’s Discipline uses Apple’s Screen Time controls to apply the accountability rules you choose."
+            support="VAEL uses Apple’s Screen Time controls to apply the accountability rules you choose."
             action={
               <View style={styles.stackedActions}>
                 <PrimaryButton
@@ -350,8 +354,25 @@ function StepLayout({
         <Title>{title}</Title>
         {support ? <Body muted>{support}</Body> : null}
       </View>
-      <View style={styles.stepContent}>{children}</View>
+      <View style={styles.stepContent}>
+        <OnboardingVisual label={eyebrow} />
+        {children}
+      </View>
       <View style={styles.stepAction}>{action}</View>
+    </View>
+  );
+}
+
+function OnboardingVisual({ label }: { label: string }) {
+  return (
+    <View style={styles.stepVisual}>
+      <Svg width="100%" height="100%" viewBox="0 0 340 108" style={StyleSheet.absoluteFill}>
+        <Path d="M-20 96 L88 8 L178 82 L270 18 L360 92" fill="none" stroke={colors.borderStrong} strokeWidth={1} />
+        <Path d="M-20 108 L88 20 L178 94 L270 30 L360 104" fill="none" stroke={colors.border} strokeWidth={1} />
+        <Circle cx={270} cy={18} r={3.5} fill={colors.accent} />
+      </Svg>
+      <VaelMark size={62} strokeWidth={2.4} />
+      <Text numberOfLines={1} style={styles.visualLabel}>{label}</Text>
     </View>
   );
 }
@@ -448,22 +469,23 @@ const styles = StyleSheet.create({
   brandTop: { paddingTop: spacing.md },
   brandHero: { flex: 1, justifyContent: 'center', gap: spacing.lg, paddingBottom: spacing.xxxl },
   brandImageWell: {
-    width: 128,
-    height: 128,
-    borderRadius: 32,
+    width: '100%',
+    height: 310,
+    borderRadius: radii.xl,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.borderStrong,
     marginBottom: spacing.md,
-  },
-  brandImage: { width: '100%', height: '100%' },
-  brandMark: {
-    position: 'absolute',
-    inset: 0,
+    backgroundColor: colors.brandGraphite,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(3,7,11,0.45)',
   },
+  brandMark: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  brandWordmark: { color: colors.primary, fontSize: 31, fontWeight: '300', letterSpacing: 14, marginLeft: 14, marginTop: spacing.lg },
+  brandAttributes: { color: colors.secondary, fontSize: 9, letterSpacing: 2.1, marginTop: spacing.sm },
   bottomActions: { gap: spacing.sm, paddingBottom: spacing.xl },
   stepBody: { flex: 1 },
   timePickerCard: {
@@ -480,7 +502,9 @@ const styles = StyleSheet.create({
   timePickerValue: { ...typography.eyebrow, color: colors.accent, marginBottom: spacing.lg },
   stepLayout: { flex: 1, minHeight: 720 },
   stepHeader: { gap: spacing.md, paddingTop: spacing.xxxl },
-  stepContent: { flex: 1, paddingTop: spacing.xxxl },
+  stepContent: { flex: 1, paddingTop: spacing.xxl, gap: spacing.xxl },
+  stepVisual: { height: 108, borderRadius: radii.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSoft, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.xl, gap: spacing.lg },
+  visualLabel: { flex: 1, color: colors.secondary, fontSize: 10, letterSpacing: 1.4, textAlign: 'right' },
   stepAction: { paddingTop: spacing.xxl, paddingBottom: spacing.lg },
   stackedActions: { gap: spacing.sm },
   choiceList: { gap: spacing.md },
@@ -489,7 +513,7 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: '#181B16',
+    backgroundColor: colors.accentSurface,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xxxl,
@@ -502,7 +526,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: radii.md,
-    backgroundColor: '#181B16',
+    backgroundColor: colors.accentSurface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -532,7 +556,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 24,
-    backgroundColor: '#181B16',
+    backgroundColor: colors.accentSurface,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xl,

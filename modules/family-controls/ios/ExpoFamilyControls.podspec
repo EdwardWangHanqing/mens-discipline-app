@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
   s.name           = 'ExpoFamilyControls'
   s.version        = '1.0.0'
-  s.summary        = 'Family Controls authorization bridge for the Mens Discipline app'
+  s.summary        = 'Family Controls authorization bridge for VAEL'
   s.description    = 'Application-local Expo module for querying and requesting Family Controls authorization.'
   s.author         = ''
   s.homepage       = 'https://docs.expo.dev/modules/'

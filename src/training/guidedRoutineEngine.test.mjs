@@ -4,7 +4,6 @@ import test from 'node:test';
 import {
   GUIDED_ROUTINE_SET_COUNT,
   INTER_SET_REST_DURATION_MS,
-  REPS_PER_SET,
   advanceRoutine,
   createInitialRoutineState,
   interruptRoutine,
@@ -37,10 +36,11 @@ test('runs demonstration then countdown before the first guided set', () => {
   assert.equal(state.setNumber, 1);
 });
 
-test('keeps 20 repetitions global while allowing movement-specific cadence', () => {
+test('uses movement-specific repetitions and cadence', () => {
   const alternate = {
     ...spec,
     id: 'alternate-test-movement',
+    repsPerSet: 12,
     cadence: { repDurationMs: 750 },
   };
   let state = enterFirstSet(
@@ -49,7 +49,7 @@ test('keeps 20 repetitions global while allowing movement-specific cadence', () 
   );
   state = advanceRoutine(state, alternate, 1_500);
   assert.equal(state.repetitionsCompleted, 2);
-  state = advanceRoutine(state, alternate, (REPS_PER_SET - 2) * 750);
+  state = advanceRoutine(state, alternate, (alternate.repsPerSet - 2) * 750);
   assert.equal(state.phase, 'rest');
 });
 
@@ -63,7 +63,7 @@ test('requires exactly five sets and inserts exactly four 20-second rests', () =
     state = advanceRoutine(
       state,
       spec,
-      REPS_PER_SET * spec.cadence.repDurationMs
+      spec.repsPerSet * spec.cadence.repDurationMs
     );
     if (setNumber < GUIDED_ROUTINE_SET_COUNT) {
       assert.equal(state.phase, 'rest');
@@ -81,14 +81,14 @@ test('requires exactly five sets and inserts exactly four 20-second rests', () =
 test('does not create a rest after set five or complete prematurely', () => {
   let state = enterFirstSet();
   const fourSetDuration =
-    4 * REPS_PER_SET * spec.cadence.repDurationMs +
+    4 * spec.repsPerSet * spec.cadence.repDurationMs +
     4 * INTER_SET_REST_DURATION_MS;
   state = advanceRoutine(state, spec, fourSetDuration);
   assert.equal(state.phase, 'guidedSet');
   assert.equal(state.setNumber, 5);
 
   const beforeFinalRep =
-    REPS_PER_SET * spec.cadence.repDurationMs - 1;
+    spec.repsPerSet * spec.cadence.repDurationMs - 1;
   state = advanceRoutine(state, spec, beforeFinalRep);
   assert.equal(state.phase, 'guidedSet');
   state = advanceRoutine(state, spec, 1);
@@ -110,7 +110,7 @@ test('completion acknowledgement is final-state-only and duplicate-safe', () => 
 
   const totalTimedDuration =
     GUIDED_ROUTINE_SET_COUNT *
-      REPS_PER_SET *
+      spec.repsPerSet *
       spec.cadence.repDurationMs +
     (GUIDED_ROUTINE_SET_COUNT - 1) * INTER_SET_REST_DURATION_MS;
   const awaiting = advanceRoutine(guided, spec, totalTimedDuration);

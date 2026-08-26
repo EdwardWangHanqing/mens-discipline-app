@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: spacing.md,
   },
-  choiceSelected: { borderColor: colors.accent, backgroundColor: '#171B16' },
+  choiceSelected: { borderColor: colors.accent, backgroundColor: colors.accentSurface },
   choicePressed: { opacity: 0.85 },
   choiceCopy: { flex: 1 },
   choiceLabel: { color: colors.primary, fontSize: 16, fontWeight: '600' },

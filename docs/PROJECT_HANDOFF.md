@@ -76,14 +76,15 @@ Movement demonstration → countdown → guided repetitions → set completion �
 
 - exactly one movement per day;
 - exactly five sets;
-- exactly 20 guided reps/set for every movement;
+- movement-specific guided reps and cadence from DEC-025;
 - exactly 20 seconds rest between sets;
 - movement-specific cadence/tempo defined with each movement and Coach asset;
-- repetition count is universal; cadence and total session duration may remain
-  movement-specific.
+- ten movements in the library and seven unique movements in each persisted
+  random cycle.
 
-Do not invent final movement targets, cadence values, Coach design/assets,
-audio/haptics, or visual progress animation during the next architecture task.
+Movement targets, cadence, and progress behavior are now defined by DEC-025 and
+the 2026-08-25 owner implementation package. Coach media and audio/haptics remain
+replaceable future assets.
 
 ## Phase 03.9 Source and Closure
 
@@ -150,8 +151,8 @@ configuration/current lock state/Grace/Skip. Profile / Settings is reached from
 Home's upper-right entry.
 
 The first complete product experience requires no account. Onboarding includes
-exactly one full free daily routine: one movement, five sets, exactly 20 reps
-per set, movement-specific cadence, and four 20-second rests. Earned
+exactly one full free daily routine: one movement, five sets,
+movement-specific reps/cadence, and four 20-second rests. Earned
 progress/history remains visible after completion, including in the signed-out
 limited Home state. New training
 requires an active entitlement. Account creation/sign-in is required before
@@ -300,3 +301,19 @@ Grace uses the existing native shield bridge without adding a dependency,
 permission, capability, or new data collection. Supplied bitmap assets are
 local app resources; Coach media remains explicitly replaceable. Round 03
 evidence is in `docs/ui-audit/round-03/`.
+
+## VAEL Owner Revision Checkpoint — 2026-08-25
+
+DEC-025 is implemented on `feature/simulator-ready-ui`: customer-facing VAEL
+branding and native icon/splash configuration, the specified cold-launch mark
+transition, all ten movement definitions, persisted seven-unique-movement
+cycles, movement-specific reps/cadence, continuous Set/Guided Reps/Rest motion,
+the supplied Train and Rest icon treatments, onboarding visual completion, and
+the complete authentication UI/integration boundary.
+
+Simulator QA passed on iPhone 17 Pro and iPhone 17e with iOS 26.5, including a
+mid-set and mid-Rest inspection. Compact-height Train preview now keeps its
+actions above the bottom navigation, and the Rest ring remains inside the safe
+right boundary. Automated verification includes Expo lint, TypeScript, and 15
+passing logic/state-machine tests. Real Apple/Google/email provider credentials
+and backend remain an honest release boundary rather than a simulated success.

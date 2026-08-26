@@ -531,7 +531,7 @@ requirements.
 
 ## DEC-024 — All Seven MVP Movements Use Five Sets of Twenty Guided Repetitions
 
-**Status:** Accepted owner override — 2026-08-24
+**Status:** Superseded by DEC-025 — 2026-08-25
 
 All seven MVP movements use the same production training quantity:
 
@@ -558,3 +558,44 @@ movement without rerolling.
 Current static Coach images, future movement animations, and future voice/music
 assets are replaceable media. Missing final media must not block full UI closure
 or Simulator-ready end-to-end validation.
+
+---
+
+## DEC-025 — VAEL Brand and Movement-Specific Seven-Day Reveal Cycle
+
+**Status:** Accepted owner override — 2026-08-25
+
+The customer-facing product name is **VAEL**. Existing bundle identifiers,
+App Group identifiers, Family Controls entitlements, and the internal
+`com.temperline.mensdiscipline` namespace remain unchanged to protect the
+validated native accountability architecture.
+
+The production movement library contains ten movements. Each seven-day cycle
+samples seven unique movements from that library in random order. One movement
+is revealed per day, a revealed movement remains stable across app restarts,
+and a new random seven-movement cycle begins after the seventh daily session.
+Replace Movement may select only from movements outside the current cycle and
+may be used once per day, preserving cycle uniqueness.
+
+Every routine uses five sets and four 20-second rests. Repetitions and guided
+cadence are movement-specific and come from the owner-supplied
+`Movement Pool and Reveal Update` specification:
+
+- Frog Pump — 20 reps at 1.5 seconds;
+- Kneeling Drive — 15 reps at 2.0 seconds;
+- Hip Bridge / Hip Drive — 12 reps at 2.5 seconds;
+- Deep Pulse — 20 reps at 1.5 seconds;
+- Reverse Bridge — 12 reps at 2.5 seconds;
+- Diamond Raise — 12 reps at 2.5 seconds;
+- Hip Rock — 16 reps at 2.0 seconds;
+- Butterfly Open — 12 reps at 2.5 seconds;
+- Bridge Extension — 12 reps at 2.5 seconds;
+- V-Open — 12 reps at 2.5 seconds.
+
+This decision supersedes DEC-024 and every older seven-movement, universal
+20-repetition, or weekday-to-movement mapping. Reveal is exposure of the
+persisted daily result, never a reroll action.
+
+The owner-supplied startup specification is also authoritative: native launch
+uses a warm-graphite field and faint VAEL mark, followed by one cold-launch-only
+draw/glow/settle sequence that transitions directly into the first real screen.

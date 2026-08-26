@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
+import * as SplashScreen from 'expo-splash-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import FamilyControls from '../../modules/family-controls';
-import { AccountScreen, PaywallScreen } from '../screens/AccountAndPaywall';
+import { AccountScreen, PaywallScreen, type AuthRequest, type AuthResult } from '../screens/AccountAndPaywall';
 import {
   MainExperience,
   type DailyStatus,
@@ -20,6 +21,18 @@ import {
 } from '../screens/OnboardingFlow';
 import { colors } from '../theme/designSystem';
 import { calculateCurrentMomentum, createGraceBudget } from '../state/dailyState';
+import { movementById } from '../data/movements';
+import {
+  canReplaceTodayMovement,
+  createMovementCycle,
+  movementForCycle,
+  normalizeMovementCycle,
+  replaceTodayMovement,
+  type MovementCycleState,
+} from '../state/movementCycle';
+import { BrandLaunchOverlay } from '../components/Brand';
+
+void SplashScreen.preventAutoHideAsync();
 
 type RootScreen = 'onboarding' | 'main' | 'account' | 'paywall';
 const appStateStorageKey = 'mens-discipline.app-state.v1';
@@ -60,6 +73,13 @@ export default function AppExperience() {
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [activeDateKey, setActiveDateKey] = useState(() => localDateKey(new Date()));
+  const [movementCycle, setMovementCycle] = useState(() => createMovementCycle(localDateKey(new Date())));
+  const [launchFinished, setLaunchFinished] = useState(false);
+  const todayMovement = movementById(movementForCycle(movementCycle).id);
+  const handleLaunchReady = useCallback(() => {
+    void SplashScreen.hideAsync();
+  }, []);
+  const handleLaunchFinished = useCallback(() => setLaunchFinished(true), []);
 
   useEffect(() => {
     void SystemUI.setBackgroundColorAsync(colors.canvas);
@@ -82,6 +102,7 @@ export default function AppExperience() {
       setActiveDateKey(nextDateKey);
       setDailyStatus('unrevealed');
       setGrace(initialGraceState());
+      setMovementCycle((current) => normalizeMovementCycle(current, nextDateKey));
       setProgress((current) => ({
         ...current,
         momentumDays: calculateCurrentMomentum(current.completedDates, new Date()),
@@ -101,10 +122,11 @@ export default function AppExperience() {
         grace,
         dailyStatus,
         onboardingCompleted,
+        movementCycle,
         dateKey: activeDateKey,
       })
     );
-  }, [activeDateKey, dailyStatus, draft, grace, hydrated, onboardingCompleted, progress]);
+  }, [activeDateKey, dailyStatus, draft, grace, hydrated, movementCycle, onboardingCompleted, progress]);
 
   return (
     <SafeAreaProvider>
@@ -130,6 +152,8 @@ export default function AppExperience() {
         <MainExperience
           nickname={draft.nickname || 'Edward'}
           draft={draft}
+          movement={todayMovement}
+          canReplaceMovement={canReplaceTodayMovement(movementCycle)}
           tab={tab}
           setTab={setTab}
           dailyStatus={dailyStatus}
@@ -153,6 +177,7 @@ export default function AppExperience() {
             setProgress(initialProgress);
             setGrace(initialGraceState());
             setDailyStatus('unrevealed');
+            setMovementCycle(createMovementCycle(localDateKey(new Date())));
             setTab('home');
             setOnboardingCompleted(false);
             setOnboardingStep(0);
@@ -171,6 +196,10 @@ export default function AppExperience() {
             }));
           }}
           onUpdateLockTime={updateLockTime}
+          onReplaceMovement={() => {
+            setMovementCycle((current) => replaceTodayMovement(current));
+            setDailyStatus('revealed');
+          }}
         />
       ) : null}
       {hydrated && screen === 'account' ? (
@@ -178,12 +207,17 @@ export default function AppExperience() {
           mode={accountMode}
           setMode={setAccountMode}
           onContinue={() => setScreen('paywall')}
+          onAuthenticate={authenticate}
+          onForgotPassword={requestPasswordReset}
           onBack={() => setScreen(onboardingStep === 0 && !draft.nickname ? 'onboarding' : 'main')}
           onNotNow={() => setScreen('main')}
         />
       ) : null}
       {hydrated && screen === 'paywall' ? (
         <PaywallScreen onClose={() => setScreen('main')} onStartTrial={() => setScreen('main')} />
+      ) : null}
+      {hydrated && !launchFinished ? (
+        <BrandLaunchOverlay onReady={handleLaunchReady} onFinished={handleLaunchFinished} />
       ) : null}
     </SafeAreaProvider>
   );
@@ -280,6 +314,7 @@ export default function AppExperience() {
         grace?: GraceState;
         dailyStatus?: DailyStatus;
         onboardingCompleted?: boolean;
+        movementCycle?: MovementCycleState;
         dateKey?: string;
       };
       const completed = Boolean(saved.onboardingCompleted);
@@ -292,6 +327,7 @@ export default function AppExperience() {
       const todayKey = localDateKey(new Date());
       setGrace(saved.grace?.dateKey === todayKey ? saved.grace : initialGraceState());
       setDailyStatus(saved.dateKey === localDateKey(new Date()) ? saved.dailyStatus ?? 'unrevealed' : 'unrevealed');
+      setMovementCycle(normalizeMovementCycle(saved.movementCycle, todayKey));
       setOnboardingCompleted(completed);
       setScreen(completed ? 'main' : 'onboarding');
     } catch {
@@ -300,6 +336,20 @@ export default function AppExperience() {
       setHydrated(true);
     }
   }
+}
+
+async function authenticate(_request: AuthRequest): Promise<AuthResult> {
+  return {
+    ok: false,
+    error: 'Authentication is ready for provider integration, but this build has no backend or Apple/Google credentials configured yet.',
+  };
+}
+
+async function requestPasswordReset(_email: string): Promise<AuthResult> {
+  return {
+    ok: false,
+    error: 'Password reset will activate when the VAEL authentication backend is connected.',
+  };
 }
 
 function parseLockTime(value: string) {

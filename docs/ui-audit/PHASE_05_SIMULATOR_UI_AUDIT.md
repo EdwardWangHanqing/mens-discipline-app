@@ -1,5 +1,10 @@
 # Phase 05 Simulator UI Audit
 
+> **Latest checkpoint — 2026-08-25:** the VAEL owner revision described at the
+> end of this document supersedes the historical universal-20-rep and
+> seven-movement content statements below. Earlier sections remain as audit
+> history for the prior checkpoint.
+
 **Date:** 2026-08-24  
 **Branch:** `feature/simulator-ready-ui`  
 **Device:** iPhone 17 Pro Simulator, iOS 26.5  
@@ -63,3 +68,38 @@ The UI closure is not blocked by final content production. Movement 02–07 reta
 data slots until the final names, Coach animation files, movement-specific
 cadence, and SUNO voice/music assets are supplied. These are content/media swaps,
 not new screen implementations.
+
+## Owner Revision 04 — VAEL Movement / Motion / Brand Completion
+
+The customer-facing brand is now VAEL. The Expo/native build contains the
+1024×1024 opaque VAEL App Icon, `CFBundleDisplayName` and `CFBundleName` both
+resolve to `VAEL`, and the existing bundle/App Group/Family Controls identifiers
+remain unchanged. The native warm-graphite splash and cold-launch-only VAEL mark
+draw/glow/settle transition were verified as one continuous handoff.
+
+The movement source now contains all ten owner-specified movements with their
+movement-specific 12/15/16/20 rep targets and 1.5/2.0/2.5-second cadence. A
+persisted random cycle samples seven unique movements from the full pool,
+preserves today's reveal across restarts, creates a new random sample after day
+seven, and prevents Replace Movement from duplicating the active cycle.
+
+Train and Rest were exercised on iPhone 17 Pro and iPhone 17e Simulators running
+iOS 26.5. Guided Reps and the current Set segment use one UI-thread linear motion
+timeline; the 20-second Rest ring decreases continuously while its number remains
+synchronized. The Rest readout and supplied wind/cloud treatment remain fully
+inside the right safe boundary on both sizes. Compact-height Train preview was
+corrected so Begin/Resume and Replace Movement are fully visible above the bottom
+navigation without altering the established composition.
+
+Motion evidence:
+
+- `docs/ui-audit/vael-cold-launch.mp4`;
+- `docs/ui-audit/vael-guided-progress.mp4`;
+- `docs/ui-audit/vael-rest-progress.mp4`.
+
+Verification: Expo lint, TypeScript, 15 pure logic/state-machine tests, fresh
+CocoaPods/native generation, and Debug build/install/launch succeeded. Xcode
+reported only dependency warnings. Apple/Google/Email authentication UI includes
+validation, keyboard handling, loading/error states, sign-up/sign-in switching,
+and password reset boundaries; real provider/backend credentials remain
+explicitly unconfigured and the preview does not claim live authentication.

@@ -1,4 +1,4 @@
-# Men's Discipline App
+# VAEL
 
 A private men's performance training application built around consistency and accountability.
 

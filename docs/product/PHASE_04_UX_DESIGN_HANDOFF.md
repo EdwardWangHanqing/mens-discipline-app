@@ -1,5 +1,11 @@
 # Men's Discipline App — Phase 04 UX Design Handoff v1.0
 
+> **2026-08-25 owner override:** DEC-025 and the supplied Movement Pool / VAEL
+> startup specifications supersede this document wherever it refers to a
+> seven-movement library, universal 20-rep sets, the former customer-facing
+> name, or an unspecified launch treatment. The navigation and product-flow
+> architecture in this handoff remain authoritative.
+
 **Date:** 2026-08-22  
 **Status:** Authoritative Phase 04 UX handoff for Phase 05 Visual System / Figma Design System  
 **Current accepted main checkpoint:** `9a0d9ffcd6887bb64525a0b8933f7edf3efd0c58`

@@ -9,11 +9,13 @@ import {
   Text,
   Vibration,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { DateTimePicker } from '@expo/ui/community/datetime-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   cancelAnimation,
+  Easing,
   FadeIn,
   FadeInDown,
   FadeInLeft,
@@ -23,11 +25,13 @@ import Animated, {
   LinearTransition,
   runOnJS,
   useAnimatedStyle,
+  useAnimatedProps,
   useSharedValue,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import Svg, { Circle } from 'react-native-svg';
+import type { SharedValue } from 'react-native-reanimated';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 import FamilyControls, { SelectedActivitiesView } from '../../modules/family-controls';
 import {
@@ -46,9 +50,8 @@ import {
 } from '../components/ui';
 import {
   DAILY_SET_COUNT,
-  REPS_PER_SET,
   REST_SECONDS,
-  todayMovement,
+  type Movement,
 } from '../data/movements';
 import type { OnboardingDraft } from './OnboardingFlow';
 import { colors, radii, spacing, typography } from '../theme/designSystem';
@@ -78,10 +81,13 @@ type Subscreen =
   | 'lockSchedule';
 
 type SessionPhase = 'countdown' | 'active' | 'rest' | 'paused' | 'complete';
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 export function MainExperience({
   nickname,
   draft,
+  movement,
+  canReplaceMovement,
   tab,
   setTab,
   dailyStatus,
@@ -97,9 +103,12 @@ export function MainExperience({
   onChooseApps,
   onSkipToday,
   onUpdateLockTime,
+  onReplaceMovement,
 }: {
   nickname: string;
   draft: OnboardingDraft;
+  movement: Movement;
+  canReplaceMovement: boolean;
   tab: MainTab;
   setTab: (tab: MainTab) => void;
   dailyStatus: DailyStatus;
@@ -115,6 +124,7 @@ export function MainExperience({
   onChooseApps: () => void;
   onSkipToday: () => void;
   onUpdateLockTime: (lockTime: string) => void;
+  onReplaceMovement: () => void;
 }) {
   const [subscreen, setSubscreen] = useState<Subscreen>('main');
   const [session, setSession] = useState<SessionPhase | null>(null);
@@ -125,6 +135,8 @@ export function MainExperience({
   const [phaseBeforePause, setPhaseBeforePause] = useState<'active' | 'rest'>('active');
   const [confirmation, setConfirmation] = useState<'grace' | 'skip' | null>(null);
   const [clock, setClock] = useState(0);
+  const repProgress = useSharedValue(0);
+  const restProgress = useSharedValue(1);
   const graceActive = grace.activeUntil !== null && grace.activeUntil > clock;
 
   useEffect(() => {
@@ -156,7 +168,7 @@ export function MainExperience({
       } else {
         setCountdown((value) => value - 1);
       }
-    }, 850);
+    }, 1000);
     return () => clearTimeout(timer);
   }, [countdown, session]);
 
@@ -165,7 +177,7 @@ export function MainExperience({
     const timer = setTimeout(() => {
       const nextReps = reps + 1;
       setReps(nextReps);
-      if (nextReps >= REPS_PER_SET) {
+      if (nextReps >= movement.repsPerSet) {
         if (setNumber === DAILY_SET_COUNT) {
           setSession('complete');
           onRoutineCompleted();
@@ -174,9 +186,24 @@ export function MainExperience({
           setSession('rest');
         }
       }
-    }, 650);
+    }, movement.cadence.repDurationMs);
     return () => clearTimeout(timer);
-  }, [onRoutineCompleted, reps, session, setNumber]);
+  }, [movement.cadence.repDurationMs, movement.repsPerSet, onRoutineCompleted, reps, session, setNumber]);
+
+  useEffect(() => {
+    if (session !== 'active') {
+      cancelAnimation(repProgress);
+      return;
+    }
+    repProgress.value = reps / movement.repsPerSet;
+    repProgress.value = withTiming(1, {
+      duration: Math.max(1, (movement.repsPerSet - reps) * movement.cadence.repDurationMs),
+      easing: Easing.linear,
+    });
+    return () => cancelAnimation(repProgress);
+    // Integer rep updates intentionally do not restart the UI-thread animation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [movement.cadence.repDurationMs, movement.id, movement.repsPerSet, session, setNumber]);
 
   useEffect(() => {
     if (session !== 'rest') return;
@@ -185,13 +212,29 @@ export function MainExperience({
         setRestSeconds(0);
         setSetNumber((value) => value + 1);
         setReps(0);
+        repProgress.set(0);
         setSession('active');
       } else {
         setRestSeconds((value) => value - 1);
       }
     }, 1000);
     return () => clearTimeout(timer);
-  }, [restSeconds, session]);
+  }, [repProgress, restSeconds, session]);
+
+  useEffect(() => {
+    if (session !== 'rest') {
+      cancelAnimation(restProgress);
+      return;
+    }
+    restProgress.value = restSeconds / REST_SECONDS;
+    restProgress.value = withTiming(0, {
+      duration: Math.max(1, restSeconds * 1000),
+      easing: Easing.linear,
+    });
+    return () => cancelAnimation(restProgress);
+    // The ring stays continuous while the displayed seconds update discretely.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, setNumber]);
 
   if (session) {
     return (
@@ -201,6 +244,9 @@ export function MainExperience({
         reps={reps}
         restSeconds={restSeconds}
         countdown={countdown}
+        movement={movement}
+        repProgress={repProgress}
+        restProgress={restProgress}
         onPause={() => {
           if (session === 'active' || session === 'rest') setPhaseBeforePause(session);
           setSession('paused');
@@ -243,6 +289,7 @@ export function MainExperience({
             dailyStatus={dailyStatus}
             progress={progress}
             lockTime={draft.lockTime}
+            movement={movement}
             reveal={() => setDailyStatus('revealed')}
             begin={() => beginSession(true)}
             resume={() => beginSession(false)}
@@ -252,6 +299,16 @@ export function MainExperience({
         {tab === 'train' ? (
           <TrainTab
             dailyStatus={dailyStatus}
+            movement={movement}
+            canReplaceMovement={canReplaceMovement}
+            replaceMovement={() => {
+              setSetNumber(1);
+              setReps(0);
+              repProgress.set(0);
+              onReplaceMovement();
+            }}
+            setNumber={setNumber}
+            repProgress={repProgress}
             reveal={() => setDailyStatus('revealed')}
             begin={() => beginSession(true)}
             resume={() => beginSession(false)}
@@ -296,6 +353,7 @@ export function MainExperience({
     if (reset) {
       setSetNumber(1);
       setReps(0);
+      repProgress.set(0);
     }
     setCountdown(3);
     setDailyStatus('inProgress');
@@ -317,7 +375,7 @@ export function MainExperience({
         />
       );
     }
-    if (subscreen === 'history') return <HistoryScreen progress={progress} onBack={back} />;
+    if (subscreen === 'history') return <HistoryScreen progress={progress} movement={movement} onBack={back} />;
     if (subscreen === 'milestones') return <MilestonesScreen progress={progress} onBack={back} />;
     if (subscreen === 'settings') {
       return (
@@ -353,6 +411,7 @@ function HomeTab({
   dailyStatus,
   progress,
   lockTime,
+  movement,
   reveal,
   begin,
   resume,
@@ -362,6 +421,7 @@ function HomeTab({
   dailyStatus: DailyStatus;
   progress: ProgressSummary;
   lockTime: string;
+  movement: Movement;
   reveal: () => void;
   begin: () => void;
   resume: () => void;
@@ -392,7 +452,7 @@ function HomeTab({
       </View>
 
       <MomentumCard progress={progress} dailyStatus={dailyStatus} />
-      <MovementCard dailyStatus={dailyStatus} lockTime={lockTime} reveal={reveal} begin={begin} resume={resume} />
+      <MovementCard dailyStatus={dailyStatus} lockTime={lockTime} movement={movement} reveal={reveal} begin={begin} resume={resume} />
       <CalendarCard completedDates={progress.completedDates} skippedDates={progress.skippedDates} />
       <Card style={styles.lifetimeCard}>
         <Eyebrow>Lifetime Progress</Eyebrow>
@@ -471,12 +531,14 @@ function MomentumCard({ progress, dailyStatus }: { progress: ProgressSummary; da
 function MovementCard({
   dailyStatus,
   lockTime,
+  movement,
   reveal,
   begin,
   resume,
 }: {
   dailyStatus: DailyStatus;
   lockTime: string;
+  movement: Movement;
   reveal: () => void;
   begin: () => void;
   resume: () => void;
@@ -492,7 +554,7 @@ function MovementCard({
           {hidden ? (
             <Image source={require('../../assets/images/reveal-cover.png')} style={styles.coverImage} />
           ) : (
-            <Image source={todayMovement.coachImage} style={styles.coachThumb} resizeMode="contain" />
+            <Image source={movement.coachImage} style={styles.coachThumb} resizeMode="contain" />
           )}
         </View>
         <View style={styles.movementCopy}>
@@ -504,7 +566,7 @@ function MovementCard({
                 ? 'Completed today.'
                 : skipped
                   ? 'Skipped today.'
-                  : todayMovement.displayName}
+                  : movement.displayName}
           </Text>
           <Text style={styles.movementSupport}>
             {hidden
@@ -522,7 +584,7 @@ function MovementCard({
         <View style={styles.metricDivider} />
         <Metric value="5" label="Sets" />
         <View style={styles.metricDivider} />
-        <Metric value="20" label="Reps" />
+        <Metric value={movement.repsPerSet} label="Reps" />
       </View>
       <View style={[styles.deadlineRow, skipped && styles.skippedInfoRow]}>
         <Icon name={completed ? 'checkmark.circle.fill' : skipped ? 'info.circle' : 'clock'} color={completed ? colors.accent : colors.secondary} size={16} />
@@ -611,15 +673,27 @@ function CalendarCard({ completedDates, skippedDates }: { completedDates: string
 
 function TrainTab({
   dailyStatus,
+  movement,
+  canReplaceMovement,
+  replaceMovement,
+  setNumber,
+  repProgress,
   reveal,
   begin,
   resume,
 }: {
   dailyStatus: DailyStatus;
+  movement: Movement;
+  canReplaceMovement: boolean;
+  replaceMovement: () => void;
+  setNumber: number;
+  repProgress: SharedValue<number>;
   reveal: () => void;
   begin: () => void;
   resume: () => void;
 }) {
+  const { height: viewportHeight } = useWindowDimensions();
+  const compactHeight = viewportHeight < 900;
   const hidden = dailyStatus === 'unrevealed';
   const completed = dailyStatus === 'completed';
   const skipped = dailyStatus === 'skipped';
@@ -639,24 +713,28 @@ function TrainTab({
       </Animated.View>
     );
   }
-  if (completed || skipped) return <OutcomeTrainTab skipped={skipped} />;
+  if (completed || skipped) return <OutcomeTrainTab skipped={skipped} movement={movement} />;
   return (
-    <ScrollView style={styles.tabContent} contentContainerStyle={styles.trainContent} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.tabContent}
+      contentContainerStyle={[styles.trainContent, compactHeight && styles.trainContentCompact]}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.trainHeading}>
         <Eyebrow>Current Movement</Eyebrow>
-        <Text style={styles.trainTitle}>{todayMovement.displayName}</Text>
-        <Text style={styles.trainFocus}>{todayMovement.focus.toUpperCase()}</Text>
+        <Text style={styles.trainTitle}>{movement.displayName}</Text>
+        <Text style={styles.trainFocus}>{movement.focus.toUpperCase()}</Text>
       </View>
-      <View style={styles.coachStage}>
-        <Image source={todayMovement.coachImage} style={styles.coachImage} resizeMode="contain" />
+      <View style={[styles.coachStage, compactHeight && styles.coachStageCompact]}>
+        <Image source={movement.coachImage} style={styles.coachImage} resizeMode="contain" />
       </View>
       <Text style={styles.setSummary}>
-        {`${DAILY_SET_COUNT} SETS · ${REPS_PER_SET} REPS`}
+        {`${DAILY_SET_COUNT} SETS · ${movement.repsPerSet} REPS`}
       </Text>
-      <SetSegments current={inProgress ? 1 : 0} />
+      <SetSegments currentSet={inProgress ? setNumber : 0} progress={repProgress} />
       <Card style={styles.trainDetailCard}>
           <View style={styles.metricRow}>
-            <Metric value="20" label="Reps" />
+            <Metric value={movement.repsPerSet} label="Reps" />
             <View style={styles.metricDivider} />
             <View style={styles.restMetric}>
               <Text style={styles.restValue}>0:20</Text>
@@ -664,16 +742,21 @@ function TrainTab({
             </View>
           </View>
           <View style={styles.instructionRow}>
-            <Icon name="bolt" color={colors.accent} size={18} />
-            <Text numberOfLines={2} style={styles.instructionText}>{todayMovement.instruction}</Text>
+            <Image source={require('../../assets/icons/train-lightning.png')} style={styles.lightningIcon} resizeMode="contain" />
+            <Text numberOfLines={2} style={styles.instructionText}>{movement.instruction}</Text>
           </View>
       </Card>
       <PrimaryButton label={inProgress ? 'Resume Session' : 'Begin'} onPress={inProgress ? resume : begin} />
+      <TextButton
+        label={canReplaceMovement ? 'Replace Movement' : 'Replacement Used Today'}
+        onPress={canReplaceMovement ? replaceMovement : () => undefined}
+        color={canReplaceMovement ? colors.secondary : colors.tertiary}
+      />
     </ScrollView>
   );
 }
 
-function OutcomeTrainTab({ skipped }: { skipped: boolean }) {
+function OutcomeTrainTab({ skipped, movement }: { skipped: boolean; movement: Movement }) {
   return (
     <ScrollView style={styles.tabContent} contentContainerStyle={styles.outcomeTrainContent} showsVerticalScrollIndicator={false}>
       <Animated.View entering={FadeInDown.duration(420)} style={styles.outcomeTrainHeader}>
@@ -681,10 +764,10 @@ function OutcomeTrainTab({ skipped }: { skipped: boolean }) {
         <Text style={styles.outcomeTrainTitle}>{skipped ? 'SKIPPED TODAY' : 'COMPLETED TODAY'}</Text>
         <Text style={styles.outcomeTrainSupport}>{skipped ? 'Back tomorrow.' : 'You showed up.'}</Text>
       </Animated.View>
-      <Animated.Image entering={FadeIn.duration(520)} source={todayMovement.coachImage} style={styles.outcomeTrainCoach} resizeMode="contain" />
+      <Animated.Image entering={FadeIn.duration(520)} source={movement.coachImage} style={styles.outcomeTrainCoach} resizeMode="contain" />
       <View style={styles.outcomeTrainProgress}>
         <Text style={styles.outcomeTrainSummary}>{skipped ? 'NO ACTION AVAILABLE TODAY' : '5 OF 5 SETS COMPLETE'}</Text>
-        <SetSegments current={skipped ? 0 : 5} />
+        <SetSegments currentSet={skipped ? 0 : DAILY_SET_COUNT + 1} />
       </View>
       <Card style={styles.outcomeTrainCard}>
         {!skipped ? <Image source={require('../../assets/icons/apps-unlocked.png')} style={styles.outcomeUnlockAsset} resizeMode="contain" /> : null}
@@ -839,13 +922,110 @@ function BottomNavigation({ selected, onSelect }: { selected: MainTab; onSelect:
   );
 }
 
-function SetSegments({ current }: { current: number }) {
+function SetSegments({
+  currentSet,
+  progress,
+}: {
+  currentSet: number;
+  progress?: SharedValue<number>;
+}) {
+  const completeCount = Math.min(DAILY_SET_COUNT, Math.max(0, currentSet - 1));
   return (
-    <View style={styles.setSegments} accessibilityLabel={`${current} of 5 sets complete`}>
-      {Array.from({ length: DAILY_SET_COUNT }, (_, index) => (
-        <View key={index} style={[styles.setSegment, index < current && styles.setSegmentActive]} />
-      ))}
+    <View style={styles.setSegments} accessibilityLabel={`${completeCount} of 5 sets complete`}>
+      {Array.from({ length: DAILY_SET_COUNT }, (_, index) => {
+        const segmentNumber = index + 1;
+        return (
+          <View key={segmentNumber} style={styles.setSegment}>
+            <SetSegmentFill
+              complete={segmentNumber < currentSet}
+              current={segmentNumber === currentSet}
+              progress={progress}
+            />
+          </View>
+        );
+      })}
     </View>
+  );
+}
+
+function SetSegmentFill({
+  complete,
+  current,
+  progress,
+}: {
+  complete: boolean;
+  current: boolean;
+  progress?: SharedValue<number>;
+}) {
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleX: complete ? 1 : current && progress ? progress.value : 0 }],
+  }));
+  return <Animated.View style={[styles.setSegmentFill, animatedStyle]} />;
+}
+
+function LiquidProgressBar({ progress, complete = false }: { progress: SharedValue<number>; complete?: boolean }) {
+  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scaleX: complete ? 1 : progress.value }] }));
+  return (
+    <View style={styles.repTrack}>
+      <Animated.View style={[styles.repFill, animatedStyle]} />
+    </View>
+  );
+}
+
+function RestCountdownRing({
+  size,
+  seconds,
+  progress,
+}: {
+  size: number;
+  seconds: number;
+  progress: SharedValue<number>;
+}) {
+  const strokeWidth = 7;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const animatedProps = useAnimatedProps(() => ({
+    strokeDashoffset: circumference * (1 - progress.value),
+  }));
+
+  return (
+    <View style={[styles.restReadout, { width: size, height: size, borderRadius: size / 2 }]}>
+      <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={colors.borderStrong}
+          strokeWidth={strokeWidth}
+        />
+        <AnimatedCircle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={colors.accent}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={[circumference, circumference]}
+          rotation="-90"
+          origin={`${size / 2}, ${size / 2}`}
+          animatedProps={animatedProps}
+        />
+      </Svg>
+      <Text style={styles.restCountdown}>0:{String(seconds).padStart(2, '0')}</Text>
+      <Eyebrow>Rest</Eyebrow>
+    </View>
+  );
+}
+
+function RestWindIcon() {
+  return (
+    <Svg width={34} height={30} viewBox="0 0 64 56" accessibilityLabel="Rest breathing cue">
+      <Path d="M18 13 H36 C44 13 48 9 48 5 C48 1 45 0 42 0 C38 0 35 2 35 5" fill="none" stroke={colors.accent} strokeWidth={5} strokeLinecap="round" />
+      <Path d="M4 27 H47 C55 27 60 23 60 17 C60 12 56 9 52 9 C48 9 45 11 45 15" fill="none" stroke={colors.accent} strokeWidth={5} strokeLinecap="round" />
+      <Path d="M18 41 H33 C39 41 43 45 43 49 C43 53 40 56 36 56 C32 56 29 54 29 51" fill="none" stroke={colors.accent} strokeWidth={5} strokeLinecap="round" />
+    </Svg>
   );
 }
 
@@ -855,6 +1035,9 @@ function SessionScreen({
   reps,
   restSeconds,
   countdown,
+  movement,
+  repProgress,
+  restProgress,
   onPause,
   onResume,
   onEnd,
@@ -865,11 +1048,16 @@ function SessionScreen({
   reps: number;
   restSeconds: number;
   countdown: number;
+  movement: Movement;
+  repProgress: SharedValue<number>;
+  restProgress: SharedValue<number>;
   onPause: () => void;
   onResume: () => void;
   onEnd: () => void;
   onContinue: () => void;
 }) {
+  const { width } = useWindowDimensions();
+  const restRingSize = Math.min(116, Math.max(94, Math.floor((width - spacing.xl * 2) * 0.31)));
   if (phase === 'complete') {
     return (
       <Screen testID="routine-complete">
@@ -879,9 +1067,9 @@ function SessionScreen({
             <Title>Completed today.</Title>
             <Body muted>You showed up.</Body>
           </View>
-          <Image source={todayMovement.coachImage} style={styles.completeCoach} resizeMode="contain" />
+          <Image source={movement.coachImage} style={styles.completeCoach} resizeMode="contain" />
           <Text style={styles.completeSets}>5 OF 5 SETS COMPLETE</Text>
-          <SetSegments current={5} />
+          <SetSegments currentSet={DAILY_SET_COUNT + 1} />
           <Card style={styles.outcomeCard}>
             <Image source={require('../../assets/icons/apps-unlocked.png')} style={styles.sessionUnlockAsset} resizeMode="contain" />
             <View style={styles.outcomeCopy}>
@@ -898,14 +1086,17 @@ function SessionScreen({
   return (
     <Screen testID={`session-${phase}`}>
       <View style={styles.sessionHeader}>
-        <Eyebrow>{todayMovement.displayName}</Eyebrow>
+        <Eyebrow>{movement.displayName}</Eyebrow>
         <Text style={styles.sessionSet}>{phase === 'rest' ? 'REST' : `SET ${setNumber} OF ${DAILY_SET_COUNT}`}</Text>
         {phase === 'rest' ? <Text style={styles.sessionSupport}>SET {setNumber} COMPLETE · SET {setNumber + 1} NEXT</Text> : null}
       </View>
       <View style={styles.sessionCoachStage}>
-        <Image source={todayMovement.coachImage} style={styles.sessionCoach} resizeMode="contain" />
+        <Image source={movement.coachImage} style={styles.sessionCoach} resizeMode="contain" />
       </View>
-      <SetSegments current={phase === 'rest' ? setNumber : setNumber - 1} />
+      <SetSegments
+        currentSet={phase === 'rest' ? setNumber + 1 : setNumber}
+        progress={phase === 'rest' ? undefined : repProgress}
+      />
       <View style={styles.sessionReadout}>
         {phase === 'countdown' ? (
           <View style={styles.countdownBlock}>
@@ -916,22 +1107,24 @@ function SessionScreen({
         ) : (
           <>
             <View style={styles.repReadout}>
-              <Text style={styles.repValue}>{phase === 'rest' ? `${REPS_PER_SET} / ${REPS_PER_SET}` : `${reps} / ${REPS_PER_SET}`}</Text>
+              <Text style={styles.repValue}>{phase === 'rest' ? `${movement.repsPerSet} / ${movement.repsPerSet}` : `${reps} / ${movement.repsPerSet}`}</Text>
               <Eyebrow>{phase === 'rest' ? 'Set reps' : 'Guided reps'}</Eyebrow>
-              <View style={styles.repTrack}>
-                <View style={[styles.repFill, { width: `${Math.max(4, (phase === 'rest' ? 100 : reps / REPS_PER_SET * 100))}%` }]} />
-              </View>
+              <LiquidProgressBar progress={repProgress} complete={phase === 'rest'} />
             </View>
             {phase === 'rest' ? (
-              <View style={styles.restReadout}>
-                <Text style={styles.restCountdown}>0:{String(restSeconds).padStart(2, '0')}</Text>
-                <Eyebrow>Rest</Eyebrow>
-              </View>
+              <RestCountdownRing size={restRingSize} seconds={restSeconds} progress={restProgress} />
             ) : null}
           </>
         )}
       </View>
-      {phase !== 'countdown' ? <Text style={styles.sessionInstruction}>{todayMovement.instruction.toUpperCase()}</Text> : null}
+      {phase === 'rest' ? (
+        <View style={styles.restCue}>
+          <RestWindIcon />
+          <Text style={styles.restCueText}>BREATHE. RESET. THE NEXT SET IS READY.</Text>
+        </View>
+      ) : phase !== 'countdown' ? (
+        <Text style={styles.sessionInstruction}>{movement.instruction.toUpperCase()}</Text>
+      ) : null}
       {phase === 'active' || phase === 'rest' ? <SecondaryButton label="Pause" onPress={onPause} icon="pause" /> : null}
       {phase === 'paused' ? (
         <View style={styles.pauseOverlay}>
@@ -1002,7 +1195,7 @@ function ProfileScreen({
   );
 }
 
-function HistoryScreen({ progress, onBack }: { progress: ProgressSummary; onBack: () => void }) {
+function HistoryScreen({ progress, movement, onBack }: { progress: ProgressSummary; movement: Movement; onBack: () => void }) {
   const recent = [...progress.completedDates].sort().reverse().slice(0, 8);
   const weekValues = lastEightWeekCounts(progress.completedDates);
   return (
@@ -1026,7 +1219,7 @@ function HistoryScreen({ progress, onBack }: { progress: ProgressSummary; onBack
           <View key={dateKey}>
             <View style={styles.historyRow}>
               <View style={styles.historyCheck}><Icon name="checkmark" color={colors.accentInk} size={12} weight="bold" /></View>
-              <View style={styles.historyCopy}><Text style={styles.historyTitle}>{todayMovement.displayName}</Text><Text style={styles.historyDate}>{formatHistoryDate(dateKey)} · 5 × 20</Text></View>
+              <View style={styles.historyCopy}><Text style={styles.historyTitle}>{movement.displayName}</Text><Text style={styles.historyDate}>{formatHistoryDate(dateKey)} · 5 × {movement.repsPerSet}</Text></View>
             </View>
             {index < recent.length - 1 ? <Divider /> : null}
           </View>
@@ -1375,22 +1568,25 @@ const styles = StyleSheet.create({
   navLabel: { color: colors.secondary, fontSize: 10, letterSpacing: 1.1, fontWeight: '600' },
   navLabelActive: { color: colors.accent },
   trainEmpty: { flex: 1, paddingHorizontal: spacing.xxxl, alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
-  concealedIcon: { width: 84, height: 84, borderRadius: 30, backgroundColor: '#181B16', alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xl },
+  concealedIcon: { width: 84, height: 84, borderRadius: 30, backgroundColor: colors.accentSurface, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xl },
   trainEmptyButton: { alignSelf: 'stretch', marginTop: spacing.xl },
   trainContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.xxxl, paddingBottom: spacing.xxl, gap: spacing.lg },
+  trainContentCompact: { paddingTop: spacing.xl, paddingBottom: spacing.xxxl, gap: spacing.md },
   trainHeading: { alignItems: 'center', gap: spacing.sm },
   trainTitle: { color: colors.primary, fontSize: 28, fontWeight: '700', textAlign: 'center', textTransform: 'uppercase', letterSpacing: 0.8 },
   trainFocus: { color: colors.secondary, fontSize: 14, letterSpacing: 1.4, textAlign: 'center' },
   coachStage: { height: 330, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
+  coachStageCompact: { height: 252 },
   coachImage: { width: '100%', height: '100%' },
   setSummary: { color: colors.primary, fontSize: 17, fontWeight: '700', letterSpacing: 1.2 },
   setSegments: { flexDirection: 'row', gap: spacing.sm },
-  setSegment: { flex: 1, height: 6, borderRadius: 3, backgroundColor: colors.borderStrong },
-  setSegmentActive: { backgroundColor: colors.accent },
+  setSegment: { flex: 1, height: 6, borderRadius: 3, backgroundColor: colors.borderStrong, overflow: 'hidden' },
+  setSegmentFill: { position: 'absolute', inset: 0, backgroundColor: colors.accent, transformOrigin: 'left center' },
   trainDetailCard: { gap: spacing.md, paddingBottom: spacing.sm },
   restMetric: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   restValue: { color: colors.primary, fontSize: 28, fontWeight: '700' },
   instructionRow: { minHeight: 42, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.border, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, gap: spacing.md },
+  lightningIcon: { width: 19, height: 24 },
   instructionText: { color: colors.secondary, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8, flex: 1 },
   outcomeCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, padding: spacing.lg },
   outcomeCopy: { flex: 1, gap: spacing.xs },
@@ -1444,16 +1640,18 @@ const styles = StyleSheet.create({
   sessionSupport: { color: colors.secondary, fontSize: 12, letterSpacing: 1.1 },
   sessionCoachStage: { height: 270, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radii.lg, marginVertical: spacing.xl },
   sessionCoach: { width: '100%', height: '100%' },
-  sessionReadout: { minHeight: 150, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.md, paddingVertical: spacing.xxl },
-  repReadout: { flex: 1, alignItems: 'center', gap: spacing.sm },
+  sessionReadout: { minHeight: 150, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.lg, paddingVertical: spacing.xxl, paddingHorizontal: spacing.md },
+  repReadout: { flex: 1, minWidth: 0, alignItems: 'center', gap: spacing.sm },
   repValue: { color: colors.primary, fontSize: 46, fontWeight: '700' },
   repTrack: { width: '80%', height: 8, borderRadius: 4, borderWidth: 1, borderColor: colors.borderStrong, overflow: 'hidden', marginTop: spacing.md },
-  repFill: { height: '100%', backgroundColor: colors.accent },
-  restReadout: { width: 124, height: 124, borderRadius: 62, borderWidth: 7, borderColor: colors.accent, alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
+  repFill: { position: 'absolute', inset: 0, backgroundColor: colors.accent, transformOrigin: 'left center' },
+  restReadout: { flexShrink: 0, alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
   restCountdown: { color: colors.primary, fontSize: 30, fontWeight: '700' },
   countdownBlock: { alignItems: 'center', gap: spacing.md },
   countdownValue: { color: colors.primary, fontSize: 64, fontWeight: '800' },
   sessionInstruction: { color: colors.secondary, fontSize: 12, lineHeight: 18, textAlign: 'center', letterSpacing: 0.8, marginBottom: spacing.xl },
+  restCue: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.md, marginBottom: spacing.xl, paddingHorizontal: spacing.lg },
+  restCueText: { flexShrink: 1, color: colors.secondary, fontSize: 11, lineHeight: 16, letterSpacing: 0.9 },
   pauseOverlay: { position: 'absolute', inset: 0, backgroundColor: colors.scrim, justifyContent: 'flex-end' },
   pauseSheet: { backgroundColor: colors.surfaceRaised, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl, padding: spacing.xl, paddingBottom: spacing.xxxl, gap: spacing.md },
   pauseActions: { gap: spacing.md, marginTop: spacing.lg },
@@ -1487,7 +1685,7 @@ const styles = StyleSheet.create({
   milestone: { width: '48%', minHeight: 180, justifyContent: 'flex-end', gap: spacing.sm },
   milestoneEarned: { borderColor: colors.accent },
   milestoneIcon: { width: 52, height: 52, borderRadius: 18, backgroundColor: colors.surfaceSoft, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xl },
-  milestoneIconEarned: { backgroundColor: '#181B16' },
+  milestoneIconEarned: { backgroundColor: colors.accentSurface },
   milestoneTitle: { color: colors.primary, fontSize: 16, fontWeight: '700' },
   milestoneSupport: { color: colors.secondary, fontSize: 12 },
   settingRow: { minHeight: 74, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
@@ -1497,7 +1695,7 @@ const styles = StyleSheet.create({
   settingsReset: { marginTop: spacing.xxxl },
   settingsFootnote: { color: colors.tertiary, fontSize: 12, lineHeight: 18, marginTop: spacing.lg },
   manageAppsCard: { alignItems: 'center', paddingVertical: spacing.xxxl },
-  appsIcon: { width: 72, height: 72, borderRadius: 24, backgroundColor: '#181B16', alignItems: 'center', justifyContent: 'center', marginBottom: spacing.lg },
+  appsIcon: { width: 72, height: 72, borderRadius: 24, backgroundColor: colors.accentSurface, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.lg },
   appsCount: { color: colors.primary, fontSize: 42, fontWeight: '700' },
   appsLabel: { ...typography.eyebrow, color: colors.accent, marginTop: spacing.xs },
   pageBottom: { marginTop: 'auto', paddingBottom: spacing.xl },

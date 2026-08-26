@@ -1,13 +1,23 @@
 {
   "expo": {
-    "name": "Men's Discipline",
+    "name": "VAEL",
     "slug": "mens-discipline-app",
+    "icon": "./assets/branding/vael-app-icon.png",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "mensdiscipline",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "plugins": [
       "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0B0B0C",
+          "image": "./assets/branding/vael-splash-mark-faint.png",
+          "imageWidth": 174,
+          "resizeMode": "contain"
+        }
+      ],
       "./plugins/with-device-activity-monitor"
     ],
     "experiments": {
@@ -15,6 +25,7 @@
       "reactCompiler": true
     },
     "ios": {
+      "icon": "./assets/branding/vael-app-icon.png",
       "bundleIdentifier": "com.temperline.mensdiscipline",
       "entitlements": {
         "com.apple.developer.family-controls": true,
