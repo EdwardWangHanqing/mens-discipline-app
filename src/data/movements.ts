@@ -8,18 +8,21 @@ export { GUIDED_ROUTINE_SET_COUNT as DAILY_SET_COUNT, REST_SECONDS };
 
 export type Movement = MovementDefinition & {
   coachImage: number;
+  coachVideo?: number;
   coachAnimationAsset?: string;
   audioAsset?: string;
 };
 
 const canonicalCoach = require('../../assets/images/coach-kneeling-drive.png');
-const kneelingDriveDemonstration = require('../../assets/images/kneeling-drive-demonstration.png');
+const kneelingDriveReady = require('../../assets/images/kneeling-drive-ready.png');
+const kneelingDriveCoachVideo = require('../../assets/videos/kneeling-drive-coach-muted.mp4');
 
 // Production movement quantities are sourced from the Owner's
 // "Movement Pool and Reveal Update". Coach media remains replaceable.
 export const movements: Movement[] = movementDefinitions.map((definition) => ({
   ...definition,
-  coachImage: definition.id === 'kneeling-drive' ? kneelingDriveDemonstration : canonicalCoach,
+  coachImage: definition.id === 'kneeling-drive' ? kneelingDriveReady : canonicalCoach,
+  coachVideo: definition.id === 'kneeling-drive' ? kneelingDriveCoachVideo : undefined,
 }));
 
 export function movementById(id: string | undefined): Movement {

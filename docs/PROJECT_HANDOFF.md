@@ -337,12 +337,28 @@ Run `npm run qa:web` and open `http://localhost:8081/design-qa`. Detailed usage
 and architecture boundaries are recorded in
 `docs/ui-audit/DESIGN_QA_PREVIEW.md`.
 
-## Kneeling Drive Demonstration Asset — 2026-08-25
+## Kneeling Drive Coach Media and Rest Transition — 2026-08-25
 
-The owner-supplied Kneeling Drive still is cropped to a 4:5 app-ready asset and
-is assigned only to `kneeling-drive`. It is used by the revealed Home card, the
-Train overview, and the immersive preparation/countdown and guided-set screens.
-Other movements retain the existing replaceable Coach placeholder until their
-own media is supplied. Expo lint, all 15 routine/state tests, and an iPhone 17e
-Simulator build passed; the Simulator was left on the revealed Kneeling Drive
-Home state for owner review.
+The owner-supplied Kneeling Drive 2.0 still is resampled without crop to an
+app-ready 4:5 asset and is assigned only to `kneeling-drive`. It is used by the
+revealed Home card and Train overview, and remains as the first-frame fallback
+through the preparation countdown.
+
+The supplied Coach MP4 is stored in the application as a video-only derivative:
+the original source has one audio track and the shipped asset has zero. The
+native `expo-video` player also sets `muted = true` and `volume = 0`, uses no
+native controls or Picture in Picture, loops the Coach video while the set is
+active, and keeps the system audio mixing mode automatic. The player does not
+claim the system audio route, run in the background, or publish a now-playing
+notification.
+
+The existing 20-second rest ring is one reusable presentation: it remains
+small in the Coach stage's lower-right corner during countdown/active training,
+then softly expands and moves to the central Rest state as the Coach stage
+fades. It continuously decreases through the Rest interval, then returns to
+the lower-right while Coach video reappears for the next set. The locked
+five-set/four-rest state machine is unchanged, including no Rest after Set 5.
+
+Expo lint, TypeScript validation, audio-track inspection, and a fresh iPhone
+17e Simulator build passed. Runtime visual QA covered Home/ready asset, active
+Coach video, central Rest at Set 1 completion, and Coach reappearance at Set 2.

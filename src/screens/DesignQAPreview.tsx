@@ -73,11 +73,12 @@ const scenarios: Scenario[] = [
   { id: 'home-grace', label: 'Grace / Recoverable', group: 'Home', state: { tab: 'home', dailyStatus: 'inProgress', graceActive: true } },
 
   { id: 'train-ready', label: 'Ready / Overview', group: 'Train', state: { tab: 'train', dailyStatus: 'revealed' } },
+  { id: 'train-countdown', label: 'Countdown / Set 1', group: 'Train', state: { tab: 'train', dailyStatus: 'inProgress', session: 'countdown', setNumber: 1, reps: 0 } },
   { id: 'train-set-1', label: 'Active / Set 1', group: 'Train', state: { tab: 'train', dailyStatus: 'inProgress', session: 'active', setNumber: 1, reps: 4 } },
-  { id: 'train-rest', label: 'Rest / Between Sets', group: 'Train', state: { tab: 'train', dailyStatus: 'inProgress', session: 'rest', setNumber: 2, reps: 20, restSeconds: 10 } },
-  { id: 'train-mid', label: 'Active / Mid Session', group: 'Train', state: { tab: 'train', dailyStatus: 'inProgress', session: 'active', setNumber: 3, reps: 10 } },
-  { id: 'train-final', label: 'Active / Final Set', group: 'Train', state: { tab: 'train', dailyStatus: 'inProgress', session: 'active', setNumber: 5, reps: 16 } },
-  { id: 'train-complete', label: 'Complete', group: 'Train', state: { tab: 'train', dailyStatus: 'completed', session: 'complete', setNumber: 5, reps: 20 } },
+  { id: 'train-rest', label: 'Rest / Between Sets', group: 'Train', state: { tab: 'train', dailyStatus: 'inProgress', session: 'rest', setNumber: 2, reps: 15, restSeconds: 10 } },
+  { id: 'train-mid', label: 'Active / Mid Session', group: 'Train', state: { tab: 'train', dailyStatus: 'inProgress', session: 'active', setNumber: 3, reps: 8 } },
+  { id: 'train-final', label: 'Active / Final Set', group: 'Train', state: { tab: 'train', dailyStatus: 'inProgress', session: 'active', setNumber: 5, reps: 12 } },
+  { id: 'train-complete', label: 'Complete', group: 'Train', state: { tab: 'train', dailyStatus: 'completed', session: 'complete', setNumber: 5, reps: 15 } },
 
   { id: 'locks-locked', label: 'Locked', group: 'Locks', state: { tab: 'locks', dailyStatus: 'revealed', selectedAppCount: 4 } },
   { id: 'locks-grace', label: 'Grace Active', group: 'Locks', state: { tab: 'locks', dailyStatus: 'inProgress', graceActive: true, selectedAppCount: 4 } },
@@ -169,7 +170,7 @@ export function DesignQAPreview() {
         <QaSection title="Session Controls">
           <Text style={styles.controlLabel}>Phase</Text>
           <View style={styles.segmentRow}>
-            {(['ready', 'active', 'rest', 'complete'] as const).map((phase) => (
+            {(['ready', 'countdown', 'active', 'rest', 'complete'] as const).map((phase) => (
               <QaButton key={phase} compact label={phase} selected={(qa.session ?? 'ready') === phase} onPress={() => setPhase(phase)} />
             ))}
           </View>
@@ -181,8 +182,8 @@ export function DesignQAPreview() {
             ))}
           </View>
 
-          <Text style={styles.controlLabel}>Reps · 0–20</Text>
-          <Counter value={qa.reps} min={0} max={20} onChange={(reps) => patchQa({ reps })} />
+          <Text style={styles.controlLabel}>Reps · 0–15</Text>
+          <Counter value={qa.reps} min={0} max={15} onChange={(reps) => patchQa({ reps })} />
 
           <Text style={styles.controlLabel}>Rest Countdown</Text>
           <View style={styles.segmentRow}>
@@ -202,7 +203,7 @@ export function DesignQAPreview() {
 
         <QaSection title="State Actions">
           <View style={styles.actionGrid}>
-            <QaButton label="Simulate Routine Complete" onPress={() => patchQa({ kind: 'main', tab: 'train', dailyStatus: 'completed', session: 'complete', setNumber: 5, reps: 20 })} />
+            <QaButton label="Simulate Routine Complete" onPress={() => patchQa({ kind: 'main', tab: 'train', dailyStatus: 'completed', session: 'complete', setNumber: 5, reps: 15 })} />
             <QaButton label="Simulate Unlock" onPress={() => patchQa({ kind: 'main', tab: 'locks', dailyStatus: 'completed', session: null })} />
             <QaButton label="Grace Active" onPress={() => patchQa({ kind: 'main', tab: 'locks', dailyStatus: 'inProgress', graceActive: true, session: null })} />
             <QaButton label="Skip Today" onPress={() => patchQa({ kind: 'main', tab: 'home', dailyStatus: 'skipped', graceActive: false, session: null })} />
@@ -323,7 +324,7 @@ export function DesignQAPreview() {
     setSelectedScenario('custom');
   }
 
-  function setPhase(phase: 'ready' | 'active' | 'rest' | 'complete') {
+  function setPhase(phase: 'ready' | 'countdown' | 'active' | 'rest' | 'complete') {
     if (phase === 'ready') {
       patchQa({ kind: 'main', tab: 'train', dailyStatus: 'revealed', session: null });
       return;
@@ -334,7 +335,7 @@ export function DesignQAPreview() {
       dailyStatus: phase === 'complete' ? 'completed' : 'inProgress',
       session: phase,
       setNumber: phase === 'complete' ? 5 : qa.setNumber,
-      reps: phase === 'complete' ? 20 : qa.reps,
+      reps: phase === 'complete' ? 15 : qa.reps,
     });
   }
 }
@@ -372,7 +373,7 @@ function Counter({ value, min, max, onChange }: { value: number; min: number; ma
       <QaButton compact label="−" onPress={() => onChange(Math.max(min, value - 1))} />
       <Text style={styles.counterValue}>{value}</Text>
       <QaButton compact label="+" onPress={() => onChange(Math.min(max, value + 1))} />
-      <QaButton compact label="20" selected={value === max} onPress={() => onChange(max)} />
+      <QaButton compact label={String(max)} selected={value === max} onPress={() => onChange(max)} />
     </View>
   );
 }

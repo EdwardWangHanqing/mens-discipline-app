@@ -18,7 +18,8 @@
           "resizeMode": "contain"
         }
       ],
-      "./plugins/with-device-activity-monitor"
+      "./plugins/with-device-activity-monitor",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true,

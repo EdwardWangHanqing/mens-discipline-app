@@ -22,6 +22,7 @@ import Animated, {
   FadeInRight,
   FadeOut,
   FadeOutLeft,
+  interpolate,
   LinearTransition,
   runOnJS,
   useAnimatedStyle,
@@ -32,6 +33,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import type { SharedValue } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { useVideoPlayer, VideoView } from 'expo-video';
 
 import FamilyControls, { SelectedActivitiesView } from '../../modules/family-controls';
 import {
@@ -240,7 +242,13 @@ export function MainExperience({
   }, [previewFrozen, repProgress, restSeconds, session]);
 
   useEffect(() => {
-    if (session !== 'rest') {
+    const restingOrHeld = session === 'rest' || (session === 'paused' && phaseBeforePause === 'rest');
+    if (!restingOrHeld) {
+      cancelAnimation(restProgress);
+      restProgress.value = 1;
+      return;
+    }
+    if (session === 'paused') {
       cancelAnimation(restProgress);
       return;
     }
@@ -253,7 +261,7 @@ export function MainExperience({
     return () => cancelAnimation(restProgress);
     // The ring stays continuous while the displayed seconds update discretely.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [previewFrozen, session, setNumber]);
+  }, [phaseBeforePause, previewFrozen, session, setNumber]);
 
   if (session) {
     return (
@@ -266,6 +274,7 @@ export function MainExperience({
         movement={movement}
         repProgress={repProgress}
         restProgress={restProgress}
+        pausedPhase={phaseBeforePause}
         onPause={() => {
           if (session === 'active' || session === 'rest') setPhaseBeforePause(session);
           setSession('paused');
@@ -1030,9 +1039,111 @@ function RestCountdownRing({
           animatedProps={animatedProps}
         />
       </Svg>
-      <Text style={styles.restCountdown}>0:{String(seconds).padStart(2, '0')}</Text>
+      <Text style={styles.restCountdown}>{String(seconds)}</Text>
       <Eyebrow>Rest</Eyebrow>
     </View>
+  );
+}
+
+function MutedLoopingCoachVideo({
+  source,
+  fallback,
+  visible,
+}: {
+  source: number;
+  fallback: number;
+  visible: boolean;
+}) {
+  const [hasFirstFrame, setHasFirstFrame] = useState(false);
+  const player = useVideoPlayer(source, (videoPlayer) => {
+    videoPlayer.loop = true;
+    videoPlayer.muted = true;
+    videoPlayer.volume = 0;
+    // Keep other audio playing normally; this session never claims the audio route.
+    videoPlayer.audioMixingMode = 'auto';
+    videoPlayer.showNowPlayingNotification = false;
+    videoPlayer.staysActiveInBackground = false;
+    videoPlayer.play();
+  });
+
+  useEffect(() => {
+    if (visible) {
+      player.play();
+    } else {
+      player.pause();
+    }
+  }, [player, visible]);
+
+  return (
+    <View style={styles.sessionCoachMedia}>
+      <VideoView
+        player={player}
+        nativeControls={false}
+        allowsPictureInPicture={false}
+        contentFit="contain"
+        onFirstFrameRender={() => setHasFirstFrame(true)}
+        style={styles.sessionCoach}
+      />
+      {!hasFirstFrame ? <Image source={fallback} style={styles.sessionCoachFallback} resizeMode="contain" /> : null}
+    </View>
+  );
+}
+
+function CoachStage({ movement, visible }: { movement: Movement; visible: boolean }) {
+  const opacity = useSharedValue(visible ? 1 : 0);
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
+  useEffect(() => {
+    opacity.set(withTiming(visible ? 1 : 0, {
+      duration: visible ? 360 : 260,
+      easing: Easing.out(Easing.cubic),
+    }));
+  }, [opacity, visible]);
+
+  return (
+    <Animated.View pointerEvents="none" style={[styles.sessionCoachStage, animatedStyle]}>
+      {movement.coachVideo ? (
+        <MutedLoopingCoachVideo source={movement.coachVideo} fallback={movement.coachImage} visible={visible} />
+      ) : (
+        <Image source={movement.coachImage} style={styles.sessionCoach} resizeMode="contain" />
+      )}
+    </Animated.View>
+  );
+}
+
+function RestTimerMorph({
+  resting,
+  seconds,
+  progress,
+}: {
+  resting: boolean;
+  seconds: number;
+  progress: SharedValue<number>;
+}) {
+  const { width } = useWindowDimensions();
+  const size = 220;
+  const morph = useSharedValue(resting ? 1 : 0);
+  const activeOffsetX = Math.max(86, (width - spacing.xl * 2) / 2 - 40 - spacing.md);
+  const activeOffsetY = 84;
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: interpolate(morph.value, [0, 1], [activeOffsetX, 0]) },
+      { translateY: interpolate(morph.value, [0, 1], [activeOffsetY, 0]) },
+      { scale: interpolate(morph.value, [0, 1], [0.36, 1]) },
+    ],
+  }));
+
+  useEffect(() => {
+    morph.set(withTiming(resting ? 1 : 0, {
+      duration: resting ? 380 : 320,
+      easing: Easing.out(Easing.cubic),
+    }));
+  }, [morph, resting]);
+
+  return (
+    <Animated.View pointerEvents="none" style={[styles.restTimerMorph, animatedStyle]}>
+      <RestCountdownRing size={size} seconds={seconds} progress={progress} />
+    </Animated.View>
   );
 }
 
@@ -1048,6 +1159,7 @@ function RestWindIcon() {
 
 function SessionScreen({
   phase,
+  pausedPhase,
   setNumber,
   reps,
   restSeconds,
@@ -1061,6 +1173,7 @@ function SessionScreen({
   onContinue,
 }: {
   phase: SessionPhase;
+  pausedPhase: 'active' | 'rest';
   setNumber: number;
   reps: number;
   restSeconds: number;
@@ -1073,8 +1186,8 @@ function SessionScreen({
   onEnd: () => void;
   onContinue: () => void;
 }) {
-  const { width } = useWindowDimensions();
-  const restRingSize = Math.min(116, Math.max(94, Math.floor((width - spacing.xl * 2) * 0.31)));
+  const displayPhase = phase === 'paused' ? pausedPhase : phase;
+  const isRest = displayPhase === 'rest';
   if (phase === 'complete') {
     return (
       <Screen testID="routine-complete">
@@ -1104,15 +1217,16 @@ function SessionScreen({
     <Screen testID={`session-${phase}`}>
       <View style={styles.sessionHeader}>
         <Eyebrow>{movement.displayName}</Eyebrow>
-        <Text style={styles.sessionSet}>{phase === 'rest' ? 'REST' : `SET ${setNumber} OF ${DAILY_SET_COUNT}`}</Text>
-        {phase === 'rest' ? <Text style={styles.sessionSupport}>SET {setNumber} COMPLETE · SET {setNumber + 1} NEXT</Text> : null}
+        <Text style={styles.sessionSet}>{isRest ? 'REST' : `SET ${setNumber} OF ${DAILY_SET_COUNT}`}</Text>
+        {isRest ? <Text style={styles.sessionSupport}>SET {setNumber} COMPLETE · SET {setNumber + 1} NEXT</Text> : null}
       </View>
-      <View style={styles.sessionCoachStage}>
-        <Image source={movement.coachImage} style={styles.sessionCoach} resizeMode="contain" />
+      <View style={styles.sessionMediaArea}>
+        <CoachStage movement={movement} visible={!isRest} />
+        <RestTimerMorph resting={isRest} seconds={isRest ? restSeconds : REST_SECONDS} progress={restProgress} />
       </View>
       <SetSegments
-        currentSet={phase === 'rest' ? setNumber + 1 : setNumber}
-        progress={phase === 'rest' ? undefined : repProgress}
+        currentSet={isRest ? setNumber + 1 : setNumber}
+        progress={isRest ? undefined : repProgress}
       />
       <View style={styles.sessionReadout}>
         {phase === 'countdown' ? (
@@ -1121,25 +1235,28 @@ function SessionScreen({
             <Text style={styles.countdownValue}>{countdown || 'GO'}</Text>
             <Text style={styles.sessionInstruction}>Follow the coach. Control every repetition.</Text>
           </View>
+        ) : isRest ? (
+          <View style={styles.restDetail}>
+            <Eyebrow>Rest recovery</Eyebrow>
+            <Text style={styles.restDetailValue}>SET {setNumber} COMPLETE</Text>
+            <Text style={styles.restDetailSupport}>Breathe, reset, and prepare for set {setNumber + 1}.</Text>
+          </View>
         ) : (
           <>
             <View style={styles.repReadout}>
-              <Text style={styles.repValue}>{phase === 'rest' ? `${movement.repsPerSet} / ${movement.repsPerSet}` : `${reps} / ${movement.repsPerSet}`}</Text>
-              <Eyebrow>{phase === 'rest' ? 'Set reps' : 'Guided reps'}</Eyebrow>
-              <LiquidProgressBar progress={repProgress} complete={phase === 'rest'} />
+              <Text style={styles.repValue}>{`${reps} / ${movement.repsPerSet}`}</Text>
+              <Eyebrow>Guided reps</Eyebrow>
+              <LiquidProgressBar progress={repProgress} />
             </View>
-            {phase === 'rest' ? (
-              <RestCountdownRing size={restRingSize} seconds={restSeconds} progress={restProgress} />
-            ) : null}
           </>
         )}
       </View>
-      {phase === 'rest' ? (
+      {isRest ? (
         <View style={styles.restCue}>
           <RestWindIcon />
           <Text style={styles.restCueText}>BREATHE. RESET. THE NEXT SET IS READY.</Text>
         </View>
-      ) : phase !== 'countdown' ? (
+      ) : displayPhase !== 'countdown' ? (
         <Text style={styles.sessionInstruction}>{movement.instruction.toUpperCase()}</Text>
       ) : null}
       {phase === 'active' || phase === 'rest' ? <SecondaryButton label="Pause" onPress={onPause} icon="pause" /> : null}
@@ -1655,15 +1772,22 @@ const styles = StyleSheet.create({
   sessionHeader: { paddingTop: spacing.xxl, gap: spacing.sm },
   sessionSet: { color: colors.primary, fontSize: 25, fontWeight: '700' },
   sessionSupport: { color: colors.secondary, fontSize: 12, letterSpacing: 1.1 },
-  sessionCoachStage: { height: 270, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radii.lg, marginVertical: spacing.xl },
+  sessionMediaArea: { height: 270, position: 'relative', marginVertical: spacing.xl },
+  sessionCoachStage: { position: 'absolute', inset: 0, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radii.lg, overflow: 'hidden' },
+  sessionCoachMedia: { flex: 1 },
   sessionCoach: { width: '100%', height: '100%' },
-  sessionReadout: { minHeight: 150, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.lg, paddingVertical: spacing.xxl, paddingHorizontal: spacing.md },
+  sessionCoachFallback: { position: 'absolute', inset: 0, width: '100%', height: '100%' },
+  restTimerMorph: { position: 'absolute', width: 220, height: 220, left: '50%', top: '50%', marginLeft: -110, marginTop: -110, alignItems: 'center', justifyContent: 'center' },
+  sessionReadout: { minHeight: 126, alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.xl, paddingHorizontal: spacing.md },
   repReadout: { flex: 1, minWidth: 0, alignItems: 'center', gap: spacing.sm },
   repValue: { color: colors.primary, fontSize: 46, fontWeight: '700' },
   repTrack: { width: '80%', height: 8, borderRadius: 4, borderWidth: 1, borderColor: colors.borderStrong, overflow: 'hidden', marginTop: spacing.md },
   repFill: { position: 'absolute', inset: 0, backgroundColor: colors.accent, transformOrigin: 'left center' },
   restReadout: { flexShrink: 0, alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
-  restCountdown: { color: colors.primary, fontSize: 30, fontWeight: '700' },
+  restCountdown: { color: colors.primary, fontSize: 54, fontWeight: '700', lineHeight: 58 },
+  restDetail: { alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.lg },
+  restDetailValue: { color: colors.primary, fontSize: 18, fontWeight: '700', letterSpacing: 1.1 },
+  restDetailSupport: { color: colors.secondary, fontSize: 13, lineHeight: 19, textAlign: 'center' },
   countdownBlock: { alignItems: 'center', gap: spacing.md },
   countdownValue: { color: colors.primary, fontSize: 64, fontWeight: '800' },
   sessionInstruction: { color: colors.secondary, fontSize: 12, lineHeight: 18, textAlign: 'center', letterSpacing: 0.8, marginBottom: spacing.xl },
