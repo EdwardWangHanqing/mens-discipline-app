@@ -362,3 +362,24 @@ five-set/four-rest state machine is unchanged, including no Rest after Set 5.
 Expo lint, TypeScript validation, audio-track inspection, and a fresh iPhone
 17e Simulator build passed. Runtime visual QA covered Home/ready asset, active
 Coach video, central Rest at Set 1 completion, and Coach reappearance at Set 2.
+
+## Train Completion Transition and Celebration Media — 2026-08-25
+
+The final guided repetition now enters a short, restrained `finishing` state
+before accountability completion and the full Complete Today screen. It fades
+from the active session into the supplied celebration Coach video, then settles
+into the existing completion content; no set, rest, completion, or unlock rule
+changes. The persisted completed Train summary uses that same celebration video
+for every movement, while the skipped summary remains unchanged.
+
+`completion-celebration-muted.mp4` is the application-local, video-only
+derivative of the owner-supplied Completed MP4 (source: one video + one audio
+track; shipped derivative: one video + zero audio tracks). The shared native
+player configuration also uses `muted = true` and `volume = 0`, no native
+controls/PiP, automatic audio mixing, no background playback, and no
+now-playing notification.
+
+The Active timer stays in the lower-right of the Coach stage, but its horizontal
+motion is clamped to a safe interior inset across compact and larger iPhone
+widths. The Rest morph remains intact: Coach fades out, the same ring
+expands centrally and decreases continuously, then returns before the next set.

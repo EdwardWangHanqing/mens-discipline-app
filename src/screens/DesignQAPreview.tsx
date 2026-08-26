@@ -78,6 +78,7 @@ const scenarios: Scenario[] = [
   { id: 'train-rest', label: 'Rest / Between Sets', group: 'Train', state: { tab: 'train', dailyStatus: 'inProgress', session: 'rest', setNumber: 2, reps: 15, restSeconds: 10 } },
   { id: 'train-mid', label: 'Active / Mid Session', group: 'Train', state: { tab: 'train', dailyStatus: 'inProgress', session: 'active', setNumber: 3, reps: 8 } },
   { id: 'train-final', label: 'Active / Final Set', group: 'Train', state: { tab: 'train', dailyStatus: 'inProgress', session: 'active', setNumber: 5, reps: 12 } },
+  { id: 'train-finishing', label: 'Transition / Complete', group: 'Train', state: { tab: 'train', dailyStatus: 'inProgress', session: 'finishing', setNumber: 5, reps: 15 } },
   { id: 'train-complete', label: 'Complete', group: 'Train', state: { tab: 'train', dailyStatus: 'completed', session: 'complete', setNumber: 5, reps: 15 } },
 
   { id: 'locks-locked', label: 'Locked', group: 'Locks', state: { tab: 'locks', dailyStatus: 'revealed', selectedAppCount: 4 } },
@@ -170,7 +171,7 @@ export function DesignQAPreview() {
         <QaSection title="Session Controls">
           <Text style={styles.controlLabel}>Phase</Text>
           <View style={styles.segmentRow}>
-            {(['ready', 'countdown', 'active', 'rest', 'complete'] as const).map((phase) => (
+            {(['ready', 'countdown', 'active', 'rest', 'finishing', 'complete'] as const).map((phase) => (
               <QaButton key={phase} compact label={phase} selected={(qa.session ?? 'ready') === phase} onPress={() => setPhase(phase)} />
             ))}
           </View>
@@ -324,7 +325,7 @@ export function DesignQAPreview() {
     setSelectedScenario('custom');
   }
 
-  function setPhase(phase: 'ready' | 'countdown' | 'active' | 'rest' | 'complete') {
+  function setPhase(phase: 'ready' | 'countdown' | 'active' | 'rest' | 'finishing' | 'complete') {
     if (phase === 'ready') {
       patchQa({ kind: 'main', tab: 'train', dailyStatus: 'revealed', session: null });
       return;

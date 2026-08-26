@@ -82,7 +82,7 @@ export type MainExperienceSubscreen =
   | 'manageApps'
   | 'lockSchedule';
 
-export type SessionPhase = 'countdown' | 'active' | 'rest' | 'paused' | 'complete';
+export type SessionPhase = 'countdown' | 'active' | 'rest' | 'paused' | 'finishing' | 'complete';
 export type MainExperiencePreviewState = {
   subscreen?: MainExperienceSubscreen;
   session?: SessionPhase | null;
@@ -93,6 +93,7 @@ export type MainExperiencePreviewState = {
   frozen?: boolean;
 };
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const completionCelebrationVideo = require('../../assets/videos/completion-celebration-muted.mp4');
 
 export function MainExperience({
   nickname,
@@ -197,8 +198,7 @@ export function MainExperience({
       setReps(nextReps);
       if (nextReps >= movement.repsPerSet) {
         if (setNumber === DAILY_SET_COUNT) {
-          setSession('complete');
-          onRoutineCompleted();
+          setSession('finishing');
         } else {
           setRestSeconds(REST_SECONDS);
           setSession('rest');
@@ -207,6 +207,15 @@ export function MainExperience({
     }, movement.cadence.repDurationMs);
     return () => clearTimeout(timer);
   }, [movement.cadence.repDurationMs, movement.repsPerSet, onRoutineCompleted, previewFrozen, reps, session, setNumber]);
+
+  useEffect(() => {
+    if (previewFrozen || session !== 'finishing') return;
+    const timer = setTimeout(() => {
+      setSession('complete');
+      onRoutineCompleted();
+    }, 1100);
+    return () => clearTimeout(timer);
+  }, [onRoutineCompleted, previewFrozen, session]);
 
   useEffect(() => {
     if (session !== 'active') {
@@ -791,7 +800,13 @@ function OutcomeTrainTab({ skipped, movement }: { skipped: boolean; movement: Mo
         <Text style={styles.outcomeTrainTitle}>{skipped ? 'SKIPPED TODAY' : 'COMPLETED TODAY'}</Text>
         <Text style={styles.outcomeTrainSupport}>{skipped ? 'Back tomorrow.' : 'You showed up.'}</Text>
       </Animated.View>
-      <Animated.Image entering={FadeIn.duration(520)} source={movement.coachImage} style={styles.outcomeTrainCoach} resizeMode="contain" />
+      {skipped ? (
+        <Animated.Image entering={FadeIn.duration(520)} source={movement.coachImage} style={styles.outcomeTrainCoach} resizeMode="contain" />
+      ) : (
+        <Animated.View entering={FadeIn.duration(520)} style={styles.outcomeTrainCompletionMedia}>
+          <CompletionCelebrationVideo />
+        </Animated.View>
+      )}
       <View style={styles.outcomeTrainProgress}>
         <Text style={styles.outcomeTrainSummary}>{skipped ? 'NO ACTION AVAILABLE TODAY' : '5 OF 5 SETS COMPLETE'}</Text>
         <SetSegments currentSet={skipped ? 0 : DAILY_SET_COUNT + 1} />
@@ -1123,7 +1138,7 @@ function RestTimerMorph({
   const { width } = useWindowDimensions();
   const size = 220;
   const morph = useSharedValue(resting ? 1 : 0);
-  const activeOffsetX = Math.max(86, (width - spacing.xl * 2) / 2 - 40 - spacing.md);
+  const activeOffsetX = Math.max(72, Math.min(96, (width - spacing.xl * 2) / 2 - 56 - spacing.md));
   const activeOffsetY = 84;
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -1154,6 +1169,46 @@ function RestWindIcon() {
       <Path d="M4 27 H47 C55 27 60 23 60 17 C60 12 56 9 52 9 C48 9 45 11 45 15" fill="none" stroke={colors.accent} strokeWidth={5} strokeLinecap="round" />
       <Path d="M18 41 H33 C39 41 43 45 43 49 C43 53 40 56 36 56 C32 56 29 54 29 51" fill="none" stroke={colors.accent} strokeWidth={5} strokeLinecap="round" />
     </Svg>
+  );
+}
+
+function CompletionCelebrationVideo({ transition = false }: { transition?: boolean }) {
+  const player = useVideoPlayer(completionCelebrationVideo, (videoPlayer) => {
+    videoPlayer.loop = true;
+    videoPlayer.muted = true;
+    videoPlayer.volume = 0;
+    videoPlayer.audioMixingMode = 'auto';
+    videoPlayer.showNowPlayingNotification = false;
+    videoPlayer.staysActiveInBackground = false;
+    videoPlayer.play();
+  });
+
+  return (
+    <View style={[styles.completionVideoStage, transition && styles.completionVideoStageTransition]}>
+      <VideoView
+        player={player}
+        nativeControls={false}
+        allowsPictureInPicture={false}
+        contentFit="contain"
+        style={styles.completionVideo}
+      />
+    </View>
+  );
+}
+
+function CompletionTransitionScreen() {
+  return (
+    <Screen testID="session-finishing">
+      <Animated.View entering={FadeIn.duration(240).easing(Easing.out(Easing.cubic))} style={styles.completionTransitionScreen}>
+        <Animated.View entering={FadeInDown.duration(340).delay(80).easing(Easing.out(Easing.cubic))} style={styles.completionTransitionHeader}>
+          <Eyebrow accent>Routine complete</Eyebrow>
+          <Text style={styles.completionTransitionTitle}>Well done.</Text>
+        </Animated.View>
+        <Animated.View entering={FadeIn.duration(420).delay(120).easing(Easing.out(Easing.cubic))}>
+          <CompletionCelebrationVideo transition />
+        </Animated.View>
+      </Animated.View>
+    </Screen>
   );
 }
 
@@ -1188,17 +1243,22 @@ function SessionScreen({
 }) {
   const displayPhase = phase === 'paused' ? pausedPhase : phase;
   const isRest = displayPhase === 'rest';
+  if (phase === 'finishing') {
+    return <CompletionTransitionScreen />;
+  }
   if (phase === 'complete') {
     return (
       <Screen testID="routine-complete">
-        <View style={styles.completeScreen}>
-          <View style={styles.completeHeader}>
+        <Animated.View entering={FadeIn.duration(360).easing(Easing.out(Easing.cubic))} style={styles.completeScreen}>
+          <Animated.View entering={FadeInDown.duration(360).delay(70).easing(Easing.out(Easing.cubic))} style={styles.completeHeader}>
             <Eyebrow>Today&apos;s Training</Eyebrow>
             <Title>Completed today.</Title>
             <Body muted>You showed up.</Body>
-          </View>
-          <Image source={movement.coachImage} style={styles.completeCoach} resizeMode="contain" />
-          <Text style={styles.completeSets}>5 OF 5 SETS COMPLETE</Text>
+          </Animated.View>
+          <Animated.View entering={FadeIn.duration(420).delay(110).easing(Easing.out(Easing.cubic))}>
+            <CompletionCelebrationVideo />
+          </Animated.View>
+          <Animated.Text entering={FadeInDown.duration(280).delay(150)} style={styles.completeSets}>5 OF 5 SETS COMPLETE</Animated.Text>
           <SetSegments currentSet={DAILY_SET_COUNT + 1} />
           <Card style={styles.outcomeCard}>
             <Image source={require('../../assets/icons/apps-unlocked.png')} style={styles.sessionUnlockAsset} resizeMode="contain" />
@@ -1208,7 +1268,7 @@ function SessionScreen({
             </View>
           </Card>
           <PrimaryButton label="Continue" onPress={onContinue} />
-        </View>
+        </Animated.View>
       </Screen>
     );
   }
@@ -1732,6 +1792,7 @@ const styles = StyleSheet.create({
   outcomeTrainTitle: { color: colors.primary, fontSize: 31, lineHeight: 38, fontWeight: '800', letterSpacing: 1.2, textAlign: 'center' },
   outcomeTrainSupport: { color: colors.secondary, fontSize: 18, letterSpacing: 2.2 },
   outcomeTrainCoach: { width: '100%', height: 330 },
+  outcomeTrainCompletionMedia: { alignItems: 'center' },
   outcomeTrainProgress: { gap: spacing.md },
   outcomeTrainSummary: { color: colors.primary, fontSize: 18, lineHeight: 24, fontWeight: '700', letterSpacing: 1.5, textAlign: 'center' },
   outcomeTrainCard: { minHeight: 100, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
@@ -1796,9 +1857,14 @@ const styles = StyleSheet.create({
   pauseOverlay: { position: 'absolute', inset: 0, backgroundColor: colors.scrim, justifyContent: 'flex-end' },
   pauseSheet: { backgroundColor: colors.surfaceRaised, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl, padding: spacing.xl, paddingBottom: spacing.xxxl, gap: spacing.md },
   pauseActions: { gap: spacing.md, marginTop: spacing.lg },
+  completionTransitionScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: spacing.xxxl, gap: spacing.xxl },
+  completionTransitionHeader: { alignItems: 'center', gap: spacing.sm },
+  completionTransitionTitle: { color: colors.primary, fontSize: 30, fontWeight: '700', letterSpacing: 0.3 },
+  completionVideoStage: { width: '74%', maxWidth: 290, height: 224, alignSelf: 'center', borderRadius: radii.lg, overflow: 'hidden', backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
+  completionVideoStageTransition: { width: '78%', maxWidth: 306, height: 244 },
+  completionVideo: { width: '100%', height: '100%' },
   completeScreen: { flex: 1, paddingTop: spacing.xxxl, paddingBottom: spacing.xl, gap: spacing.lg },
   completeHeader: { alignItems: 'center', gap: spacing.sm },
-  completeCoach: { flex: 1, width: '100%', maxHeight: 350 },
   completeSets: { color: colors.primary, fontSize: 17, fontWeight: '700', letterSpacing: 1.1 },
   sessionUnlockAsset: { width: 64, height: 64 },
   profileHero: { alignItems: 'center', paddingVertical: spacing.xxxl, gap: spacing.sm },
