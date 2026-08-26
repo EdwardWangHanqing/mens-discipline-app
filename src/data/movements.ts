@@ -13,12 +13,13 @@ export type Movement = MovementDefinition & {
 };
 
 const canonicalCoach = require('../../assets/images/coach-kneeling-drive.png');
+const kneelingDriveDemonstration = require('../../assets/images/kneeling-drive-demonstration.png');
 
 // Production movement quantities are sourced from the Owner's
 // "Movement Pool and Reveal Update". Coach media remains replaceable.
 export const movements: Movement[] = movementDefinitions.map((definition) => ({
   ...definition,
-  coachImage: canonicalCoach,
+  coachImage: definition.id === 'kneeling-drive' ? kneelingDriveDemonstration : canonicalCoach,
 }));
 
 export function movementById(id: string | undefined): Movement {

@@ -122,7 +122,9 @@ const previewProgress: ProgressSummary = {
   skippedDates: [],
 };
 
-const previewMovement = movementById('frog-pump');
+// Keep visual QA on the supplied production asset so Home, Begin, and the
+// automatic preparation countdown can be reviewed together.
+const previewMovement = movementById('kneeling-drive');
 
 export function DesignQAPreview() {
   const { width, height } = useWindowDimensions();

@@ -1,6 +1,6 @@
 # Men's Discipline App — Project Handoff
 
-**Last updated:** 2026-08-24 (America/Vancouver)
+**Last updated:** 2026-08-25 (America/Vancouver)
 
 **Repository:** `/Users/hanqingwang/Desktop/mens-discipline-app`
 
@@ -336,3 +336,13 @@ preview state and are labeled as mocks.
 Run `npm run qa:web` and open `http://localhost:8081/design-qa`. Detailed usage
 and architecture boundaries are recorded in
 `docs/ui-audit/DESIGN_QA_PREVIEW.md`.
+
+## Kneeling Drive Demonstration Asset — 2026-08-25
+
+The owner-supplied Kneeling Drive still is cropped to a 4:5 app-ready asset and
+is assigned only to `kneeling-drive`. It is used by the revealed Home card, the
+Train overview, and the immersive preparation/countdown and guided-set screens.
+Other movements retain the existing replaceable Coach placeholder until their
+own media is supplied. Expo lint, all 15 routine/state tests, and an iPhone 17e
+Simulator build passed; the Simulator was left on the revealed Kneeling Drive
+Home state for owner review.
