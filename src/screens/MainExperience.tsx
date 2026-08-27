@@ -301,24 +301,17 @@ export function MainExperience({
     );
   }
 
-  if (subscreen !== 'main') {
-    return (
-      <Animated.View key={subscreen} entering={FadeInRight.duration(300)} exiting={FadeOutLeft.duration(180)} style={styles.fullScene}>
-        {renderSubscreen()}
-      </Animated.View>
-    );
-  }
-
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <View style={styles.mainShell}>
-        <Animated.View
-          key={tab}
-          entering={FadeInRight.duration(240)}
-          exiting={FadeOut.duration(120)}
-          layout={LinearTransition.duration(200)}
-          style={styles.tabScene}
-        >
+    <View style={styles.fullScene}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <View style={styles.mainShell}>
+          <Animated.View
+            key={tab}
+            entering={FadeInRight.duration(240)}
+            exiting={FadeOut.duration(120)}
+            layout={LinearTransition.duration(200)}
+            style={styles.tabScene}
+          >
         {tab === 'home' ? (
           <HomeTab
             nickname={nickname}
@@ -364,25 +357,36 @@ export function MainExperience({
             openSchedule={() => setSubscreen('lockSchedule')}
           />
         ) : null}
+          </Animated.View>
+          <BottomNavigation selected={tab} onSelect={setTab} />
+        </View>
+        {confirmation ? (
+          <ConfirmationSheet
+            type={confirmation}
+            graceRemaining={grace.remaining}
+            onCancel={() => setConfirmation(null)}
+            onConfirm={() => {
+              if (confirmation === 'grace' && grace.remaining > 0) {
+                if (!designPreview) void FamilyControls.removeShield().catch(() => undefined);
+                setGrace((current) => consumeGrace(current, Date.now()));
+              }
+              if (confirmation === 'skip') onSkipToday();
+              setConfirmation(null);
+            }}
+          />
+        ) : null}
+      </SafeAreaView>
+      {subscreen !== 'main' ? (
+        <Animated.View
+          key={subscreen}
+          entering={FadeInRight.duration(300).easing(Easing.out(Easing.cubic))}
+          exiting={FadeOutLeft.duration(220).easing(Easing.out(Easing.cubic))}
+          style={styles.subscreenOverlay}
+        >
+          {renderSubscreen()}
         </Animated.View>
-        <BottomNavigation selected={tab} onSelect={setTab} />
-      </View>
-      {confirmation ? (
-        <ConfirmationSheet
-          type={confirmation}
-          graceRemaining={grace.remaining}
-          onCancel={() => setConfirmation(null)}
-          onConfirm={() => {
-            if (confirmation === 'grace' && grace.remaining > 0) {
-              if (!designPreview) void FamilyControls.removeShield().catch(() => undefined);
-              setGrace((current) => consumeGrace(current, Date.now()));
-            }
-            if (confirmation === 'skip') onSkipToday();
-            setConfirmation(null);
-          }}
-        />
       ) : null}
-    </SafeAreaView>
+    </View>
   );
 
   function beginSession(reset: boolean) {
@@ -554,7 +558,7 @@ function MomentumCard({ progress, dailyStatus }: { progress: ProgressSummary; da
           return (
             <View key={`${day}-${index}`} style={[styles.dayCell, done && styles.dayCellDone]}>
               <Text style={[styles.dayLetter, done && styles.dayLetterDone]}>{day}</Text>
-              {done ? <Icon name="checkmark" color={colors.accent} size={13} weight="bold" /> : null}
+              {done ? <View pointerEvents="none" style={styles.dayCheck}><Icon name="checkmark" color={colors.accent} size={13} weight="bold" /></View> : null}
             </View>
           );
         })}
@@ -761,7 +765,7 @@ function TrainTab({
         <Text style={styles.trainTitle}>{movement.displayName}</Text>
         <Text style={styles.trainFocus}>{movement.focus.toUpperCase()}</Text>
       </View>
-      <View style={[styles.coachStage, compactHeight && styles.coachStageCompact]}>
+      <View style={styles.coachStage}>
         <Image source={movement.coachImage} style={styles.coachImage} resizeMode="contain" />
       </View>
       <Text style={styles.setSummary}>
@@ -1673,8 +1677,9 @@ function formatLockTime(date: Date) {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.canvas },
   fullScene: { flex: 1, backgroundColor: colors.canvas },
-  mainShell: { flex: 1 },
-  tabScene: { flex: 1 },
+  mainShell: { flex: 1, backgroundColor: colors.canvas },
+  tabScene: { flex: 1, backgroundColor: colors.canvas },
+  subscreenOverlay: { position: 'absolute', inset: 0, zIndex: 2, backgroundColor: colors.canvas },
   tabContent: { flex: 1 },
   homeContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.xxl, gap: spacing.xxxl },
   homeHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.lg },
@@ -1692,10 +1697,11 @@ const styles = StyleSheet.create({
   weekRingValue: { color: colors.primary, fontSize: 25, fontWeight: '700' },
   weekRingLabel: { color: colors.secondary, fontSize: 11, letterSpacing: 1.4, marginTop: 2 },
   weekDays: { flexDirection: 'row', gap: spacing.sm },
-  dayCell: { flex: 1, minHeight: 54, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  dayCell: { flex: 1, minHeight: 54, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', position: 'relative' },
   dayCellDone: { borderColor: colors.accent },
   dayLetter: { color: colors.secondary, fontSize: 13, fontWeight: '700' },
   dayLetterDone: { color: colors.primary },
+  dayCheck: { position: 'absolute', left: 0, right: 0, bottom: 5, alignItems: 'center' },
   movementCard: { padding: spacing.lg, gap: spacing.lg },
   movementHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   movementThumbnail: { width: 102, height: 124, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, overflow: 'hidden', backgroundColor: colors.surfaceSoft },
@@ -1740,8 +1746,7 @@ const styles = StyleSheet.create({
   trainHeading: { alignItems: 'center', gap: spacing.sm },
   trainTitle: { color: colors.primary, fontSize: 28, fontWeight: '700', textAlign: 'center', textTransform: 'uppercase', letterSpacing: 0.8 },
   trainFocus: { color: colors.secondary, fontSize: 14, letterSpacing: 1.4, textAlign: 'center' },
-  coachStage: { height: 330, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
-  coachStageCompact: { height: 252 },
+  coachStage: { width: '100%', aspectRatio: 4 / 3, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
   coachImage: { width: '100%', height: '100%' },
   setSummary: { color: colors.primary, fontSize: 17, fontWeight: '700', letterSpacing: 1.2 },
   setSegments: { flexDirection: 'row', gap: spacing.sm },
@@ -1804,7 +1809,7 @@ const styles = StyleSheet.create({
   sessionHeader: { paddingTop: spacing.xxl, gap: spacing.sm },
   sessionSet: { color: colors.primary, fontSize: 25, fontWeight: '700' },
   sessionSupport: { color: colors.secondary, fontSize: 12, letterSpacing: 1.1 },
-  sessionMediaArea: { height: 270, position: 'relative', marginVertical: spacing.xl },
+  sessionMediaArea: { width: '100%', aspectRatio: 4 / 3, position: 'relative', marginVertical: spacing.lg },
   sessionCoachStage: { position: 'absolute', inset: 0, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radii.lg, overflow: 'hidden' },
   sessionCoachMedia: { flex: 1 },
   sessionCoach: { width: '100%', height: '100%' },
@@ -1833,8 +1838,8 @@ const styles = StyleSheet.create({
   completionTransitionScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: spacing.xxxl, gap: spacing.xxl },
   completionTransitionHeader: { alignItems: 'center', gap: spacing.sm },
   completionTransitionTitle: { color: colors.primary, fontSize: 30, fontWeight: '700', letterSpacing: 0.3 },
-  completionVideoStage: { width: '74%', maxWidth: 290, height: 224, alignSelf: 'center', borderRadius: radii.lg, overflow: 'hidden', backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
-  completionVideoStageTransition: { width: '78%', maxWidth: 306, height: 244 },
+  completionVideoStage: { width: '82%', maxWidth: 310, aspectRatio: 4 / 3, alignSelf: 'center', borderRadius: radii.lg, overflow: 'hidden', backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
+  completionVideoStageTransition: { width: '86%', maxWidth: 324 },
   completionVideo: { width: '100%', height: '100%' },
   completeScreen: { flex: 1, paddingTop: spacing.xxxl, paddingBottom: spacing.xl, gap: spacing.lg },
   completeHeader: { alignItems: 'center', gap: spacing.sm },

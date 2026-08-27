@@ -1,6 +1,6 @@
 # Men's Discipline App — Project Handoff
 
-**Last updated:** 2026-08-25 (America/Vancouver)
+**Last updated:** 2026-08-26 (America/Vancouver)
 
 **Repository:** `/Users/hanqingwang/Desktop/mens-discipline-app`
 
@@ -384,3 +384,25 @@ timer morph. All session timers sit beside the repetition count inside the
 metrics card, so the ring remains fully visible on compact iPhone widths. The
 instruction row now uses the supplied lightning treatment at its leading edge;
 Rest remains Coach-free and continues to decrease automatically.
+
+## 4:3 Coach Media and Home Transition Polish — 2026-08-26
+
+The owner-supplied 4:3 Kneeling Drive Training and Complete 2.0 videos replace
+the previous portrait Coach and celebration assets. Both application resources
+are video-only derivatives (one video track, zero audio tracks), while the
+native players retain `muted = true` and `volume = 0` as a second safeguard.
+The Train Coach, active session, completion transition, and Complete Today
+stages now use 4:3 containers with `contentFit="contain"`; no part of the Coach
+is stretched or cropped.
+
+Home's weekly-completion checkmark is now an overlay beneath the weekday letter,
+so completing a day does not lift its letter above its peers. Profile and
+settings subscreens now animate over a continuously mounted deep-canvas Home
+scene: they enter from the right and reveal that already-present scene when
+exiting left. Main tab and scene containers also have explicit canvas-colored
+backgrounds, eliminating the transient white frame seen during interactions.
+
+Expo lint, TypeScript, all 15 routine/state tests, a fresh iPhone 17e Simulator
+build/run, Home completion visual QA, Profile → Home return QA, and Complete
+Today 4:3 media QA passed. The only build note remains the pre-existing Hermes
+run-script dependency-analysis warning.
