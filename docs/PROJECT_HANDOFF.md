@@ -406,3 +406,18 @@ Expo lint, TypeScript, all 15 routine/state tests, a fresh iPhone 17e Simulator
 build/run, Home completion visual QA, Profile → Home return QA, and Complete
 Today 4:3 media QA passed. The only build note remains the pre-existing Hermes
 run-script dependency-analysis warning.
+
+## Train Layout Fidelity Correction — 2026-08-26
+
+The owner approved a targeted correction to the actual iPhone React Native
+screens, not the Web QA surface. Kneeling Drive now uses a 4:3 Home preview;
+the Train overview presents the fixed 20-second rest duration without an active
+countdown ring; Active restores the separate Guided Reps, progress, and Coach
+cue hierarchy; and Rest centers its countdown, completion readout, cue, and
+bottom Pause control without overlapping content. The five-set, movement-paced
+repetition, 20-second Rest, pause/resume, and completion rules are unchanged.
+
+Expo lint, TypeScript, all 15 routine/state tests, and fresh iPhone 17e
+Simulator checks of Home, Train overview, Active, and Rest passed. The only
+build note remains the pre-existing Hermes run-script dependency-analysis
+warning.

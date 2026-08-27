@@ -740,7 +740,6 @@ function TrainTab({
   resume: () => void;
 }) {
   const { height: viewportHeight } = useWindowDimensions();
-  const restPreviewProgress = useSharedValue(1);
   const compactHeight = viewportHeight < 900;
   const hidden = dailyStatus === 'unrevealed';
   const completed = dailyStatus === 'completed';
@@ -781,17 +780,15 @@ function TrainTab({
       </Text>
       <SetSegments currentSet={inProgress ? setNumber : 0} progress={repProgress} />
       <Card style={styles.trainDetailCard}>
-          <View style={styles.metricRow}>
-            <Metric value={movement.repsPerSet} label="Reps" />
-            <View style={styles.metricDivider} />
-            <View style={styles.restMetric}>
-              <RestCountdownRing size={96} seconds={REST_SECONDS} progress={restPreviewProgress} />
-            </View>
-          </View>
-          <View style={styles.instructionRow}>
-            <Image source={require('../../assets/icons/train-lightning.png')} style={styles.lightningIcon} resizeMode="contain" />
-            <Text numberOfLines={2} style={styles.instructionText}>{movement.instruction}</Text>
-          </View>
+        <View style={styles.metricRow}>
+          <Metric value={movement.repsPerSet} label="Reps" />
+          <View style={styles.metricDivider} />
+          <Metric value="20s" label="Rest" />
+        </View>
+        <View style={styles.instructionRow}>
+          <Image source={require('../../assets/icons/train-lightning.png')} style={styles.lightningIcon} resizeMode="contain" />
+          <Text numberOfLines={2} style={styles.instructionText}>{movement.instruction}</Text>
+        </View>
       </Card>
       <PrimaryButton label={inProgress ? 'Resume Session' : 'Begin'} onPress={inProgress ? resume : begin} />
       <TextButton
@@ -1308,7 +1305,7 @@ function SessionScreen({
         key={isRest ? 'rest' : isCountdown ? 'countdown' : 'active'}
         entering={FadeIn.duration(280).easing(Easing.out(Easing.cubic))}
         exiting={FadeOut.duration(180).easing(Easing.in(Easing.cubic))}
-        style={styles.sessionPhaseContent}
+        style={[styles.sessionPhaseContent, isRest && styles.sessionPhaseContentRest]}
       >
         {!isRest ? (
           <View style={styles.sessionMediaArea}>
@@ -1752,7 +1749,7 @@ const styles = StyleSheet.create({
   dayCheck: { position: 'absolute', left: 0, right: 0, bottom: 5, alignItems: 'center' },
   movementCard: { padding: spacing.lg, gap: spacing.lg },
   movementHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
-  movementThumbnail: { width: 102, height: 124, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, overflow: 'hidden', backgroundColor: colors.surfaceSoft },
+  movementThumbnail: { width: 116, aspectRatio: 4 / 3, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, overflow: 'hidden', backgroundColor: colors.surfaceSoft },
   coverImage: { width: '100%', height: '100%' },
   coachThumb: { width: '100%', height: '100%' },
   movementCopy: { flex: 1, gap: spacing.sm },
@@ -1801,8 +1798,6 @@ const styles = StyleSheet.create({
   setSegment: { flex: 1, height: 6, borderRadius: 3, backgroundColor: colors.borderStrong, overflow: 'hidden' },
   setSegmentFill: { position: 'absolute', inset: 0, backgroundColor: colors.accent, transformOrigin: 'left center' },
   trainDetailCard: { gap: spacing.md, paddingBottom: spacing.sm },
-  restMetric: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  restValue: { color: colors.primary, fontSize: 28, fontWeight: '700' },
   instructionRow: { minHeight: 42, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.border, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, gap: spacing.md },
   lightningIcon: { width: 19, height: 24 },
   instructionText: { color: colors.secondary, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8, flex: 1 },
@@ -1857,7 +1852,8 @@ const styles = StyleSheet.create({
   sessionHeader: { paddingTop: spacing.xxl, gap: spacing.sm },
   sessionSet: { color: colors.primary, fontSize: 25, fontWeight: '700' },
   sessionSupport: { color: colors.secondary, fontSize: 12, letterSpacing: 1.1 },
-  sessionPhaseContent: { flex: 1, minHeight: 0 },
+  sessionPhaseContent: { minHeight: 0 },
+  sessionPhaseContentRest: { flex: 1 },
   sessionMediaArea: { width: '100%', aspectRatio: 4 / 3, position: 'relative', marginVertical: spacing.lg },
   sessionCoachStage: { position: 'absolute', inset: 0, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radii.lg, overflow: 'hidden' },
   sessionCoachMedia: { flex: 1 },
@@ -1865,7 +1861,7 @@ const styles = StyleSheet.create({
   sessionCoachFallback: { position: 'absolute', inset: 0, width: '100%', height: '100%' },
   sessionReadout: { alignItems: 'stretch', justifyContent: 'center', paddingTop: spacing.lg, paddingHorizontal: spacing.md },
   sessionMetricsCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing.lg, gap: spacing.lg },
-  repReadout: { flex: 1, minWidth: 0, alignItems: 'center', gap: spacing.sm },
+  repReadout: { minWidth: 0, alignItems: 'center', gap: spacing.sm },
   repValue: { color: colors.primary, fontSize: 42, lineHeight: 50, fontWeight: '700' },
   repTrack: { width: '80%', height: 8, borderRadius: 4, borderWidth: 1, borderColor: colors.borderStrong, overflow: 'hidden', marginTop: spacing.md },
   repFill: { position: 'absolute', inset: 0, backgroundColor: colors.accent, transformOrigin: 'left center' },
@@ -1877,7 +1873,7 @@ const styles = StyleSheet.create({
   countdownBlock: { alignItems: 'center', gap: spacing.md },
   countdownValue: { color: colors.primary, fontSize: 64, fontWeight: '800' },
   sessionInstruction: { color: colors.secondary, fontSize: 12, lineHeight: 18, textAlign: 'center', letterSpacing: 0.8, marginBottom: spacing.xl },
-  restContent: { flex: 1, justifyContent: 'center', gap: spacing.xxxl, paddingVertical: spacing.xxl },
+  restContent: { flex: 1, justifyContent: 'flex-start', gap: spacing.xxl, paddingTop: spacing.xxxl + spacing.xxxl + spacing.md },
   restPrimaryArea: { alignItems: 'center', gap: spacing.xl },
   restCompletionReadout: { alignItems: 'center', gap: spacing.xs },
   restRepValue: { color: colors.primary, fontSize: 28, lineHeight: 34, fontWeight: '700' },
