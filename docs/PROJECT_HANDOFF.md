@@ -421,3 +421,25 @@ Expo lint, TypeScript, all 15 routine/state tests, and fresh iPhone 17e
 Simulator checks of Home, Train overview, Active, and Rest passed. The only
 build note remains the pre-existing Hermes run-script dependency-analysis
 warning.
+
+## Local Navigation and Family Controls Recovery Baseline — 2026-08-28
+
+A local-only Git safety baseline was created before this checkpoint at
+`e021f6561a0f4d53b6cf36f4821735856d45a606`. No remote, signing, entitlement,
+Bundle ID, App Group, dependency, or generated native-project configuration was
+changed.
+
+Profile and its History, Milestones, Membership, Settings, Notifications,
+Introduction, and information children now use Expo Router's native stack.
+Custom Back controls pop the real route history, native iOS interactive back is
+enabled, and opaque route backgrounds prevent the continuously mounted Home
+screen from flashing between Profile-family transitions.
+
+The React Native shell now consumes native Family Controls authorization as the
+source of truth on cold launch, foreground return, Locks focus, Choose Apps,
+and authorization-request completion. A definitive denied/revoked state invokes
+the existing native safety reconciliation to cancel known schedules and remove
+known shields while preserving the opaque saved selection. Recovery distinguishes
+the official first authorization request from the Settings-based revoked path;
+restored authorization requires app-selection review before accountability can
+be scheduled again, and a finalized Completed or Skipped outcome remains intact.

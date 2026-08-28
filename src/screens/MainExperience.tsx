@@ -34,8 +34,12 @@ import type { SharedValue } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { GlassView } from 'expo-glass-effect';
+import { useRouter } from 'expo-router';
 
-import FamilyControls, { SelectedActivitiesView } from '../../modules/family-controls';
+import FamilyControls, {
+  SelectedActivitiesView,
+  type FamilyControlsAuthorizationDisplayStatus,
+} from '../../modules/family-controls';
 import {
   Body,
   Card,
@@ -118,6 +122,12 @@ export function MainExperience({
   onOpenAccount,
   onOpenPaywall,
   onChooseApps,
+  familyControlsStatus = 'approved',
+  familyControlsBusy = false,
+  familyControlsMessage = null,
+  selectionRequiresReview = false,
+  onRefreshFamilyControls = async () => true,
+  onOpenFamilyControlsSettings = () => undefined,
   onSkipToday,
   onUpdateLockTime,
   onReplaceMovement,
@@ -139,12 +149,19 @@ export function MainExperience({
   onOpenAccount: () => void;
   onOpenPaywall: () => void;
   onChooseApps: () => void;
+  familyControlsStatus?: FamilyControlsAuthorizationDisplayStatus;
+  familyControlsBusy?: boolean;
+  familyControlsMessage?: string | null;
+  selectionRequiresReview?: boolean;
+  onRefreshFamilyControls?: () => Promise<boolean>;
+  onOpenFamilyControlsSettings?: () => void;
   onSkipToday: () => void;
   onUpdateLockTime: (lockTime: string) => void;
   onReplaceMovement: () => void;
   previewState?: MainExperiencePreviewState;
 }) {
   const designPreview = previewState !== undefined;
+  const router = useRouter();
   const previewFrozen = previewState?.frozen ?? false;
   const [subscreen, setSubscreen] = useState<MainExperienceSubscreen>(previewState?.subscreen ?? 'main');
   const [session, setSession] = useState<SessionPhase | null>(previewState?.session ?? null);
@@ -160,6 +177,11 @@ export function MainExperience({
   const repProgress = useSharedValue(0);
   const restProgress = useSharedValue(1);
   const graceActive = grace.activeUntil !== null && grace.activeUntil > clock;
+
+  useEffect(() => {
+    if (designPreview || tab !== 'locks') return;
+    void onRefreshFamilyControls();
+  }, [designPreview, onRefreshFamilyControls, tab]);
 
   useEffect(() => {
     const initialTimer = setTimeout(() => setClock(Date.now()), 0);
@@ -348,7 +370,10 @@ export function MainExperience({
             reveal={() => setDailyStatus('revealed')}
             begin={() => beginSession(true)}
             resume={() => beginSession(false)}
-            openProfile={() => setSubscreen('profile')}
+            openProfile={() => {
+              if (designPreview) setSubscreen('profile');
+              else router.push({ pathname: '/profile', params: { movementId: movement.id } });
+            }}
           />
         ) : null}
         {tab === 'train' ? (
@@ -462,7 +487,19 @@ export function MainExperience({
     }
     if (subscreen === 'lockPreferences') return <LockPreferencesScreen onBack={() => setSubscreen('settings')} />;
     if (subscreen === 'manageApps') {
-      return <ManageAppsScreen count={draft.selectedAppCount} onBack={() => setSubscreen('main')} onChooseApps={onChooseApps} />;
+      return (
+        <ManageAppsScreen
+          count={draft.selectedAppCount}
+          authorizationStatus={familyControlsStatus}
+          busy={familyControlsBusy}
+          message={familyControlsMessage}
+          selectionRequiresReview={selectionRequiresReview}
+          onBack={() => setSubscreen('main')}
+          onChooseApps={onChooseApps}
+          onOpenSettings={onOpenFamilyControlsSettings}
+          onRefresh={() => void onRefreshFamilyControls()}
+        />
+      );
     }
     return (
       <LockScheduleScreen
@@ -1402,7 +1439,7 @@ function SessionScreen({
   );
 }
 
-function ProfileScreen({
+export function ProfileScreen({
   nickname,
   progress,
   onBack,
@@ -1449,7 +1486,7 @@ function ProfileScreen({
   );
 }
 
-function HistoryScreen({ progress, movement, onBack }: { progress: ProgressSummary; movement: Movement; onBack: () => void }) {
+export function HistoryScreen({ progress, movement, onBack }: { progress: ProgressSummary; movement: Movement; onBack: () => void }) {
   const recent = [...progress.completedDates].sort().reverse().slice(0, 8);
   const weeks = lastEightWeeks(progress.completedDates);
   return (
@@ -1484,7 +1521,7 @@ function HistoryScreen({ progress, movement, onBack }: { progress: ProgressSumma
   );
 }
 
-function MilestonesScreen({ progress, onBack }: { progress: ProgressSummary; onBack: () => void }) {
+export function MilestonesScreen({ progress, onBack }: { progress: ProgressSummary; onBack: () => void }) {
   const milestones = [
     { icon: 'flame' as const, title: 'First Session', target: 1, type: 'sessions' as const },
     { icon: 'repeat' as const, title: 'First Cycle', target: 1, type: 'cycles' as const },
@@ -1517,7 +1554,7 @@ function MilestonesScreen({ progress, onBack }: { progress: ProgressSummary; onB
   );
 }
 
-function MembershipScreen({ onBack, onOpenPaywall }: { onBack: () => void; onOpenPaywall: () => void }) {
+export function MembershipScreen({ onBack, onOpenPaywall }: { onBack: () => void; onOpenPaywall: () => void }) {
   return (
     <Screen scroll>
       <TopBar title="Membership" onBack={onBack} />
@@ -1538,7 +1575,7 @@ function MembershipScreen({ onBack, onOpenPaywall }: { onBack: () => void; onOpe
   );
 }
 
-function SettingsScreen({
+export function SettingsScreen({
   onBack,
   openNotifications,
   openInformation,
@@ -1577,9 +1614,9 @@ function SettingsScreen({
   );
 }
 
-type InformationPage = 'help' | 'privacy' | 'terms' | 'about';
+export type InformationPage = 'help' | 'privacy' | 'terms' | 'about';
 
-function InformationScreen({ page, onBack }: { page: InformationPage; onBack: () => void }) {
+export function InformationScreen({ page, onBack }: { page: InformationPage; onBack: () => void }) {
   const content: Record<InformationPage, { title: string; eyebrow: string; intro: string; sections: { title: string; body: string }[] }> = {
     help: {
       title: 'Help & Support',
@@ -1636,7 +1673,7 @@ function InformationScreen({ page, onBack }: { page: InformationPage; onBack: ()
   );
 }
 
-function IntroductionReplayScreen({ onBack }: { onBack: () => void }) {
+export function IntroductionReplayScreen({ onBack }: { onBack: () => void }) {
   const [page, setPage] = useState(0);
   const slides = [
     { eyebrow: 'VAEL', title: 'Train what most men ignore.', body: 'Short, private training built for consistency, control, and a stronger daily rhythm.', icon: 'figure.flexibility' as const },
@@ -1662,7 +1699,7 @@ function IntroductionReplayScreen({ onBack }: { onBack: () => void }) {
   );
 }
 
-function NotificationsScreen({ onBack }: { onBack: () => void }) {
+export function NotificationsScreen({ onBack }: { onBack: () => void }) {
   return (
     <Screen scroll>
       <TopBar title="Notifications" onBack={onBack} />
@@ -1693,17 +1730,69 @@ function LockPreferencesScreen({ onBack }: { onBack: () => void }) {
   );
 }
 
-function ManageAppsScreen({ count, onBack, onChooseApps }: { count: number; onBack: () => void; onChooseApps: () => void }) {
+function ManageAppsScreen({
+  count,
+  authorizationStatus,
+  busy,
+  message,
+  selectionRequiresReview,
+  onBack,
+  onChooseApps,
+  onOpenSettings,
+  onRefresh,
+}: {
+  count: number;
+  authorizationStatus: FamilyControlsAuthorizationDisplayStatus;
+  busy: boolean;
+  message: string | null;
+  selectionRequiresReview: boolean;
+  onBack: () => void;
+  onChooseApps: () => void;
+  onOpenSettings: () => void;
+  onRefresh: () => void;
+}) {
+  const authorized = authorizationStatus === 'approved' || authorizationStatus === 'approvedWithDataAccess';
+  const checking = authorizationStatus === 'checking';
+  const canRequestAuthorization = authorizationStatus === 'notDetermined';
+  const needsRecovery = !checking && !authorized && !canRequestAuthorization;
+
   return (
     <Screen>
       <TopBar title="Manage Apps" onBack={onBack} />
-      <View style={styles.pageHeader}><Eyebrow>Selected Apps</Eyebrow><Title compact>Choose what should wait.</Title><Body muted>These apps are tied to your daily commitment.</Body></View>
-      <Card style={styles.manageAppsCard}>
-        <View style={styles.appsIcon}><Icon name="app.dashed" color={colors.accent} size={34} /></View>
-        <Text style={styles.appsCount}>{count || 'No'}</Text>
-        <Text style={styles.appsLabel}>{count === 1 ? 'app selected' : 'apps selected'}</Text>
-      </Card>
-      <View style={styles.pageBottom}><PrimaryButton label="Choose Apps" onPress={onChooseApps} /></View>
+      {needsRecovery ? (
+        <>
+          <View style={styles.pageHeader}>
+            <Eyebrow accent>Screen Time Access Is Off</Eyebrow>
+            <Title compact>Reconnect accountability.</Title>
+            <Body muted>VAEL needs Screen Time access to manage the apps tied to your daily commitment. Training remains available.</Body>
+          </View>
+          <Card style={styles.screenTimeRecoveryCard}>
+            <View style={styles.appsIcon}><Icon name="lock.slash" color={colors.accent} size={34} /></View>
+            <Text style={styles.screenTimeRecoveryTitle}>Enable access in Settings</Text>
+            <Text style={styles.screenTimeRecoveryCopy}>Open VAEL’s app settings, restore Screen Time access, then return here. iOS may ask you to choose apps again.</Text>
+          </Card>
+          {message ? <Text style={styles.familyControlsMessage}>{message}</Text> : null}
+          <View style={styles.pageBottom}>
+            <PrimaryButton label="Enable Screen Time Access" onPress={onOpenSettings} />
+            <TextButton label="Check Again" onPress={onRefresh} />
+          </View>
+        </>
+      ) : (
+        <>
+          <View style={styles.pageHeader}>
+            <Eyebrow>Selected Apps</Eyebrow>
+            <Title compact>{canRequestAuthorization ? 'Connect Screen Time.' : selectionRequiresReview ? 'Choose apps again.' : 'Choose what should wait.'}</Title>
+            <Body muted>{canRequestAuthorization ? 'Enable Apple’s Screen Time access, then choose the apps tied to your daily commitment.' : selectionRequiresReview ? 'Screen Time access is back. Re-select apps so VAEL can rebuild a valid accountability setup.' : 'These apps are tied to your daily commitment.'}</Body>
+          </View>
+          <Card style={styles.manageAppsCard}>
+            <View style={styles.appsIcon}><Icon name="app.dashed" color={colors.accent} size={34} /></View>
+            <Text style={styles.appsCount}>{checking ? '…' : count || 'No'}</Text>
+            <Text style={styles.appsLabel}>{selectionRequiresReview ? 'selection needs review' : count === 1 ? 'app selected' : 'apps selected'}</Text>
+          </Card>
+          {message ? <Text style={styles.familyControlsMessage}>{message}</Text> : null}
+          <View style={styles.pageBottom}><PrimaryButton label={busy ? 'Checking…' : canRequestAuthorization ? 'Enable Screen Time Access' : selectionRequiresReview ? 'Choose Apps Again' : 'Choose Apps'} onPress={onChooseApps} disabled={busy || checking} /></View>
+        </>
+      )}
     </Screen>
   );
 }
@@ -2168,6 +2257,10 @@ const styles = StyleSheet.create({
   settingsReset: { marginTop: spacing.xxxl },
   settingsFootnote: { color: colors.tertiary, fontSize: 12, lineHeight: 18, marginTop: spacing.lg },
   manageAppsCard: { alignItems: 'center', paddingVertical: spacing.xxxl },
+  screenTimeRecoveryCard: { alignItems: 'center', gap: spacing.md, paddingVertical: spacing.xxxl },
+  screenTimeRecoveryTitle: { color: colors.primary, fontSize: 20, fontWeight: '700', textAlign: 'center' },
+  screenTimeRecoveryCopy: { color: colors.secondary, fontSize: 14, lineHeight: 21, textAlign: 'center' },
+  familyControlsMessage: { color: colors.secondary, fontSize: 13, lineHeight: 19, textAlign: 'center', marginTop: spacing.lg, paddingHorizontal: spacing.lg },
   appsIcon: { width: 72, height: 72, borderRadius: 24, backgroundColor: colors.accentSurface, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.lg },
   appsCount: { color: colors.primary, fontSize: 42, fontWeight: '700' },
   appsLabel: { ...typography.eyebrow, color: colors.accent, marginTop: spacing.xs },

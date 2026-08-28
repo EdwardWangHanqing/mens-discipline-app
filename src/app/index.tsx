@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
+import * as Linking from 'expo-linking';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import * as SplashScreen from 'expo-splash-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import FamilyControls from '../../modules/family-controls';
+import FamilyControls, {
+  type FamilyControlsAuthorizationDisplayStatus,
+  type FamilyControlsAuthorizationStatus,
+} from '../../modules/family-controls';
 import { AccountScreen, PaywallScreen, type AuthRequest, type AuthResult } from '../screens/AccountAndPaywall';
 import {
   MainExperience,
@@ -31,44 +35,40 @@ import {
   type MovementCycleState,
 } from '../state/movementCycle';
 import { BrandLaunchOverlay } from '../components/Brand';
+import { initialDraft, initialProgress, useAppShell } from '../state/appShell';
+import {
+  canScheduleAccountability,
+  chooseAppsAuthorizationAction,
+  isFamilyControlsAuthorizationUsable,
+} from '../state/familyControlsState';
 
 void SplashScreen.preventAutoHideAsync();
 
-type RootScreen = 'onboarding' | 'main' | 'account' | 'paywall';
 const appStateStorageKey = 'mens-discipline.app-state.v1';
-
-const initialDraft: OnboardingDraft = {
-  nickname: '',
-  goal: '',
-  barrier: '',
-  lockTime: '9:00 PM',
-  selectedAppCount: 0,
-  screenTimeConnected: false,
-};
-
-const initialProgress: ProgressSummary = {
-  sessions: 0,
-  cycles: 0,
-  momentumDays: 0,
-  longestMomentum: 0,
-  completedDates: [],
-  skippedDates: [],
-};
 
 function initialGraceState(): GraceState {
   return createGraceBudget(localDateKey(new Date()));
 }
 
 export default function AppExperience() {
-  const [screen, setScreen] = useState<RootScreen>('onboarding');
+  const {
+    accountMode,
+    draft,
+    progress,
+    screen,
+    setAccountMode,
+    setDraft,
+    setProgress,
+    setScreen,
+  } = useAppShell();
   const [onboardingStep, setOnboardingStep] = useState(0);
-  const [draft, setDraft] = useState(initialDraft);
   const [tab, setTab] = useState<MainTab>('home');
   const [dailyStatus, setDailyStatus] = useState<DailyStatus>('unrevealed');
-  const [accountMode, setAccountMode] = useState<'signUp' | 'signIn'>('signUp');
   const [authorizationBusy, setAuthorizationBusy] = useState(false);
   const [pickerBusy, setPickerBusy] = useState(false);
-  const [progress, setProgress] = useState(initialProgress);
+  const [authorizationStatus, setAuthorizationStatus] = useState<FamilyControlsAuthorizationDisplayStatus>('checking');
+  const [selectionRequiresReview, setSelectionRequiresReview] = useState(false);
+  const [familyControlsMessage, setFamilyControlsMessage] = useState<string | null>(null);
   const [grace, setGrace] = useState<GraceState>(initialGraceState);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -81,18 +81,72 @@ export default function AppExperience() {
   }, []);
   const handleLaunchFinished = useCallback(() => setLaunchFinished(true), []);
 
+  const refreshSelectionSummary = useCallback(async () => {
+    if (Platform.OS !== 'ios') return;
+    try {
+      const summary = await FamilyControls.getSelectionSummary();
+      const count = summary.applicationCount + summary.categoryCount + summary.webDomainCount;
+      setDraft((current) => ({ ...current, selectedAppCount: count }));
+    } catch {
+      // Authorization recovery remains available even when selection storage is unavailable.
+    }
+  }, [setDraft]);
+
+  const applyAuthorizationStatus = useCallback(async (status: FamilyControlsAuthorizationStatus) => {
+    setAuthorizationStatus(status);
+    const connected = isFamilyControlsAuthorizationUsable(status);
+    setDraft((current) => ({ ...current, screenTimeConnected: connected }));
+    if (status === 'denied') {
+      setSelectionRequiresReview(true);
+      await FamilyControls.reconcileAuthorizationSafety().catch(() => undefined);
+    }
+    return connected;
+  }, [setDraft]);
+
+  const refreshFamilyControls = useCallback(async () => {
+    if (Platform.OS !== 'ios') {
+      setAuthorizationStatus('unknown');
+      return false;
+    }
+    try {
+      const sample = FamilyControls.getAuthorizationStatusDiagnostic();
+      const connected = await applyAuthorizationStatus(sample.status);
+      if (connected) await refreshSelectionSummary();
+      return connected;
+    } catch {
+      setAuthorizationStatus('unknown');
+      setDraft((current) => ({ ...current, screenTimeConnected: false }));
+      return false;
+    }
+  }, [applyAuthorizationStatus, refreshSelectionSummary, setDraft]);
+
   useEffect(() => {
     void SystemUI.setBackgroundColorAsync(colors.canvas);
   }, []);
 
   useEffect(() => {
-    void restoreLocalState();
+    const timer = setTimeout(() => void restoreLocalState(), 0);
+    return () => clearTimeout(timer);
+    // Local hydration intentionally runs once; the callback applies the saved snapshot.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
-    void refreshSelection();
-  }, [hydrated]);
+    const initialRefresh = setTimeout(() => void refreshFamilyControls(), 0);
+    const authorizationSubscription = FamilyControls.addListener(
+      'onAuthorizationStatusChanged',
+      (sample) => void applyAuthorizationStatus(sample.status)
+    );
+    const appStateSubscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void refreshFamilyControls();
+    });
+    return () => {
+      clearTimeout(initialRefresh);
+      authorizationSubscription.remove();
+      appStateSubscription.remove();
+    };
+  }, [applyAuthorizationStatus, hydrated, refreshFamilyControls]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -110,7 +164,7 @@ export default function AppExperience() {
     };
     const timer = setInterval(reconcileDate, 30_000);
     return () => clearInterval(timer);
-  }, [activeDateKey, hydrated]);
+  }, [activeDateKey, hydrated, setProgress]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -123,10 +177,11 @@ export default function AppExperience() {
         dailyStatus,
         onboardingCompleted,
         movementCycle,
+        selectionRequiresReview,
         dateKey: activeDateKey,
       })
     );
-  }, [activeDateKey, dailyStatus, draft, grace, hydrated, movementCycle, onboardingCompleted, progress]);
+  }, [activeDateKey, dailyStatus, draft, grace, hydrated, movementCycle, onboardingCompleted, progress, selectionRequiresReview]);
 
   return (
     <SafeAreaProvider>
@@ -172,6 +227,12 @@ export default function AppExperience() {
           }}
           onOpenPaywall={() => setScreen('paywall')}
           onChooseApps={chooseApps}
+          familyControlsStatus={authorizationStatus}
+          familyControlsBusy={authorizationBusy || pickerBusy}
+          familyControlsMessage={familyControlsMessage}
+          selectionRequiresReview={selectionRequiresReview}
+          onRefreshFamilyControls={refreshFamilyControls}
+          onOpenFamilyControlsSettings={() => void Linking.openSettings()}
           onSkipToday={() => {
             setDailyStatus('skipped');
             const dateKey = localDateKey(new Date());
@@ -225,12 +286,16 @@ export default function AppExperience() {
   async function requestScreenTime() {
     if (authorizationBusy) return;
     setAuthorizationBusy(true);
+    setFamilyControlsMessage(null);
     try {
       const result = await FamilyControls.requestAuthorization();
-      const connected = result.status === 'approved' || result.status === 'approvedWithDataAccess';
-      setDraft((current) => ({ ...current, screenTimeConnected: connected }));
+      const connected = await applyAuthorizationStatus(result.status);
+      if (!connected && result.status === 'denied') {
+        setFamilyControlsMessage('Screen Time access is off. You can enable it from iOS Settings.');
+      }
     } catch {
-      setDraft((current) => ({ ...current, screenTimeConnected: false }));
+      await refreshFamilyControls();
+      setFamilyControlsMessage('Screen Time access was not enabled. You can continue training without Locks.');
     } finally {
       setAuthorizationBusy(false);
       setOnboardingStep((step) => (step === 8 ? 9 : step));
@@ -240,28 +305,44 @@ export default function AppExperience() {
   async function chooseApps() {
     if (pickerBusy) return;
     setPickerBusy(true);
+    setFamilyControlsMessage(null);
     try {
+      let status = FamilyControls.getAuthorizationStatusDiagnostic().status;
+      if (chooseAppsAuthorizationAction(status) === 'requestAuthorization') {
+        const requested = await FamilyControls.requestAuthorization();
+        status = requested.status;
+      }
+      const connected = await applyAuthorizationStatus(status);
+      if (!connected) {
+        setFamilyControlsMessage(
+          status === 'denied'
+            ? 'Screen Time access is off. Enable it in iOS Settings, then return to VAEL.'
+            : 'Screen Time access is currently unavailable. Training remains available.'
+        );
+        return;
+      }
       const result = await FamilyControls.presentActivityPicker();
       if (result.outcome === 'saved') {
         const summary = result.selection;
         const count = summary.applicationCount + summary.categoryCount + summary.webDomainCount;
         setDraft((current) => ({ ...current, selectedAppCount: count }));
+        setSelectionRequiresReview(false);
+        setFamilyControlsMessage(count > 0 ? null : 'No apps selected. Training still works without Locks.');
+        const parsed = parseLockTime(draft.lockTime);
+        if (parsed && onboardingCompleted && canScheduleAccountability({
+          authorizationStatus: status,
+          dailyStatus,
+          selectedAppCount: count,
+          selectionRequiresReview: false,
+        })) {
+          await FamilyControls.scheduleDailyLock(parsed.hour, parsed.minute).catch(() => undefined);
+        }
       }
     } catch {
-      setDraft((current) => ({ ...current, selectedAppCount: current.selectedAppCount || 4 }));
+      await refreshFamilyControls();
+      setFamilyControlsMessage('VAEL could not open app selection. Check Screen Time access and try again.');
     } finally {
       setPickerBusy(false);
-    }
-  }
-
-  async function refreshSelection() {
-    if (Platform.OS !== 'ios') return;
-    try {
-      const summary = await FamilyControls.getSelectionSummary();
-      const count = summary.applicationCount + summary.categoryCount + summary.webDomainCount;
-      if (count > 0) setDraft((current) => ({ ...current, selectedAppCount: count }));
-    } catch {
-      // The user-facing experience does not depend on a diagnostic refresh.
     }
   }
 
@@ -288,7 +369,7 @@ export default function AppExperience() {
   async function updateLockTime(lockTime: string) {
     setDraft((current) => ({ ...current, lockTime }));
     const parsed = parseLockTime(lockTime);
-    if (!parsed || !draft.screenTimeConnected || draft.selectedAppCount === 0) return;
+    if (!parsed || !canScheduleAccountability({ authorizationStatus, dailyStatus, selectedAppCount: draft.selectedAppCount, selectionRequiresReview })) return;
     await FamilyControls.scheduleDailyLock(parsed.hour, parsed.minute).catch(() => undefined);
   }
 
@@ -303,6 +384,7 @@ export default function AppExperience() {
         dailyStatus?: DailyStatus;
         onboardingCompleted?: boolean;
         movementCycle?: MovementCycleState;
+        selectionRequiresReview?: boolean;
         dateKey?: string;
       };
       const completed = Boolean(saved.onboardingCompleted);
@@ -316,6 +398,7 @@ export default function AppExperience() {
       setGrace(saved.grace?.dateKey === todayKey ? saved.grace : initialGraceState());
       setDailyStatus(saved.dateKey === localDateKey(new Date()) ? saved.dailyStatus ?? 'unrevealed' : 'unrevealed');
       setMovementCycle(normalizeMovementCycle(saved.movementCycle, todayKey));
+      setSelectionRequiresReview(Boolean(saved.selectionRequiresReview));
       setOnboardingCompleted(completed);
       setScreen(completed ? 'main' : 'onboarding');
     } catch {

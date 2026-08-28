@@ -43,7 +43,7 @@
     "web": "expo start --web",
     "qa:web": "expo start --web",
     "lint": "expo lint",
-    "test:routine": "node --experimental-default-type=module --experimental-strip-types --test src/training/guidedRoutineEngine.test.mjs src/state/dailyState.test.mjs src/state/movementCycle.test.mjs"
+    "test:routine": "node --experimental-default-type=module --experimental-strip-types --test src/training/guidedRoutineEngine.test.mjs src/state/dailyState.test.mjs src/state/movementCycle.test.mjs src/state/familyControlsState.test.mjs"
   },
   "private": true,
   "engines": {
