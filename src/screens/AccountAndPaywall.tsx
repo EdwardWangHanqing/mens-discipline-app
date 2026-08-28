@@ -44,7 +44,7 @@ export function AccountScreen({
   const [loading, setLoading] = useState<'apple' | 'google' | 'email' | 'forgot' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const passwordValid = password.length >= 8;
+  const passwordValid = signUp ? password.length >= 8 : password.length > 0;
 
   return (
     <KeyboardAvoidingView style={styles.keyboardRoot} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -89,7 +89,7 @@ export function AccountScreen({
           <Field
             value={password}
             onChangeText={(value) => { setPassword(value); setError(null); }}
-            placeholder="Password · 8+ characters"
+            placeholder={signUp ? 'Password · 8+ characters' : 'Password'}
             secureTextEntry
             textContentType={signUp ? 'newPassword' : 'password'}
             returnKeyType="go"
@@ -128,7 +128,7 @@ export function AccountScreen({
         return;
       }
       if (!passwordValid) {
-        setError('Password must be at least 8 characters.');
+        setError(signUp ? 'Password must be at least 8 characters.' : 'Enter your password.');
         return;
       }
     }

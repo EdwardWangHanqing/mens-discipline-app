@@ -171,18 +171,6 @@ export default function AppExperience() {
             setScreen('account');
           }}
           onOpenPaywall={() => setScreen('paywall')}
-          onResetOnboarding={() => {
-            void AsyncStorage.removeItem(appStateStorageKey);
-            setDraft(initialDraft);
-            setProgress(initialProgress);
-            setGrace(initialGraceState());
-            setDailyStatus('unrevealed');
-            setMovementCycle(createMovementCycle(localDateKey(new Date())));
-            setTab('home');
-            setOnboardingCompleted(false);
-            setOnboardingStep(0);
-            setScreen('onboarding');
-          }}
           onChooseApps={chooseApps}
           onSkipToday={() => {
             setDailyStatus('skipped');

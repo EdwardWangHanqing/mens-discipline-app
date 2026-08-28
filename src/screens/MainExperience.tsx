@@ -33,6 +33,7 @@ import Animated, {
 import type { SharedValue } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { useVideoPlayer, VideoView } from 'expo-video';
+import { GlassView } from 'expo-glass-effect';
 
 import FamilyControls, { SelectedActivitiesView } from '../../modules/family-controls';
 import {
@@ -75,8 +76,14 @@ export type MainExperienceSubscreen =
   | 'profile'
   | 'history'
   | 'milestones'
+  | 'membership'
   | 'settings'
   | 'notifications'
+  | 'help'
+  | 'privacy'
+  | 'terms'
+  | 'about'
+  | 'introduction'
   | 'lockPreferences'
   | 'manageApps'
   | 'lockSchedule';
@@ -110,7 +117,6 @@ export function MainExperience({
   onCompletionContinue,
   onOpenAccount,
   onOpenPaywall,
-  onResetOnboarding,
   onChooseApps,
   onSkipToday,
   onUpdateLockTime,
@@ -132,7 +138,6 @@ export function MainExperience({
   onCompletionContinue: () => void;
   onOpenAccount: () => void;
   onOpenPaywall: () => void;
-  onResetOnboarding: () => void;
   onChooseApps: () => void;
   onSkipToday: () => void;
   onUpdateLockTime: (lockTime: string) => void;
@@ -149,6 +154,7 @@ export function MainExperience({
   const [countdown, setCountdown] = useState(previewState?.countdown ?? 3);
   const [phaseBeforePause, setPhaseBeforePause] = useState<'active' | 'rest'>('active');
   const [pauseDismissing, setPauseDismissing] = useState(false);
+  const [setCompleting, setSetCompleting] = useState(false);
   const [confirmation, setConfirmation] = useState<'grace' | 'skip' | null>(null);
   const [clock, setClock] = useState(0);
   const repProgress = useSharedValue(0);
@@ -193,6 +199,7 @@ export function MainExperience({
   useEffect(() => {
     if (previewFrozen) return;
     if (session !== 'active') return;
+    if (setCompleting) return;
     const timer = setTimeout(() => {
       const nextReps = reps + 1;
       setReps(nextReps);
@@ -200,13 +207,22 @@ export function MainExperience({
         if (setNumber === DAILY_SET_COUNT) {
           setSession('finishing');
         } else {
-          setRestSeconds(REST_SECONDS);
-          setSession('rest');
+          setSetCompleting(true);
         }
       }
     }, movement.cadence.repDurationMs);
     return () => clearTimeout(timer);
-  }, [movement.cadence.repDurationMs, movement.repsPerSet, onRoutineCompleted, previewFrozen, reps, session, setNumber]);
+  }, [movement.cadence.repDurationMs, movement.repsPerSet, onRoutineCompleted, previewFrozen, reps, session, setCompleting, setNumber]);
+
+  useEffect(() => {
+    if (!setCompleting || session !== 'active') return;
+    const timer = setTimeout(() => {
+      setRestSeconds(REST_SECONDS);
+      setSetCompleting(false);
+      setSession('rest');
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [session, setCompleting]);
 
   useEffect(() => {
     if (previewFrozen || session !== 'finishing') return;
@@ -285,6 +301,7 @@ export function MainExperience({
         restProgress={restProgress}
         pausedPhase={phaseBeforePause}
         pauseDismissing={pauseDismissing}
+        setCompleting={setCompleting}
         onPause={() => {
           if (session === 'active' || session === 'rest') setPhaseBeforePause(session);
           setSession('paused');
@@ -297,6 +314,7 @@ export function MainExperience({
           }, 220);
         }}
         onEnd={() => {
+          setSetCompleting(false);
           setSession(null);
           setDailyStatus('inProgress');
           setTab('train');
@@ -420,23 +438,28 @@ export function MainExperience({
           openMilestones={() => setSubscreen('milestones')}
           openSettings={() => setSubscreen('settings')}
           openAccount={onOpenAccount}
+          openMembership={() => setSubscreen('membership')}
         />
       );
     }
     if (subscreen === 'history') return <HistoryScreen progress={progress} movement={movement} onBack={back} />;
     if (subscreen === 'milestones') return <MilestonesScreen progress={progress} onBack={back} />;
+    if (subscreen === 'membership') return <MembershipScreen onBack={back} onOpenPaywall={onOpenPaywall} />;
     if (subscreen === 'settings') {
       return (
         <SettingsScreen
           onBack={back}
           openNotifications={() => setSubscreen('notifications')}
-          openLockPreferences={() => setSubscreen('lockPreferences')}
-          onOpenPaywall={onOpenPaywall}
-          onResetOnboarding={onResetOnboarding}
+          openInformation={(page) => setSubscreen(page)}
+          openIntroduction={() => setSubscreen('introduction')}
         />
       );
     }
     if (subscreen === 'notifications') return <NotificationsScreen onBack={() => setSubscreen('settings')} />;
+    if (subscreen === 'introduction') return <IntroductionReplayScreen onBack={() => setSubscreen('settings')} />;
+    if (subscreen === 'help' || subscreen === 'privacy' || subscreen === 'terms' || subscreen === 'about') {
+      return <InformationScreen page={subscreen} onBack={() => setSubscreen('settings')} />;
+    }
     if (subscreen === 'lockPreferences') return <LockPreferencesScreen onBack={() => setSubscreen('settings')} />;
     if (subscreen === 'manageApps') {
       return <ManageAppsScreen count={draft.selectedAppCount} onBack={() => setSubscreen('main')} onChooseApps={onChooseApps} />;
@@ -768,27 +791,22 @@ function TrainTab({
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.trainHeading}>
-        <Eyebrow>Current Movement</Eyebrow>
+        <Text style={styles.trainBrand}>VAEL</Text>
         <Text style={styles.trainTitle}>{movement.displayName}</Text>
-        <Text style={styles.trainFocus}>{movement.focus.toUpperCase()}</Text>
       </View>
       <View style={styles.coachStage}>
         <Image source={movement.coachImage} style={styles.coachImage} resizeMode="contain" />
       </View>
-      <Text style={styles.setSummary}>
-        {`${DAILY_SET_COUNT} SETS · ${movement.repsPerSet} REPS`}
-      </Text>
-      <SetSegments currentSet={inProgress ? setNumber : 0} progress={repProgress} />
-      <Card style={styles.trainDetailCard}>
+      <Card style={styles.trainMetricsCard}>
         <View style={styles.metricRow}>
-          <Metric value={movement.repsPerSet} label="Reps" />
+          <TrainingMetric icon="square.stack.3d.up" value={DAILY_SET_COUNT} label="Sets" />
           <View style={styles.metricDivider} />
-          <Metric value="20s" label="Rest" />
+          <TrainingMetric icon="arrow.triangle.2.circlepath" value={movement.repsPerSet} label="Reps" />
         </View>
-        <View style={styles.instructionRow}>
-          <Image source={require('../../assets/icons/train-lightning.png')} style={styles.lightningIcon} resizeMode="contain" />
-          <Text numberOfLines={2} style={styles.instructionText}>{movement.instruction}</Text>
-        </View>
+      </Card>
+      <Card style={styles.trainCueCard}>
+        <Image source={require('../../assets/icons/train-lightning.png')} style={styles.lightningIcon} resizeMode="contain" />
+        <Text numberOfLines={2} style={styles.trainCueText}>Follow the coach. Control every repetition.</Text>
       </Card>
       <PrimaryButton label={inProgress ? 'Resume Session' : 'Begin'} onPress={inProgress ? resume : begin} />
       <TextButton
@@ -797,6 +815,18 @@ function TrainTab({
         color={canReplaceMovement ? colors.secondary : colors.tertiary}
       />
     </ScrollView>
+  );
+}
+
+function TrainingMetric({ icon, value, label }: { icon: Parameters<typeof Icon>[0]['name']; value: string | number; label: string }) {
+  return (
+    <View style={styles.trainingMetric}>
+      <View style={styles.trainingMetricValueRow}>
+        <Icon name={icon} color={colors.accent} size={25} weight="medium" />
+        <Text style={styles.trainingMetricValue}>{value}</Text>
+      </View>
+      <Text style={styles.trainingMetricLabel}>{label}</Text>
+    </View>
   );
 }
 
@@ -975,9 +1005,11 @@ function BottomNavigation({ selected, onSelect }: { selected: MainTab; onSelect:
 function SetSegments({
   currentSet,
   progress,
+  completeCurrent = false,
 }: {
   currentSet: number;
   progress?: SharedValue<number>;
+  completeCurrent?: boolean;
 }) {
   const completeCount = Math.min(DAILY_SET_COUNT, Math.max(0, currentSet - 1));
   return (
@@ -988,7 +1020,8 @@ function SetSegments({
           <View key={segmentNumber} style={styles.setSegment}>
             <SetSegmentFill
               complete={segmentNumber < currentSet}
-              current={segmentNumber === currentSet}
+              current={segmentNumber === currentSet && !completeCurrent}
+              completeCurrent={segmentNumber === currentSet && completeCurrent}
               progress={progress}
             />
           </View>
@@ -1001,14 +1034,16 @@ function SetSegments({
 function SetSegmentFill({
   complete,
   current,
+  completeCurrent,
   progress,
 }: {
   complete: boolean;
   current: boolean;
+  completeCurrent: boolean;
   progress?: SharedValue<number>;
 }) {
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scaleX: complete ? 1 : current && progress ? progress.value : 0 }],
+    transform: [{ scaleX: complete || completeCurrent ? 1 : current && progress ? progress.value : 0 }],
   }));
   return <Animated.View style={[styles.setSegmentFill, animatedStyle]} />;
 }
@@ -1177,14 +1212,17 @@ function PauseOverlay({
 
   return (
     <Animated.View style={[styles.pauseOverlay, overlayStyle]}>
-      <Animated.View style={[styles.pauseSheet, sheetStyle]}>
-        <Eyebrow>Session Paused</Eyebrow>
-        <Title compact>Stay with it.</Title>
-        <Body muted>Your progress is held until you resume.</Body>
+      <GlassView pointerEvents="none" glassEffectStyle="regular" tintColor="rgba(8, 9, 11, 0.72)" colorScheme="dark" style={styles.pauseBackdrop} />
+      <Animated.View style={sheetStyle}>
+        <GlassView glassEffectStyle="regular" tintColor="rgba(23, 24, 27, 0.88)" colorScheme="dark" style={styles.pauseSheet}>
+          <View style={styles.pauseGlyph}><Icon name="pause.fill" color={colors.accent} size={26} weight="medium" /></View>
+          <Text style={styles.pauseTitle}>Stay with it</Text>
+          <Text style={styles.pauseSupport}>Every rep builds control{`\n`}and confidence.</Text>
         <View style={styles.pauseActions}>
           <PrimaryButton label="Resume" onPress={onResume} />
-          <SecondaryButton label="End Session" onPress={onEnd} danger />
+            <TextButton label="End Workout" onPress={onEnd} color={colors.secondary} />
         </View>
+        </GlassView>
       </Animated.View>
     </Animated.View>
   );
@@ -1241,6 +1279,7 @@ function SessionScreen({
   repProgress,
   restProgress,
   pauseDismissing,
+  setCompleting,
   onPause,
   onResume,
   onEnd,
@@ -1256,6 +1295,7 @@ function SessionScreen({
   repProgress: SharedValue<number>;
   restProgress: SharedValue<number>;
   pauseDismissing: boolean;
+  setCompleting: boolean;
   onPause: () => void;
   onResume: () => void;
   onEnd: () => void;
@@ -1298,7 +1338,7 @@ function SessionScreen({
     <Screen testID={`session-${phase}`}>
       <View style={styles.sessionHeader}>
         <Eyebrow>{movement.displayName}</Eyebrow>
-        <Text style={styles.sessionSet}>{isRest ? 'REST' : `SET ${setNumber} OF ${DAILY_SET_COUNT}`}</Text>
+        <Text style={[styles.sessionSet, isRest && styles.sessionRestTitle]}>{isRest ? 'REST' : `SET ${setNumber} OF ${DAILY_SET_COUNT}`}</Text>
         {isRest ? <Text style={styles.sessionSupport}>SET {setNumber} COMPLETE · SET {setNumber + 1} NEXT</Text> : null}
       </View>
       <Animated.View
@@ -1312,7 +1352,11 @@ function SessionScreen({
             {isCountdown ? <StaticCoachStage movement={movement} /> : <CoachStage movement={movement} visible />}
           </View>
         ) : null}
-        <SetSegments currentSet={isRest ? setNumber + 1 : setNumber} progress={isRest ? undefined : repProgress} />
+        <SetSegments
+          currentSet={isRest ? setNumber + 1 : setNumber}
+          progress={isRest ? undefined : repProgress}
+          completeCurrent={isCountdown || isRest}
+        />
         {isCountdown ? (
           <View style={styles.countdownBlock}>
             <Eyebrow>Get Ready</Eyebrow>
@@ -1321,21 +1365,22 @@ function SessionScreen({
           </View>
         ) : isRest ? (
           <View style={styles.restContent}>
-            <View style={styles.restPrimaryArea}>
-              <RestCountdownRing size={174} seconds={restSeconds} progress={restProgress} />
+            <Animated.View entering={FadeInDown.duration(320).easing(Easing.out(Easing.cubic))} style={styles.restPrimaryArea}>
+              <RestCountdownRing size={214} seconds={restSeconds} progress={restProgress} />
               <View style={styles.restCompletionReadout}>
                 <Text style={styles.restRepValue}>{movement.repsPerSet} / {movement.repsPerSet}</Text>
                 <Eyebrow>Set reps</Eyebrow>
+                <View style={styles.restCompletionLine} />
               </View>
-            </View>
-            <View style={styles.restCue}>
+            </Animated.View>
+            <Animated.View entering={FadeIn.duration(280).delay(80)} style={styles.restCue}>
               <RestWindIcon />
               <Text style={styles.restCueText}>BREATHE. RESET. THE NEXT SET IS READY.</Text>
-            </View>
+            </Animated.View>
           </View>
         ) : (
-          <View style={styles.sessionReadout}>
-            <View style={styles.sessionMetricsCard}>
+            <Animated.View entering={FadeInDown.duration(280).easing(Easing.out(Easing.cubic))} style={styles.sessionReadout}>
+              <View style={styles.sessionMetricsCard}>
               <View style={styles.repReadout}>
                 <Text style={styles.repValue}>{reps} / {movement.repsPerSet}</Text>
                 <Eyebrow>Guided reps</Eyebrow>
@@ -1345,11 +1390,11 @@ function SessionScreen({
                 <Image source={require('../../assets/icons/train-lightning.png')} style={styles.sessionLightningIcon} resizeMode="contain" />
                 <Text style={styles.sessionInstructionRowText}>{movement.instruction.toUpperCase()}</Text>
               </View>
-            </View>
-          </View>
+              </View>
+            </Animated.View>
         )}
       </Animated.View>
-      {phase === 'active' || phase === 'rest' ? <View style={styles.pauseControl}><SecondaryButton label="Pause" onPress={onPause} icon="pause" /></View> : null}
+      {(phase === 'active' && !setCompleting) || phase === 'rest' ? <View style={styles.pauseControl}><SecondaryButton label="Pause" onPress={onPause} icon="pause" /></View> : null}
       {phase === 'paused' ? (
         <PauseOverlay dismissing={pauseDismissing} onResume={onResume} onEnd={onEnd} />
       ) : null}
@@ -1365,6 +1410,7 @@ function ProfileScreen({
   openMilestones,
   openSettings,
   openAccount,
+  openMembership,
 }: {
   nickname: string;
   progress: ProgressSummary;
@@ -1373,36 +1419,30 @@ function ProfileScreen({
   openMilestones: () => void;
   openSettings: () => void;
   openAccount: () => void;
+  openMembership: () => void;
 }) {
   return (
     <Screen scroll>
-      <TopBar
-        title="Profile"
-        onBack={onBack}
-        action={(
-          <Pressable accessibilityRole="button" accessibilityLabel="Open settings" onPress={openSettings} hitSlop={8}>
-            <Icon name="gearshape" color={colors.primary} />
-          </Pressable>
-        )}
-      />
+      <TopBar title="Profile" onBack={onBack} />
       <View style={styles.profileHero}>
         <View style={styles.avatar}><Text style={styles.avatarText}>{(nickname || 'E').slice(0, 1).toUpperCase()}</Text></View>
         <Title compact>{nickname || 'Edward'}</Title>
-        <Text style={styles.memberStatus}>FOUNDING MEMBER PREVIEW</Text>
+        <Text style={styles.memberStatus}>VAEL MEMBER</Text>
       </View>
-      <Card>
+      <Card style={styles.profileMetricsCard}>
         <View style={styles.metricRow}>
           <Metric value={progress.sessions} label="Sessions" />
           <View style={styles.metricDivider} />
           <Metric value={progress.cycles} label="Cycles" />
           <View style={styles.metricDivider} />
-          <Metric value={progress.momentumDays} label="Momentum" />
+          <Metric value={progress.longestMomentum} label="Longest streak" />
         </View>
       </Card>
       <View style={styles.menuGroup}>
         <MenuRow icon="chart.bar" label="History & Progress" onPress={openHistory} />
         <MenuRow icon="medal" label="Milestones" onPress={openMilestones} />
-        <MenuRow icon="person.crop.circle" label="Account" onPress={openAccount} />
+        <MenuRow icon="person.crop.circle" label="Profile & Account" onPress={openAccount} />
+        <MenuRow icon="creditcard" label="Membership" onPress={openMembership} />
         <MenuRow icon="gearshape" label="Settings" onPress={openSettings} />
       </View>
     </Screen>
@@ -1411,18 +1451,19 @@ function ProfileScreen({
 
 function HistoryScreen({ progress, movement, onBack }: { progress: ProgressSummary; movement: Movement; onBack: () => void }) {
   const recent = [...progress.completedDates].sort().reverse().slice(0, 8);
-  const weekValues = lastEightWeekCounts(progress.completedDates);
+  const weeks = lastEightWeeks(progress.completedDates);
   return (
     <Screen scroll>
       <TopBar title="History & Progress" onBack={onBack} />
       <View style={styles.pageHeader}><Eyebrow>Your Work</Eyebrow><Title compact>Progress, without noise.</Title></View>
-      <Card style={styles.historyChart}>
+      <Card style={styles.historyCalendar}>
         <Eyebrow>Last 8 Weeks</Eyebrow>
-        <View style={styles.bars}>
-          {weekValues.map((value, index) => (
-            <View key={index} style={styles.barColumn}>
-              <View style={[styles.bar, { height: Math.max(3, value * 18), opacity: value ? 1 : 0.18 }]} />
-              <Text style={styles.barLabel}>W{index + 1}</Text>
+        <View style={styles.historyWeekdays}>{['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => <Text key={`${day}-${index}`} style={styles.historyWeekday}>{day}</Text>)}</View>
+        <View style={styles.historyWeekList}>
+          {weeks.map((week, index) => (
+            <View key={week.label} style={styles.historyWeekRow}>
+              <View style={styles.historyWeekLabel}><Text style={styles.historyWeekNumber}>W{8 - index}</Text><Text style={styles.historyWeekDates}>{week.label}</Text></View>
+              <View style={styles.historyDots}>{week.days.map((done, dayIndex) => <View key={dayIndex} style={[styles.historyDot, done && styles.historyDotDone]}>{done ? <Icon name="checkmark" color={colors.accentInk} size={10} weight="bold" /> : null}</View>)}</View>
             </View>
           ))}
         </View>
@@ -1444,16 +1485,55 @@ function HistoryScreen({ progress, movement, onBack }: { progress: ProgressSumma
 }
 
 function MilestonesScreen({ progress, onBack }: { progress: ProgressSummary; onBack: () => void }) {
+  const milestones = [
+    { icon: 'flame' as const, title: 'First Session', target: 1, type: 'sessions' as const },
+    { icon: 'repeat' as const, title: 'First Cycle', target: 1, type: 'cycles' as const },
+    { icon: 'chart.bar' as const, title: '25 Sessions', target: 25, type: 'sessions' as const },
+    { icon: 'repeat' as const, title: '5 Cycles', target: 5, type: 'cycles' as const },
+    { icon: 'repeat' as const, title: '10 Cycles', target: 10, type: 'cycles' as const },
+    { icon: 'chart.bar' as const, title: '50 Sessions', target: 50, type: 'sessions' as const },
+    { icon: 'chart.bar' as const, title: '100 Sessions', target: 100, type: 'sessions' as const },
+    { icon: 'repeat' as const, title: '25 Cycles', target: 25, type: 'cycles' as const },
+    { icon: 'repeat' as const, title: '50 Cycles', target: 50, type: 'cycles' as const },
+    { icon: 'flame' as const, title: '7-Day Streak', target: 7, type: 'streak' as const },
+    { icon: 'flame' as const, title: '30-Day Streak', target: 30, type: 'streak' as const },
+    { icon: 'medal' as const, title: 'Quiet Consistency', target: 365, type: 'sessions' as const },
+  ];
+  const next = milestones.find((milestone) => milestoneValue(progress, milestone.type) < milestone.target) ?? milestones[milestones.length - 1];
+  const nextValue = milestoneValue(progress, next.type);
   return (
     <Screen scroll>
       <TopBar title="Milestones" onBack={onBack} />
-      <View style={styles.pageHeader}><Eyebrow>Earned Quietly</Eyebrow><Title compact>Built by showing up.</Title></View>
+      <View style={styles.pageHeader}><Eyebrow>Earned Quietly</Eyebrow><Title compact>Built by showing up.</Title><Body muted>{milestones.filter((milestone) => milestoneValue(progress, milestone.type) >= milestone.target).length} of {milestones.length} earned</Body></View>
+      <Card style={styles.nextMilestoneCard}>
+        <Eyebrow accent>Next milestone</Eyebrow>
+        <View style={styles.nextMilestoneMain}><View style={styles.nextMilestoneIcon}><Icon name={next.icon} color={colors.accent} size={28} /></View><View style={styles.nextMilestoneCopy}><Text style={styles.nextMilestoneTitle}>{next.title}</Text><Text style={styles.nextMilestoneSupport}>{nextValue} / {next.target} completed</Text></View></View>
+        <View style={styles.milestoneProgressTrack}><View style={[styles.milestoneProgressFill, { width: `${Math.min(100, (nextValue / next.target) * 100)}%` }]} /></View>
+      </Card>
       <View style={styles.milestoneGrid}>
-        <Milestone icon="flame" title="First Week" support="7 sessions" earned={progress.sessions >= 7} />
-        <Milestone icon="repeat" title="Full Cycle" support="7 movements" earned={progress.cycles >= 1} />
-        <Milestone icon="shield" title="Held the Line" support="7 locks cleared" earned={progress.sessions >= 7} />
-        <Milestone icon="calendar" title="One Month" support="30 sessions" earned={progress.sessions >= 30} />
+        {milestones.map((milestone) => <Milestone key={milestone.title} icon={milestone.icon} title={milestone.title} support={`${milestoneValue(progress, milestone.type)} / ${milestone.target} completed`} earned={milestoneValue(progress, milestone.type) >= milestone.target} />)}
       </View>
+    </Screen>
+  );
+}
+
+function MembershipScreen({ onBack, onOpenPaywall }: { onBack: () => void; onOpenPaywall: () => void }) {
+  return (
+    <Screen scroll>
+      <TopBar title="Membership" onBack={onBack} />
+      <View style={styles.pageHeader}><Eyebrow accent>Your Plan</Eyebrow><Title compact>Managed clearly.</Title></View>
+      <Card style={styles.membershipPlanCard}>
+        <View style={styles.membershipPlanTop}><View style={styles.membershipMark}><Text style={styles.membershipMarkText}>V</Text></View><View style={styles.membershipPlanCopy}><Text style={styles.membershipPlanTitle}>VAEL Membership</Text><Text style={styles.membershipPlanStatus}>No active subscription</Text></View></View>
+        <Divider />
+        <View style={styles.membershipDetail}><Icon name="calendar" color={colors.accent} size={20} /><Text style={styles.membershipDetailCopy}>Start with a 3-day free trial</Text></View>
+        <View style={styles.membershipDetail}><Icon name="tag" color={colors.accent} size={20} /><Text style={styles.membershipDetailCopy}>Annual $39.99 / year</Text></View>
+      </Card>
+      <View style={styles.menuGroup}>
+        <MenuRow icon="creditcard" label="Choose a Membership" onPress={onOpenPaywall} />
+        <MenuRow icon="arrow.clockwise" label="Restore Purchases" onPress={onOpenPaywall} />
+        <MenuRow icon="questionmark.circle" label="Billing Help" onPress={onOpenPaywall} />
+      </View>
+      <Text style={styles.membershipFootnote}>Cancelling an App Store subscription stops future renewal. Deleting a VAEL account does not cancel a subscription.</Text>
     </Screen>
   );
 }
@@ -1461,15 +1541,13 @@ function MilestonesScreen({ progress, onBack }: { progress: ProgressSummary; onB
 function SettingsScreen({
   onBack,
   openNotifications,
-  openLockPreferences,
-  onOpenPaywall,
-  onResetOnboarding,
+  openInformation,
+  openIntroduction,
 }: {
   onBack: () => void;
   openNotifications: () => void;
-  openLockPreferences: () => void;
-  onOpenPaywall: () => void;
-  onResetOnboarding: () => void;
+  openInformation: (page: 'help' | 'privacy' | 'terms' | 'about') => void;
+  openIntroduction: () => void;
 }) {
   return (
     <Screen scroll>
@@ -1477,18 +1555,109 @@ function SettingsScreen({
       <View style={styles.pageHeader}><Eyebrow>Preferences</Eyebrow><Title compact>Keep it intentional.</Title></View>
       <View style={styles.menuGroup}>
         <MenuRow icon="bell" label="Notifications" onPress={openNotifications} />
-        <MenuRow icon="lock.shield" label="Lock Preferences" onPress={openLockPreferences} />
-        <MenuRow icon="creditcard" label="Membership" onPress={onOpenPaywall} />
       </View>
       <SectionTitle title="Experience" />
       <Card>
-        <SettingToggle icon="speaker.wave.2" title="Coach Voice" support="Future audio slot" initial />
+        <SettingToggle icon="speaker.wave.2" title="Coach Voice" support="Voice guidance during training" initial />
         <Divider />
-        <SettingToggle icon="music.note" title="Training Music" support="Future SUNO asset slot" />
+        <SettingToggle icon="music.note" title="Training Music" support="Background audio during sessions" />
         <Divider />
         <SettingToggle icon="iphone.radiowaves.left.and.right" title="Haptics" support="Guided set cues" initial />
       </Card>
-      <View style={styles.settingsReset}><SecondaryButton label="Replay Onboarding" onPress={onResetOnboarding} /></View>
+      <SectionTitle title="Support & Legal" />
+      <Card style={styles.compactListCard}>
+        <MenuRow compact icon="headphones" label="Help & Support" onPress={() => openInformation('help')} />
+        <Divider /><MenuRow compact icon="hand.raised" label="Privacy Policy" onPress={() => openInformation('privacy')} />
+        <Divider /><MenuRow compact icon="doc.text" label="Terms of Use" onPress={() => openInformation('terms')} />
+        <Divider /><MenuRow compact icon="info.circle" label="About VAEL" onPress={() => openInformation('about')} />
+      </Card>
+      <SectionTitle title="App" />
+      <Card style={styles.compactListCard}><MenuRow compact icon="play.circle" label="Replay Introduction" onPress={openIntroduction} /></Card>
+    </Screen>
+  );
+}
+
+type InformationPage = 'help' | 'privacy' | 'terms' | 'about';
+
+function InformationScreen({ page, onBack }: { page: InformationPage; onBack: () => void }) {
+  const content: Record<InformationPage, { title: string; eyebrow: string; intro: string; sections: { title: string; body: string }[] }> = {
+    help: {
+      title: 'Help & Support',
+      eyebrow: 'HOW VAEL WORKS',
+      intro: 'A short guide to the experience you are using today.',
+      sections: [
+        { title: 'Today’s movement', body: 'Reveal your movement from Home, then begin when you are ready. A revealed movement stays available until it is completed or skipped.' },
+        { title: 'Guided training', body: 'Each routine uses five guided sets. You can pause safely and resume without losing the current set.' },
+        { title: 'Accountability', body: 'If you connect Screen Time and select apps, the lock rules you set are managed by iOS. Grace and Skip are always shown clearly before they change today’s state.' },
+      ],
+    },
+    privacy: {
+      title: 'Privacy Policy',
+      eyebrow: 'YOUR DATA',
+      intro: 'VAEL is designed to keep the experience private and intentional.',
+      sections: [
+        { title: 'Local progress', body: 'In this preview build, your nickname, routine history, daily state, and preferences are stored locally on this device.' },
+        { title: 'Screen Time', body: 'If you choose to use accountability controls, iOS manages the selected-app authorization. VAEL does not display or expose the opaque app-selection tokens.' },
+        { title: 'Camera and health data', body: 'The current MVP does not use the camera for training and does not connect to HealthKit.' },
+        { title: 'Preview notice', body: 'This in-app summary is for the current preview build. A final public privacy policy and support contact are required before App Store release.' },
+      ],
+    },
+    terms: {
+      title: 'Terms of Use',
+      eyebrow: 'PRODUCT PREVIEW',
+      intro: 'Use VAEL as a private training and accountability tool.',
+      sections: [
+        { title: 'Your choice', body: 'You choose whether to train, connect Screen Time, select apps, or use the available daily recovery actions.' },
+        { title: 'Subscriptions', body: 'Membership pricing and trial information are displayed before purchase. This preview build does not process live purchases or account authentication.' },
+        { title: 'Wellness boundary', body: 'VAEL is a general fitness and consistency experience. It does not provide medical diagnosis, treatment, or guaranteed performance outcomes.' },
+        { title: 'Preview notice', body: 'These are product-preview terms. Final public Terms of Use or an App Store EULA must be published before release.' },
+      ],
+    },
+    about: {
+      title: 'About VAEL',
+      eyebrow: 'PRIVATE · DISCIPLINED · INTENTIONAL',
+      intro: 'VAEL is a calm daily practice built around consistency, control, and a clear record of progress.',
+      sections: [
+        { title: 'One clear commitment', body: 'One movement each day. Five guided sets. A practical rhythm you can return to.' },
+        { title: 'Accountability by choice', body: 'Screen Time controls can connect your daily commitment to the apps you choose, while keeping the choice in your hands.' },
+        { title: 'Built quietly', body: 'Progress is recorded without feeds, public scores, or unnecessary noise.' },
+      ],
+    },
+  };
+  const current = content[page];
+  return (
+    <Screen scroll>
+      <TopBar title={current.title} onBack={onBack} />
+      <View style={styles.infoHeader}><Eyebrow accent>{current.eyebrow}</Eyebrow><Title compact>{current.title}</Title><Body muted>{current.intro}</Body></View>
+      <View style={styles.infoSections}>
+        {current.sections.map((section) => <Card key={section.title} style={styles.infoCard}><Text style={styles.infoCardTitle}>{section.title}</Text><Text style={styles.infoCardBody}>{section.body}</Text></Card>)}
+      </View>
+    </Screen>
+  );
+}
+
+function IntroductionReplayScreen({ onBack }: { onBack: () => void }) {
+  const [page, setPage] = useState(0);
+  const slides = [
+    { eyebrow: 'VAEL', title: 'Train what most men ignore.', body: 'Short, private training built for consistency, control, and a stronger daily rhythm.', icon: 'figure.flexibility' as const },
+    { eyebrow: 'THE DAILY FORMAT', title: 'One movement. Five guided sets.', body: 'VAEL sets the pace. You stay present, complete the work, and keep moving forward.', icon: 'square.stack.3d.up' as const },
+    { eyebrow: 'ACCOUNTABILITY', title: 'Make the commitment clear.', body: 'When you choose Screen Time controls, selected apps can wait until you have shown up for today.', icon: 'checkmark.shield' as const },
+  ];
+  const current = slides[page];
+  return (
+    <Screen>
+      <TopBar title="Introduction" onBack={onBack} />
+      <Animated.View key={page} entering={FadeInRight.duration(240)} exiting={FadeOutLeft.duration(180)} style={styles.introductionContent}>
+        <View style={styles.introductionIcon}><Icon name={current.icon} color={colors.accent} size={48} /></View>
+        <Eyebrow accent>{current.eyebrow}</Eyebrow>
+        <Title>{current.title}</Title>
+        <Body muted>{current.body}</Body>
+        <View style={styles.introductionProgress}>{slides.map((_, index) => <View key={index} style={[styles.introductionProgressSegment, index <= page && styles.introductionProgressSegmentActive]} />)}</View>
+      </Animated.View>
+      <View style={styles.introductionActions}>
+        <PrimaryButton label={page === slides.length - 1 ? 'Done' : 'Continue'} onPress={() => page === slides.length - 1 ? onBack() : setPage((currentPage) => currentPage + 1)} />
+        {page > 0 ? <TextButton label="Back" onPress={() => setPage((currentPage) => currentPage - 1)} /> : null}
+      </View>
     </Screen>
   );
 }
@@ -1627,13 +1796,13 @@ function SectionTitle({ title, action, onPress }: { title: string; action?: stri
   );
 }
 
-function MenuRow({ icon, label, onPress }: { icon: Parameters<typeof Icon>[0]['name']; label: string; onPress: () => void }) {
+function MenuRow({ icon, label, onPress, compact = false }: { icon: Parameters<typeof Icon>[0]['name']; label: string; onPress: () => void; compact?: boolean }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      style={({ pressed }) => [styles.menuRow, pressed && styles.menuRowPressed]}
+      style={({ pressed }) => [styles.menuRow, compact && styles.menuRowCompact, pressed && styles.menuRowPressed]}
     >
       <View style={styles.menuIcon}><Icon name={icon} color={colors.secondary} size={20} /></View>
       <Text style={styles.menuLabel}>{label}</Text>
@@ -1663,6 +1832,35 @@ function SettingToggle({ icon, title, support, initial = false }: { icon: Parame
   );
 }
 
+function milestoneValue(progress: ProgressSummary, type: 'sessions' | 'cycles' | 'streak') {
+  if (type === 'cycles') return progress.cycles;
+  if (type === 'streak') return progress.longestMomentum;
+  return progress.sessions;
+}
+
+function lastEightWeeks(completedDates: string[]) {
+  const completed = new Set(completedDates);
+  const currentMonday = startOfCurrentWeek();
+  return Array.from({ length: 8 }, (_, index) => {
+    const weekStart = new Date(currentMonday);
+    weekStart.setDate(currentMonday.getDate() - (7 - index) * 7);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    return {
+      label: `${shortDate(weekStart)} – ${shortDate(weekEnd)}`,
+      days: Array.from({ length: 7 }, (_, dayIndex) => {
+        const day = new Date(weekStart);
+        day.setDate(weekStart.getDate() + dayIndex);
+        return completed.has(localDateKey(day));
+      }),
+    };
+  });
+}
+
+function shortDate(date: Date) {
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
+}
+
 function localDateKey(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -1684,18 +1882,6 @@ function isDateInCurrentWeek(dateKey: string) {
   const end = new Date(start);
   end.setDate(end.getDate() + 7);
   return date >= start && date < end;
-}
-
-function lastEightWeekCounts(completedDates: string[]) {
-  const counts = Array(8).fill(0) as number[];
-  const currentStart = startOfCurrentWeek();
-  completedDates.forEach((dateKey) => {
-    const date = new Date(`${dateKey}T12:00:00`);
-    const diffDays = Math.floor((currentStart.getTime() - date.getTime()) / 86_400_000);
-    const weeksAgo = diffDays < 0 ? 0 : Math.floor(diffDays / 7);
-    if (weeksAgo >= 0 && weeksAgo < 8) counts[7 - weeksAgo] += 1;
-  });
-  return counts;
 }
 
 function formatHistoryDate(dateKey: string) {
@@ -1786,18 +1972,23 @@ const styles = StyleSheet.create({
   trainEmpty: { flex: 1, paddingHorizontal: spacing.xxxl, alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
   concealedIcon: { width: 84, height: 84, borderRadius: 30, backgroundColor: colors.accentSurface, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xl },
   trainEmptyButton: { alignSelf: 'stretch', marginTop: spacing.xl },
-  trainContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.xxxl, paddingBottom: spacing.xxl, gap: spacing.lg },
-  trainContentCompact: { paddingTop: spacing.xl, paddingBottom: spacing.xxxl, gap: spacing.md },
-  trainHeading: { alignItems: 'center', gap: spacing.sm },
-  trainTitle: { color: colors.primary, fontSize: 28, fontWeight: '700', textAlign: 'center', textTransform: 'uppercase', letterSpacing: 0.8 },
-  trainFocus: { color: colors.secondary, fontSize: 14, letterSpacing: 1.4, textAlign: 'center' },
+  trainContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.xxl, paddingBottom: spacing.xxl, gap: spacing.lg },
+  trainContentCompact: { paddingTop: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.md },
+  trainHeading: { alignItems: 'center', gap: spacing.xl, paddingVertical: spacing.sm },
+  trainBrand: { color: colors.secondary, fontSize: 17, letterSpacing: 7.2, fontWeight: '600', marginLeft: 7.2 },
+  trainTitle: { color: colors.primary, fontSize: 34, lineHeight: 40, fontWeight: '800', textAlign: 'center', textTransform: 'uppercase', letterSpacing: 1.7 },
   coachStage: { width: '100%', aspectRatio: 4 / 3, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
   coachImage: { width: '100%', height: '100%' },
-  setSummary: { color: colors.primary, fontSize: 17, fontWeight: '700', letterSpacing: 1.2 },
   setSegments: { flexDirection: 'row', gap: spacing.sm },
   setSegment: { flex: 1, height: 6, borderRadius: 3, backgroundColor: colors.borderStrong, overflow: 'hidden' },
   setSegmentFill: { position: 'absolute', inset: 0, backgroundColor: colors.accent, transformOrigin: 'left center' },
-  trainDetailCard: { gap: spacing.md, paddingBottom: spacing.sm },
+  trainMetricsCard: { minHeight: 116, justifyContent: 'center', paddingVertical: spacing.md },
+  trainingMetric: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
+  trainingMetricValueRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  trainingMetricValue: { color: colors.primary, fontSize: 38, lineHeight: 44, fontWeight: '700' },
+  trainingMetricLabel: { ...typography.eyebrow, color: colors.secondary, fontSize: 12, letterSpacing: 2.3 },
+  trainCueCard: { minHeight: 72, flexDirection: 'row', alignItems: 'center', gap: spacing.lg, paddingVertical: spacing.md },
+  trainCueText: { color: colors.secondary, fontSize: 16, lineHeight: 22, letterSpacing: 0.35, flex: 1 },
   instructionRow: { minHeight: 42, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.border, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, gap: spacing.md },
   lightningIcon: { width: 19, height: 24 },
   instructionText: { color: colors.secondary, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8, flex: 1 },
@@ -1850,39 +2041,45 @@ const styles = StyleSheet.create({
   breakAction: { color: colors.accent, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
   breakSupport: { color: colors.tertiary, fontSize: 12 },
   sessionHeader: { paddingTop: spacing.xxl, gap: spacing.sm },
-  sessionSet: { color: colors.primary, fontSize: 25, fontWeight: '700' },
-  sessionSupport: { color: colors.secondary, fontSize: 12, letterSpacing: 1.1 },
-  sessionPhaseContent: { minHeight: 0 },
+  sessionSet: { color: colors.primary, fontSize: 31, lineHeight: 38, fontWeight: '800', letterSpacing: 0.3 },
+  sessionRestTitle: { fontSize: 52, lineHeight: 59, letterSpacing: 0.4 },
+  sessionSupport: { color: colors.secondary, fontSize: 12, lineHeight: 18, letterSpacing: 1.05 },
+  sessionPhaseContent: { minHeight: 0, flex: 1 },
   sessionPhaseContentRest: { flex: 1 },
-  sessionMediaArea: { width: '100%', aspectRatio: 4 / 3, position: 'relative', marginVertical: spacing.lg },
+  sessionMediaArea: { width: '100%', aspectRatio: 4 / 3, position: 'relative', marginTop: spacing.lg, marginBottom: spacing.lg },
   sessionCoachStage: { position: 'absolute', inset: 0, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radii.lg, overflow: 'hidden' },
   sessionCoachMedia: { flex: 1 },
   sessionCoach: { width: '100%', height: '100%' },
   sessionCoachFallback: { position: 'absolute', inset: 0, width: '100%', height: '100%' },
   sessionReadout: { alignItems: 'stretch', justifyContent: 'center', paddingTop: spacing.lg, paddingHorizontal: spacing.md },
-  sessionMetricsCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing.lg, gap: spacing.lg },
+  sessionMetricsCard: { minHeight: 216, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing.lg, justifyContent: 'space-between', gap: spacing.lg },
   repReadout: { minWidth: 0, alignItems: 'center', gap: spacing.sm },
-  repValue: { color: colors.primary, fontSize: 42, lineHeight: 50, fontWeight: '700' },
-  repTrack: { width: '80%', height: 8, borderRadius: 4, borderWidth: 1, borderColor: colors.borderStrong, overflow: 'hidden', marginTop: spacing.md },
+  repValue: { color: colors.primary, fontSize: 54, lineHeight: 60, fontWeight: '700' },
+  repTrack: { width: '80%', height: 8, borderRadius: 4, borderWidth: 1, borderColor: colors.borderStrong, overflow: 'hidden', marginTop: spacing.sm },
   repFill: { position: 'absolute', inset: 0, backgroundColor: colors.accent, transformOrigin: 'left center' },
   restReadout: { flexShrink: 0, alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
-  restCountdown: { color: colors.primary, fontSize: 38, fontWeight: '700', lineHeight: 44 },
+  restCountdown: { color: colors.primary, fontSize: 58, fontWeight: '700', lineHeight: 66 },
   sessionInstructionRow: { minHeight: 38, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.border, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, gap: spacing.sm },
   sessionLightningIcon: { width: 15, height: 19 },
   sessionInstructionRowText: { color: colors.secondary, fontSize: 10, lineHeight: 14, letterSpacing: 0.75, flex: 1 },
-  countdownBlock: { alignItems: 'center', gap: spacing.md },
-  countdownValue: { color: colors.primary, fontSize: 64, fontWeight: '800' },
-  sessionInstruction: { color: colors.secondary, fontSize: 12, lineHeight: 18, textAlign: 'center', letterSpacing: 0.8, marginBottom: spacing.xl },
-  restContent: { flex: 1, justifyContent: 'flex-start', gap: spacing.xxl, paddingTop: spacing.xxxl + spacing.xxxl + spacing.md },
+  countdownBlock: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, paddingBottom: spacing.xxxl },
+  countdownValue: { color: colors.primary, fontSize: 82, lineHeight: 92, fontWeight: '800' },
+  sessionInstruction: { color: colors.secondary, fontSize: 16, lineHeight: 24, textAlign: 'center', letterSpacing: 0.45, marginTop: spacing.xxxl },
+  restContent: { flex: 1, justifyContent: 'space-around', gap: spacing.xl, paddingTop: spacing.xxl, paddingBottom: spacing.md },
   restPrimaryArea: { alignItems: 'center', gap: spacing.xl },
   restCompletionReadout: { alignItems: 'center', gap: spacing.xs },
-  restRepValue: { color: colors.primary, fontSize: 28, lineHeight: 34, fontWeight: '700' },
+  restRepValue: { color: colors.primary, fontSize: 43, lineHeight: 50, fontWeight: '700' },
+  restCompletionLine: { width: 128, height: 5, borderRadius: 3, backgroundColor: colors.accent, marginTop: spacing.sm },
   restCue: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.md, paddingHorizontal: spacing.lg },
-  restCueText: { flexShrink: 1, color: colors.secondary, fontSize: 11, lineHeight: 16, letterSpacing: 0.9 },
+  restCueText: { flexShrink: 1, color: colors.secondary, fontSize: 12, lineHeight: 18, letterSpacing: 0.9 },
   pauseControl: { marginTop: spacing.lg },
-  pauseOverlay: { position: 'absolute', inset: 0, backgroundColor: colors.scrim, justifyContent: 'flex-end' },
-  pauseSheet: { backgroundColor: colors.surfaceRaised, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl, padding: spacing.xl, paddingBottom: spacing.xxxl, gap: spacing.md },
-  pauseActions: { gap: spacing.md, marginTop: spacing.lg },
+  pauseOverlay: { position: 'absolute', inset: 0, backgroundColor: 'rgba(1, 2, 4, 0.44)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xxxl },
+  pauseBackdrop: { position: 'absolute', inset: 0 },
+  pauseSheet: { width: '100%', borderRadius: radii.xl, borderWidth: 1, borderColor: 'rgba(167, 176, 184, 0.42)', paddingHorizontal: spacing.xl, paddingVertical: spacing.xxxl, alignItems: 'center', overflow: 'hidden' },
+  pauseGlyph: { width: 68, height: 68, borderRadius: 34, borderWidth: 1.5, borderColor: colors.accent, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xl },
+  pauseTitle: { color: colors.primary, fontSize: 34, lineHeight: 40, fontWeight: '700', textAlign: 'center' },
+  pauseSupport: { color: colors.secondary, fontSize: 17, lineHeight: 25, textAlign: 'center', marginTop: spacing.lg },
+  pauseActions: { alignSelf: 'stretch', gap: spacing.md, marginTop: spacing.xxxl },
   completionTransitionScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: spacing.xxxl, gap: spacing.xxl },
   completionTransitionHeader: { alignItems: 'center', gap: spacing.sm },
   completionTransitionTitle: { color: colors.primary, fontSize: 30, fontWeight: '700', letterSpacing: 0.3 },
@@ -1893,17 +2090,30 @@ const styles = StyleSheet.create({
   completeHeader: { alignItems: 'center', gap: spacing.sm },
   completeSets: { color: colors.primary, fontSize: 17, fontWeight: '700', letterSpacing: 1.1 },
   sessionUnlockAsset: { width: 64, height: 64 },
-  profileHero: { alignItems: 'center', paddingVertical: spacing.xxxl, gap: spacing.sm },
-  avatar: { width: 84, height: 84, borderRadius: 42, backgroundColor: colors.surfaceRaised, borderWidth: 1, borderColor: colors.accent, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
-  avatarText: { color: colors.primary, fontSize: 32, fontWeight: '700' },
-  memberStatus: { color: colors.accent, fontSize: 10, fontWeight: '700', letterSpacing: 1.3 },
-  menuGroup: { gap: spacing.sm, marginTop: spacing.xxl },
-  menuRow: { minHeight: 62, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, gap: spacing.md },
+  profileHero: { alignItems: 'center', paddingTop: spacing.xxxl, paddingBottom: spacing.xxl, gap: spacing.sm },
+  avatar: { width: 112, height: 112, borderRadius: 56, backgroundColor: colors.surfaceRaised, borderWidth: 1.5, borderColor: colors.accent, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md, shadowColor: colors.accent, shadowOpacity: 0.15, shadowRadius: 16, shadowOffset: { width: 0, height: 3 } },
+  avatarText: { color: colors.primary, fontSize: 48, fontWeight: '700' },
+  memberStatus: { color: colors.secondary, fontSize: 12, fontWeight: '600', letterSpacing: 1.4 },
+  profileMetricsCard: { paddingVertical: spacing.sm },
+  menuGroup: { gap: spacing.md, marginTop: spacing.xxl },
+  menuRow: { minHeight: 72, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, gap: spacing.md },
+  menuRowCompact: { minHeight: 60, borderWidth: 0, borderRadius: 0 },
   menuRowPressed: { backgroundColor: colors.surfaceRaised },
   menuIcon: { width: 34, alignItems: 'flex-start' },
   menuLabel: { flex: 1, color: colors.primary, fontSize: 16, fontWeight: '600' },
-  pageHeader: { paddingVertical: spacing.xxxl, gap: spacing.md },
+  pageHeader: { paddingTop: spacing.xxxl, paddingBottom: spacing.xxl, gap: spacing.md },
   historyChart: { height: 250, justifyContent: 'space-between' },
+  historyCalendar: { gap: spacing.lg, padding: spacing.lg },
+  historyWeekdays: { marginLeft: 74, flexDirection: 'row', justifyContent: 'space-between' },
+  historyWeekday: { width: 25, textAlign: 'center', color: colors.secondary, fontSize: 11, fontWeight: '700' },
+  historyWeekList: { gap: spacing.md },
+  historyWeekRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  historyWeekLabel: { width: 62, gap: 2 },
+  historyWeekNumber: { color: colors.primary, fontSize: 14, fontWeight: '700' },
+  historyWeekDates: { color: colors.secondary, fontSize: 10 },
+  historyDots: { flex: 1, flexDirection: 'row', justifyContent: 'space-between' },
+  historyDot: { width: 25, height: 25, borderRadius: 13, backgroundColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  historyDotDone: { backgroundColor: colors.accent },
   bars: { height: 170, flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
   barColumn: { flex: 1, alignItems: 'center', gap: spacing.sm },
   bar: { width: '70%', borderRadius: 5, backgroundColor: colors.accent },
@@ -1914,17 +2124,47 @@ const styles = StyleSheet.create({
   historyTitle: { color: colors.primary, fontSize: 15, fontWeight: '600' },
   historyDate: { color: colors.secondary, fontSize: 12 },
   emptyHistory: { minHeight: 160, alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
+  nextMilestoneCard: { gap: spacing.lg, padding: spacing.lg },
+  nextMilestoneMain: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  nextMilestoneIcon: { width: 58, height: 58, borderRadius: radii.lg, borderWidth: 1, borderColor: colors.borderStrong, alignItems: 'center', justifyContent: 'center' },
+  nextMilestoneCopy: { flex: 1, gap: spacing.xs },
+  nextMilestoneTitle: { color: colors.primary, fontSize: 24, fontWeight: '700' },
+  nextMilestoneSupport: { color: colors.secondary, fontSize: 14 },
+  milestoneProgressTrack: { height: 5, borderRadius: 3, backgroundColor: colors.borderStrong, overflow: 'hidden' },
+  milestoneProgressFill: { height: '100%', borderRadius: 3, backgroundColor: colors.accent },
   milestoneGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
-  milestone: { width: '48%', minHeight: 180, justifyContent: 'flex-end', gap: spacing.sm },
+  milestone: { width: '48%', minHeight: 166, justifyContent: 'flex-end', gap: spacing.sm },
   milestoneEarned: { borderColor: colors.accent },
   milestoneIcon: { width: 52, height: 52, borderRadius: 18, backgroundColor: colors.surfaceSoft, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xl },
   milestoneIconEarned: { backgroundColor: colors.accentSurface },
   milestoneTitle: { color: colors.primary, fontSize: 16, fontWeight: '700' },
   milestoneSupport: { color: colors.secondary, fontSize: 12 },
-  settingRow: { minHeight: 74, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  membershipPlanCard: { gap: spacing.lg, borderColor: colors.accent },
+  membershipPlanTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  membershipMark: { width: 64, height: 64, borderRadius: 32, borderWidth: 1, borderColor: colors.borderStrong, alignItems: 'center', justifyContent: 'center' },
+  membershipMarkText: { color: colors.accent, fontSize: 34, fontWeight: '800', fontStyle: 'italic' },
+  membershipPlanCopy: { flex: 1, gap: spacing.xs },
+  membershipPlanTitle: { color: colors.primary, fontSize: 25, fontWeight: '700' },
+  membershipPlanStatus: { color: colors.secondary, fontSize: 14 },
+  membershipDetail: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  membershipDetailCopy: { color: colors.primary, fontSize: 16, flex: 1 },
+  membershipFootnote: { color: colors.secondary, fontSize: 13, lineHeight: 20, marginTop: spacing.xxl, paddingHorizontal: spacing.sm },
+  settingRow: { minHeight: 84, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   settingCopy: { flex: 1, gap: spacing.xs },
   settingTitle: { color: colors.primary, fontSize: 15, fontWeight: '600' },
   settingSupport: { color: colors.secondary, fontSize: 12 },
+  compactListCard: { padding: 0, overflow: 'hidden' },
+  infoHeader: { paddingTop: spacing.xxxl, paddingBottom: spacing.xxl, gap: spacing.md },
+  infoSections: { gap: spacing.md, paddingBottom: spacing.xxxl },
+  infoCard: { gap: spacing.sm },
+  infoCardTitle: { color: colors.primary, fontSize: 17, fontWeight: '700' },
+  infoCardBody: { color: colors.secondary, fontSize: 14, lineHeight: 21 },
+  introductionContent: { flex: 1, justifyContent: 'center', gap: spacing.lg, paddingHorizontal: spacing.xl, paddingBottom: spacing.xxl },
+  introductionIcon: { width: 104, height: 104, borderRadius: 36, backgroundColor: colors.accentSurface, borderWidth: 1, borderColor: colors.borderStrong, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xl },
+  introductionProgress: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xl },
+  introductionProgressSegment: { flex: 1, height: 4, borderRadius: 2, backgroundColor: colors.borderStrong },
+  introductionProgressSegmentActive: { backgroundColor: colors.accent },
+  introductionActions: { gap: spacing.md, paddingHorizontal: spacing.xl, paddingBottom: spacing.xl, alignItems: 'center' },
   settingsReset: { marginTop: spacing.xxxl },
   settingsFootnote: { color: colors.tertiary, fontSize: 12, lineHeight: 18, marginTop: spacing.lg },
   manageAppsCard: { alignItems: 'center', paddingVertical: spacing.xxxl },

@@ -298,7 +298,6 @@ export function DesignQAPreview() {
         onCompletionContinue={() => patchQa({ kind: 'account', accountMode: 'signUp', session: null })}
         onOpenAccount={() => patchQa({ kind: 'account', accountMode: 'signIn' })}
         onOpenPaywall={() => patchQa({ kind: 'paywall' })}
-        onResetOnboarding={() => patchQa({ kind: 'onboarding', onboardingStep: 0 })}
         onChooseApps={() => patchQa({ selectedAppCount: 4 })}
         onSkipToday={() => patchQa({ dailyStatus: 'skipped', session: null, graceActive: false })}
         onUpdateLockTime={(lockTime) => setDraft((current) => ({ ...current, lockTime }))}
