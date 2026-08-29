@@ -1443,6 +1443,8 @@ function SessionScreen({
 export function ProfileScreen({
   nickname,
   progress,
+  avatarUri,
+  onEditAvatar,
   onBack,
   openHistory,
   openMilestones,
@@ -1452,6 +1454,8 @@ export function ProfileScreen({
 }: {
   nickname: string;
   progress: ProgressSummary;
+  avatarUri?: string;
+  onEditAvatar?: () => void;
   onBack: () => void;
   openHistory: () => void;
   openMilestones: () => void;
@@ -1463,9 +1467,24 @@ export function ProfileScreen({
     <Screen scroll>
       <TopBar title="Profile" onBack={onBack} />
       <View style={styles.profileHero}>
-        <View style={styles.avatar}><Text style={styles.avatarText}>{(nickname || 'E').slice(0, 1).toUpperCase()}</Text></View>
+        <Pressable
+          accessibilityRole={onEditAvatar ? 'button' : undefined}
+          accessibilityLabel={onEditAvatar ? 'Choose profile photo' : undefined}
+          disabled={!onEditAvatar}
+          onPress={onEditAvatar}
+          style={styles.avatarPressable}
+        >
+          <View style={styles.avatar}>
+            {avatarUri ? <Image source={{ uri: avatarUri }} style={styles.avatarImage} /> : <Text style={styles.avatarText}>{(nickname || 'E').slice(0, 1).toUpperCase()}</Text>}
+          </View>
+          {onEditAvatar ? <View style={styles.avatarEditBadge}><Icon name="camera.fill" color={colors.accentInk} size={14} weight="semibold" /></View> : null}
+        </Pressable>
         <Title compact>{nickname || 'Edward'}</Title>
-        <Text style={styles.memberStatus}>VAEL MEMBER</Text>
+        <View style={styles.memberStatusBadge}>
+          <Icon name="crown.fill" color={colors.accent} size={13} weight="semibold" />
+          <Text style={styles.memberStatus}>VAEL MEMBER</Text>
+          <View style={styles.memberStatusDot} />
+        </View>
       </View>
       <Card style={styles.profileMetricsCard}>
         <View style={styles.metricRow}>
@@ -2165,9 +2184,14 @@ const styles = StyleSheet.create({
   completeSets: { color: colors.primary, fontSize: 17, fontWeight: '700', letterSpacing: 1.1 },
   sessionUnlockAsset: { width: 64, height: 64 },
   profileHero: { alignItems: 'center', paddingTop: spacing.xxxl, paddingBottom: spacing.xxl, gap: spacing.sm },
+  avatarPressable: { position: 'relative', marginBottom: spacing.md },
   avatar: { width: 112, height: 112, borderRadius: 56, backgroundColor: colors.surfaceRaised, borderWidth: 1.5, borderColor: colors.accent, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md, shadowColor: colors.accent, shadowOpacity: 0.15, shadowRadius: 16, shadowOffset: { width: 0, height: 3 } },
+  avatarImage: { width: '100%', height: '100%', borderRadius: 56 },
+  avatarEditBadge: { position: 'absolute', right: -2, bottom: 8, width: 32, height: 32, borderRadius: 16, backgroundColor: colors.accent, borderWidth: 3, borderColor: colors.canvas, alignItems: 'center', justifyContent: 'center' },
   avatarText: { color: colors.primary, fontSize: 48, fontWeight: '700' },
-  memberStatus: { color: colors.secondary, fontSize: 12, fontWeight: '600', letterSpacing: 1.4 },
+  memberStatusBadge: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: spacing.md, paddingVertical: 7, borderRadius: radii.pill, backgroundColor: colors.accentSurface, borderWidth: 1, borderColor: colors.borderStrong },
+  memberStatus: { color: colors.accent, fontSize: 10, fontWeight: '800', letterSpacing: 1.45 },
+  memberStatusDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.accent },
   profileMetricsCard: { paddingVertical: spacing.sm },
   menuGroup: { gap: spacing.md, marginTop: spacing.xxl },
   menuRow: { minHeight: 72, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, gap: spacing.md },

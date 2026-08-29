@@ -1,19 +1,32 @@
-import { useEffect } from 'react';
-import { View } from 'react-native';
+import { Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 
+import { PaywallScreen, type SubscriptionPlan, type SubscriptionResult } from '../../screens/AccountAndPaywall';
 import { useAppShell } from '../../state/appShell';
-import { colors } from '../../theme/designSystem';
 
 export default function MembershipRoute() {
   const router = useRouter();
-  const { setPaywallContext, setScreen } = useAppShell();
+  const { access, setAccess } = useAppShell();
 
-  useEffect(() => {
-    setPaywallContext('membership');
-    setScreen('paywall');
-    router.dismissAll();
-  }, [router, setPaywallContext, setScreen]);
+  return (
+    <PaywallScreen
+      context="membership"
+      entitlementStatus={access.entitlementStatus}
+      onClose={() => router.back()}
+      onPurchase={purchaseSubscription}
+      onRestore={restorePurchases}
+      onAccessActivated={(entitlementStatus) => setAccess((current) => ({ ...current, authStatus: 'signedIn', entitlementStatus }))}
+      onManageSubscription={() => void Linking.openURL('https://apps.apple.com/account/subscriptions')}
+      onOpenLegal={(page) => router.push({ pathname: '/profile/settings/[page]', params: { page } })}
+      onOpenDeveloperControls={undefined}
+    />
+  );
+}
 
-  return <View style={{ flex: 1, backgroundColor: colors.canvas }} />;
+async function purchaseSubscription(_plan: SubscriptionPlan): Promise<SubscriptionResult> {
+  return { ok: false, error: 'App Store purchasing is not connected in this build. Use Debug Developer Controls to test entitlement routing.' };
+}
+
+async function restorePurchases(): Promise<SubscriptionResult> {
+  return { ok: false, error: 'Restore Purchases will activate when the StoreKit or RevenueCat entitlement adapter is connected.' };
 }

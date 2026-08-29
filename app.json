@@ -19,6 +19,12 @@
         }
       ],
       "./plugins/with-device-activity-monitor",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "VAEL uses your photos only when you choose a profile picture."
+        }
+      ],
       "expo-video"
     ],
     "experiments": {

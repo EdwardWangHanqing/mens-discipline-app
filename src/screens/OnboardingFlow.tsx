@@ -15,6 +15,7 @@ const accountabilityCoach = require('../../assets/images/onboarding-accountabili
 
 export type OnboardingDraft = {
   nickname: string;
+  avatarUri?: string;
   goal: string;
   barrier: string;
   lockTime: string;
