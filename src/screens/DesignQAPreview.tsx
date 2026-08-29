@@ -9,7 +9,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 
-import { AccountScreen, PaywallScreen, type AuthResult } from './AccountAndPaywall';
+import { AccountScreen, PaywallScreen, type AuthResult, type SubscriptionResult } from './AccountAndPaywall';
 import {
   MainExperience,
   type DailyStatus,
@@ -268,7 +268,7 @@ export function DesignQAPreview() {
     }
 
     if (qa.kind === 'paywall') {
-      return <PaywallScreen onPurchase={mockAuthentication} onRestore={mockAuthentication} onOpenLegal={() => undefined} />;
+      return <PaywallScreen context="required" entitlementStatus="none" onPurchase={mockSubscription} onRestore={mockSubscription} onAccessActivated={() => patchQa({ kind: 'main' })} onManageSubscription={() => undefined} onOpenLegal={() => undefined} />;
     }
 
     const grace: GraceState = {
@@ -341,6 +341,10 @@ export function DesignQAPreview() {
 
 async function mockAuthentication(): Promise<AuthResult> {
   return { ok: false, error: 'Design QA mock: no authentication provider or backend is called.' };
+}
+
+async function mockSubscription(): Promise<SubscriptionResult> {
+  return { ok: false, error: 'Design QA mock: no App Store purchase is called.' };
 }
 
 function QaSection({ title, children }: { title: string; children: React.ReactNode }) {

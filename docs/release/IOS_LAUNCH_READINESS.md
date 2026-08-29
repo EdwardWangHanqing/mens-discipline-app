@@ -11,12 +11,12 @@
 ## 0. Locked product assumptions this checklist must not override
 
 - iOS first; Android later, with cross-platform architecture reserved.
-- First value experience does **not** force login.
-- Exactly one full free routine is completed before the user is asked to create/sign in to an account; earned progress/history remains visible if they decline.
+- First-run access requires Onboarding → Account → Required Paywall → active entitlement; there is no first free routine.
 - Account creation/sign-in is required before Paywall, Home, or Training.
 - Account direction: Apple + Google + Email; Phone OTP is not an MVP priority.
 - The 3-Day Free Trial belongs only to Annual. Subscription plans are Monthly $9.99/month with no trial and Annual $39.99/year with the trial. Annual is default/recommended; 3-Month is removed.
 - Paywall is required and cannot be dismissed or navigated around to Home/Training without active entitlement. No valid training access means no active accountability lock.
+- Profile → Membership is a separate voluntary context with a visible return action and active-plan management states.
 - Daily training structure is exactly 1 movement/day, seven unique movements
   sampled from a ten-movement library per persisted cycle, exactly 5 sets,
   movement-specific reps/cadence, and exactly 20s rest.
@@ -215,6 +215,8 @@ This track runs in parallel with development; it must not block coding.
 - [ ] Restore Purchases exists and is easy to find.
 - [ ] Existing subscriber sign-in / restore path works.
 - [ ] Required Paywall cannot be closed, swiped back, or relaunched around to reach Home/Training without active entitlement.
+- [ ] Profile → Membership can always return to Profile and shows none/expired purchase choices or the correct active-plan management state.
+- [ ] Development-only Restart Onboarding is absent from Release/App Store builds.
 - [ ] No active training entitlement results in no active accountability lock.
 - [ ] App Store description clearly indicates which showcased functionality requires subscription when relevant.
 

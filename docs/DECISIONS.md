@@ -634,3 +634,28 @@ and must not mutate real App Store purchase or Family Controls state.
 
 The safety rule remains: no valid training access means no active
 accountability schedule or shield enforcement.
+
+---
+
+## DEC-027 — Required Paywall vs Voluntary Membership Management
+
+**Status:** Accepted owner clarification — 2026-08-29
+
+VAEL has two visually consistent but behaviorally distinct subscription
+contexts:
+
+- The first-run and access-gate `Required Paywall` has no close/back action and
+  cannot be dismissed without a successful purchase or restored active
+  entitlement.
+- `Profile → Membership` is user-initiated and always retains a visible return
+  action. Users with no entitlement or an expired entitlement see the same
+  Monthly/Annual purchase choices; active users see their current Monthly,
+  Annual Trial, or Annual plan, renewal terms, Manage Subscription, Restore,
+  Terms, and Privacy.
+
+Annual remains the default at USD $39.99/year with the Annual-only 3-Day Free
+Trial. Monthly remains USD $9.99/month with no trial. CTA copy changes with the
+selected plan.
+
+A Restart Onboarding entry may appear in Settings only in development/debug
+builds for owner testing. It must not be reachable in Release/App Store builds.

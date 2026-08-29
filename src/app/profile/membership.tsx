@@ -1,16 +1,19 @@
+import { useEffect } from 'react';
+import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { MembershipScreen } from '../../screens/MainExperience';
 import { useAppShell } from '../../state/appShell';
+import { colors } from '../../theme/designSystem';
 
 export default function MembershipRoute() {
   const router = useRouter();
-  const { setScreen } = useAppShell();
+  const { setPaywallContext, setScreen } = useAppShell();
 
-  const openPaywall = () => {
+  useEffect(() => {
+    setPaywallContext('membership');
     setScreen('paywall');
     router.dismissAll();
-  };
+  }, [router, setPaywallContext, setScreen]);
 
-  return <MembershipScreen onBack={() => router.back()} onOpenPaywall={openPaywall} />;
+  return <View style={{ flex: 1, backgroundColor: colors.canvas }} />;
 }

@@ -1,6 +1,6 @@
 # Men's Discipline App — Project Handoff
 
-**Last updated:** 2026-08-28 (America/Vancouver)
+**Last updated:** 2026-08-29 (America/Vancouver)
 
 **Repository:** `/Users/hanqingwang/Desktop/mens-discipline-app`
 
@@ -53,6 +53,12 @@ Required Paywall → Active Entitlement → Home. Monthly has no trial; Annual a
 has a 3-Day Free Trial. Account and entitlement are separate states.
 
 The older DEC-021 Camera pivot below remains authoritative for training.
+
+DEC-027 clarifies that the non-dismissible rule applies only to the required
+access gate. Profile → Membership is voluntary and closable, reuses the same
+plan design for none/expired states, and shows current-plan management for
+Monthly active, Annual Trial, and Annual active states. Settings exposes Restart
+Onboarding only in development builds for owner QA.
 
 DEC-021 is authoritative.
 

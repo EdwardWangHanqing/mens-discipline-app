@@ -80,7 +80,6 @@ export type MainExperienceSubscreen =
   | 'profile'
   | 'history'
   | 'milestones'
-  | 'membership'
   | 'settings'
   | 'notifications'
   | 'help'
@@ -121,6 +120,7 @@ export function MainExperience({
   onCompletionContinue,
   onOpenAccount,
   onOpenPaywall,
+  onRestartOnboarding,
   onChooseApps,
   familyControlsStatus = 'approved',
   familyControlsBusy = false,
@@ -148,6 +148,7 @@ export function MainExperience({
   onCompletionContinue: () => void;
   onOpenAccount: () => void;
   onOpenPaywall: () => void;
+  onRestartOnboarding?: () => void;
   onChooseApps: () => void;
   familyControlsStatus?: FamilyControlsAuthorizationDisplayStatus;
   familyControlsBusy?: boolean;
@@ -463,13 +464,12 @@ export function MainExperience({
           openMilestones={() => setSubscreen('milestones')}
           openSettings={() => setSubscreen('settings')}
           openAccount={onOpenAccount}
-          openMembership={() => setSubscreen('membership')}
+          openMembership={onOpenPaywall}
         />
       );
     }
     if (subscreen === 'history') return <HistoryScreen progress={progress} movement={movement} onBack={back} />;
     if (subscreen === 'milestones') return <MilestonesScreen progress={progress} onBack={back} />;
-    if (subscreen === 'membership') return <MembershipScreen onBack={back} onOpenPaywall={onOpenPaywall} />;
     if (subscreen === 'settings') {
       return (
         <SettingsScreen
@@ -477,6 +477,7 @@ export function MainExperience({
           openNotifications={() => setSubscreen('notifications')}
           openInformation={(page) => setSubscreen(page)}
           openIntroduction={() => setSubscreen('introduction')}
+          onRestartOnboarding={onRestartOnboarding}
         />
       );
     }
@@ -1554,38 +1555,18 @@ export function MilestonesScreen({ progress, onBack }: { progress: ProgressSumma
   );
 }
 
-export function MembershipScreen({ onBack, onOpenPaywall }: { onBack: () => void; onOpenPaywall: () => void }) {
-  return (
-    <Screen scroll>
-      <TopBar title="Membership" onBack={onBack} />
-      <View style={styles.pageHeader}><Eyebrow accent>Your Plan</Eyebrow><Title compact>Managed clearly.</Title></View>
-      <Card style={styles.membershipPlanCard}>
-        <View style={styles.membershipPlanTop}><View style={styles.membershipMark}><Text style={styles.membershipMarkText}>V</Text></View><View style={styles.membershipPlanCopy}><Text style={styles.membershipPlanTitle}>VAEL Membership</Text><Text style={styles.membershipPlanStatus}>No active subscription</Text></View></View>
-        <Divider />
-        <View style={styles.membershipDetail}><Icon name="calendar" color={colors.accent} size={20} /><Text style={styles.membershipDetailCopy}>Annual includes a 3-day free trial</Text></View>
-        <View style={styles.membershipDetail}><Icon name="tag" color={colors.accent} size={20} /><Text style={styles.membershipDetailCopy}>Annual $39.99 / year</Text></View>
-        <View style={styles.membershipDetail}><Icon name="creditcard" color={colors.accent} size={20} /><Text style={styles.membershipDetailCopy}>Monthly $9.99 / month · no trial</Text></View>
-      </Card>
-      <View style={styles.menuGroup}>
-        <MenuRow icon="creditcard" label="Choose a Membership" onPress={onOpenPaywall} />
-        <MenuRow icon="arrow.clockwise" label="Restore Purchases" onPress={onOpenPaywall} />
-        <MenuRow icon="questionmark.circle" label="Billing Help" onPress={onOpenPaywall} />
-      </View>
-      <Text style={styles.membershipFootnote}>Cancelling an App Store subscription stops future renewal. Deleting a VAEL account does not cancel a subscription.</Text>
-    </Screen>
-  );
-}
-
 export function SettingsScreen({
   onBack,
   openNotifications,
   openInformation,
   openIntroduction,
+  onRestartOnboarding,
 }: {
   onBack: () => void;
   openNotifications: () => void;
   openInformation: (page: 'help' | 'privacy' | 'terms' | 'about') => void;
   openIntroduction: () => void;
+  onRestartOnboarding?: () => void;
 }) {
   return (
     <Screen scroll>
@@ -1610,7 +1591,10 @@ export function SettingsScreen({
         <Divider /><MenuRow compact icon="info.circle" label="About VAEL" onPress={() => openInformation('about')} />
       </Card>
       <SectionTitle title="App" />
-      <Card style={styles.compactListCard}><MenuRow compact icon="play.circle" label="Replay Introduction" onPress={openIntroduction} /></Card>
+      <Card style={styles.compactListCard}>
+        <MenuRow compact icon="play.circle" label="Replay Introduction" onPress={openIntroduction} />
+        {onRestartOnboarding ? <><Divider /><MenuRow compact icon="arrow.counterclockwise" label="Restart Onboarding (Testing)" onPress={onRestartOnboarding} /></> : null}
+      </Card>
     </Screen>
   );
 }
@@ -2229,16 +2213,6 @@ const styles = StyleSheet.create({
   milestoneIconEarned: { backgroundColor: colors.accentSurface },
   milestoneTitle: { color: colors.primary, fontSize: 16, fontWeight: '700' },
   milestoneSupport: { color: colors.secondary, fontSize: 12 },
-  membershipPlanCard: { gap: spacing.lg, borderColor: colors.accent },
-  membershipPlanTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  membershipMark: { width: 64, height: 64, borderRadius: 32, borderWidth: 1, borderColor: colors.borderStrong, alignItems: 'center', justifyContent: 'center' },
-  membershipMarkText: { color: colors.accent, fontSize: 34, fontWeight: '800', fontStyle: 'italic' },
-  membershipPlanCopy: { flex: 1, gap: spacing.xs },
-  membershipPlanTitle: { color: colors.primary, fontSize: 25, fontWeight: '700' },
-  membershipPlanStatus: { color: colors.secondary, fontSize: 14 },
-  membershipDetail: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
-  membershipDetailCopy: { color: colors.primary, fontSize: 16, flex: 1 },
-  membershipFootnote: { color: colors.secondary, fontSize: 13, lineHeight: 20, marginTop: spacing.xxl, paddingHorizontal: spacing.sm },
   settingRow: { minHeight: 84, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   settingCopy: { flex: 1, gap: spacing.xs },
   settingTitle: { color: colors.primary, fontSize: 15, fontWeight: '600' },

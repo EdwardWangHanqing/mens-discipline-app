@@ -2,6 +2,7 @@ import { createContext, useContext, useMemo, useState, type Dispatch, type React
 
 import type { OnboardingDraft } from '../screens/OnboardingFlow';
 import type { ProgressSummary } from '../screens/MainExperience';
+import { normalizeAccessState, type AccessState, type PaywallContext } from './accessState';
 
 export type RootScreen = 'onboarding' | 'main' | 'account' | 'paywall' | 'legal' | 'developer';
 
@@ -32,6 +33,12 @@ type AppShellState = {
   setDraft: Dispatch<SetStateAction<OnboardingDraft>>;
   progress: ProgressSummary;
   setProgress: Dispatch<SetStateAction<ProgressSummary>>;
+  access: AccessState;
+  setAccess: Dispatch<SetStateAction<AccessState>>;
+  paywallContext: PaywallContext;
+  setPaywallContext: Dispatch<SetStateAction<PaywallContext>>;
+  onboardingStep: number;
+  setOnboardingStep: Dispatch<SetStateAction<number>>;
 };
 
 const AppShellContext = createContext<AppShellState | null>(null);
@@ -41,9 +48,12 @@ export function AppShellProvider({ children }: { children: ReactNode }) {
   const [accountMode, setAccountMode] = useState<'signUp' | 'signIn'>('signUp');
   const [draft, setDraft] = useState(initialDraft);
   const [progress, setProgress] = useState(initialProgress);
+  const [access, setAccess] = useState<AccessState>(() => normalizeAccessState());
+  const [paywallContext, setPaywallContext] = useState<PaywallContext>('required');
+  const [onboardingStep, setOnboardingStep] = useState(0);
   const value = useMemo(
-    () => ({ screen, setScreen, accountMode, setAccountMode, draft, setDraft, progress, setProgress }),
-    [accountMode, draft, progress, screen]
+    () => ({ screen, setScreen, accountMode, setAccountMode, draft, setDraft, progress, setProgress, access, setAccess, paywallContext, setPaywallContext, onboardingStep, setOnboardingStep }),
+    [access, accountMode, draft, onboardingStep, paywallContext, progress, screen]
   );
 
   return <AppShellContext.Provider value={value}>{children}</AppShellContext.Provider>;

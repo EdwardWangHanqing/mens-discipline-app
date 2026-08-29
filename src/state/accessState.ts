@@ -14,9 +14,39 @@ export type AccessState = {
 };
 
 export type AccessDestination = 'onboarding' | 'account' | 'paywall' | 'main';
+export type PaywallContext = 'required' | 'membership';
+
+export type MembershipPresentation = {
+  plan: 'Annual' | 'Monthly';
+  status: '3-Day Free Trial' | 'Active';
+  badge: 'TRIAL ACTIVE' | 'ACTIVE';
+  renewal: string;
+};
 
 export function hasActiveEntitlement(status: EntitlementStatus) {
   return status === 'monthlyActive' || status === 'annualTrial' || status === 'annualActive';
+}
+
+export function canDismissPaywall(context: PaywallContext) {
+  return context === 'membership';
+}
+
+export function membershipPresentation(status: EntitlementStatus): MembershipPresentation | null {
+  if (status === 'annualTrial') {
+    return {
+      plan: 'Annual',
+      status: '3-Day Free Trial',
+      badge: 'TRIAL ACTIVE',
+      renewal: 'Renews at $39.99/year when the trial ends.',
+    };
+  }
+  if (status === 'annualActive') {
+    return { plan: 'Annual', status: 'Active', badge: 'ACTIVE', renewal: 'Renews at $39.99/year.' };
+  }
+  if (status === 'monthlyActive') {
+    return { plan: 'Monthly', status: 'Active', badge: 'ACTIVE', renewal: 'Renews at $9.99/month.' };
+  }
+  return null;
 }
 
 export function resolveAccessDestination(state: AccessState): AccessDestination {

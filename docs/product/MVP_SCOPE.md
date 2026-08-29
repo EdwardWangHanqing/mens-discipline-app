@@ -484,6 +484,13 @@ RevenueCat is planned for subscription entitlement management.
 
 RevenueCat integration belongs to the later monetization implementation phase rather than the initial technical proof of concept.
 
+The subscription UI has two contexts. The onboarding/access-gate Paywall is
+required and non-dismissible. Profile → Membership is voluntary and retains a
+return action. It shows the same purchase choices for none/expired states and a
+current-plan management view for Monthly active, Annual Trial, and Annual active
+states, including renewal terms, Manage Subscription, Restore, Terms, and
+Privacy.
+
 ---
 
 # 22. Account Flow

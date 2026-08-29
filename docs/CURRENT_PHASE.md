@@ -12,6 +12,12 @@ VAEL
 system and all MVP UI, implement the shared state-driven experience, then repeat
 Simulator visual QA until the app is ready for owner end-to-end use.
 
+**2026-08-29 membership clarification:** the onboarding/access-gate Paywall is
+required and non-dismissible; Profile → Membership is voluntary and closable.
+The voluntary screen shows purchase choices for none/expired states and current
+plan management for Monthly active, Annual Trial, or Annual active. A
+development-only Settings action restarts onboarding for owner testing.
+
 Phase 04 is closed and passed. The UX architecture is now the source for
 visual-system work; Phase 05 must translate the locked behavior into visual
 tokens, components, and screens without redesigning product behavior.

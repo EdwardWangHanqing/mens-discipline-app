@@ -6,12 +6,13 @@ import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import * as SplashScreen from 'expo-splash-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 
 import FamilyControls, {
   type FamilyControlsAuthorizationDisplayStatus,
   type FamilyControlsAuthorizationStatus,
 } from '../../modules/family-controls';
-import { AccountScreen, PaywallScreen, type AuthRequest, type AuthResult, type SubscriptionPlan } from '../screens/AccountAndPaywall';
+import { AccountScreen, PaywallScreen, type AuthRequest, type AuthResult, type SubscriptionPlan, type SubscriptionResult } from '../screens/AccountAndPaywall';
 import {
   InformationScreen,
   MainExperience,
@@ -43,6 +44,7 @@ import {
   normalizeAccessState,
   resolveAccessDestination,
   type AccessState,
+  type EntitlementStatus,
 } from '../state/accessState';
 import {
   canScheduleAccountability,
@@ -59,17 +61,23 @@ function initialGraceState(): GraceState {
 }
 
 export default function AppExperience() {
+  const router = useRouter();
   const {
     accountMode,
+    access,
     draft,
+    onboardingStep,
+    paywallContext,
     progress,
     screen,
     setAccountMode,
+    setAccess,
     setDraft,
+    setOnboardingStep,
     setProgress,
+    setPaywallContext,
     setScreen,
   } = useAppShell();
-  const [onboardingStep, setOnboardingStep] = useState(0);
   const [tab, setTab] = useState<MainTab>('home');
   const [dailyStatus, setDailyStatus] = useState<DailyStatus>('unrevealed');
   const [pickerBusy, setPickerBusy] = useState(false);
@@ -77,7 +85,6 @@ export default function AppExperience() {
   const [selectionRequiresReview, setSelectionRequiresReview] = useState(false);
   const [familyControlsMessage, setFamilyControlsMessage] = useState<string | null>(null);
   const [grace, setGrace] = useState<GraceState>(initialGraceState);
-  const [access, setAccess] = useState<AccessState>(() => normalizeAccessState());
   const [legalPage, setLegalPage] = useState<'terms' | 'privacy'>('terms');
   const [developerReturnScreen, setDeveloperReturnScreen] = useState<'account' | 'paywall'>('account');
   const [hydrated, setHydrated] = useState(false);
@@ -251,8 +258,14 @@ export default function AppExperience() {
           }}
           onOpenPaywall={() => {
             setAccountMode('signIn');
-            setScreen(access.authStatus === 'signedIn' ? 'paywall' : 'account');
+            if (access.authStatus === 'signedIn') {
+              setPaywallContext('membership');
+              setScreen('paywall');
+            } else {
+              setScreen('account');
+            }
           }}
+          onRestartOnboarding={__DEV__ ? restartOnboardingForTesting : undefined}
           onChooseApps={chooseApps}
           familyControlsStatus={authorizationStatus}
           familyControlsBusy={pickerBusy}
@@ -285,6 +298,7 @@ export default function AppExperience() {
           onContinue={() => {
             const next = { ...access, authStatus: 'signedIn' as const };
             setAccess(next);
+            if (!hasActiveEntitlement(next.entitlementStatus)) setPaywallContext('required');
             setScreen(resolveAccessDestination(next));
           }}
           onAuthenticate={authenticate}
@@ -302,8 +316,16 @@ export default function AppExperience() {
       ) : null}
       {hydrated && screen === 'paywall' ? (
         <PaywallScreen
+          context={paywallContext}
+          entitlementStatus={access.entitlementStatus}
+          onClose={paywallContext === 'membership' ? () => {
+            setScreen('main');
+            router.push({ pathname: '/profile', params: { movementId: todayMovement.id } });
+          } : undefined}
           onPurchase={purchaseSubscription}
           onRestore={restorePurchases}
+          onAccessActivated={activateTrainingAccess}
+          onManageSubscription={() => void Linking.openURL('https://apps.apple.com/account/subscriptions')}
           onOpenLegal={(page) => { setLegalPage(page); setScreen('legal'); }}
           onOpenDeveloperControls={__DEV__ ? () => openDeveloperControls('paywall') : undefined}
         />
@@ -319,13 +341,16 @@ export default function AppExperience() {
           onBack={() => setScreen(developerReturnScreen)}
           onReset={resetLocalState}
           onRestartOnboarding={() => {
-            setAccess(normalizeAccessState());
-            setOnboardingStep(0);
+            restartOnboardingForTesting();
           }}
           onMarkOnboardingComplete={() => setAccess((current) => ({ ...current, onboardingCompleted: true }))}
           onSetAuth={(authStatus) => setAccess((current) => ({ ...current, authStatus }))}
           onSetEntitlement={(entitlementStatus) => setAccess((current) => ({ ...current, entitlementStatus }))}
-          onResolveRoute={() => setScreen(resolveAccessDestination(access))}
+          onResolveRoute={() => {
+            const destination = resolveAccessDestination(access);
+            if (destination === 'paywall') setPaywallContext('required');
+            setScreen(destination);
+          }}
         />
       ) : null}
       {hydrated && !launchFinished ? (
@@ -466,6 +491,17 @@ export default function AppExperience() {
     setScreen('developer');
   }
 
+  function activateTrainingAccess(entitlementStatus: Extract<EntitlementStatus, 'monthlyActive' | 'annualTrial' | 'annualActive'>) {
+    setAccess((current) => ({ ...current, authStatus: 'signedIn', entitlementStatus }));
+    setScreen('main');
+  }
+
+  function restartOnboardingForTesting() {
+    setAccess(normalizeAccessState());
+    setOnboardingStep(0);
+    setScreen('onboarding');
+  }
+
   function resetLocalState() {
     void AsyncStorage.removeItem(appStateStorageKey);
     void FamilyControls.cancelScheduledLocks().catch(() => undefined);
@@ -497,14 +533,14 @@ async function requestPasswordReset(_email: string): Promise<AuthResult> {
   };
 }
 
-async function purchaseSubscription(_plan: SubscriptionPlan): Promise<AuthResult> {
+async function purchaseSubscription(_plan: SubscriptionPlan): Promise<SubscriptionResult> {
   return {
     ok: false,
     error: 'App Store purchasing is not connected in this build. Use Debug Developer Controls to test entitlement routing.',
   };
 }
 
-async function restorePurchases(): Promise<AuthResult> {
+async function restorePurchases(): Promise<SubscriptionResult> {
   return {
     ok: false,
     error: 'Restore Purchases will activate when the StoreKit or RevenueCat entitlement adapter is connected.',
