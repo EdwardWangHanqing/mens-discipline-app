@@ -6,6 +6,12 @@
 > name, or an unspecified launch treatment. The navigation and product-flow
 > architecture in this handoff remain authoritative.
 
+> **2026-08-28 owner override:** DEC-026 and the current onboarding work package
+> supersede this document wherever it permits a first free routine, optional
+> account creation, a signed-out limited Home, or a closable Paywall. Current
+> first-run order is Onboarding → Required Account → Required Paywall → Active
+> Entitlement → Home. Monthly has no trial; Annual alone has a 3-Day Free Trial.
+
 **Date:** 2026-08-22  
 **Status:** Authoritative Phase 04 UX handoff for Phase 05 Visual System / Figma Design System  
 **Current accepted main checkpoint:** `9a0d9ffcd6887bb64525a0b8933f7edf3efd0c58`

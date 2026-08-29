@@ -11,8 +11,9 @@ import FamilyControls, {
   type FamilyControlsAuthorizationDisplayStatus,
   type FamilyControlsAuthorizationStatus,
 } from '../../modules/family-controls';
-import { AccountScreen, PaywallScreen, type AuthRequest, type AuthResult } from '../screens/AccountAndPaywall';
+import { AccountScreen, PaywallScreen, type AuthRequest, type AuthResult, type SubscriptionPlan } from '../screens/AccountAndPaywall';
 import {
+  InformationScreen,
   MainExperience,
   type DailyStatus,
   type GraceState,
@@ -35,7 +36,14 @@ import {
   type MovementCycleState,
 } from '../state/movementCycle';
 import { BrandLaunchOverlay } from '../components/Brand';
+import { DeveloperControls } from '../screens/DeveloperControls';
 import { initialDraft, initialProgress, useAppShell } from '../state/appShell';
+import {
+  hasActiveEntitlement,
+  normalizeAccessState,
+  resolveAccessDestination,
+  type AccessState,
+} from '../state/accessState';
 import {
   canScheduleAccountability,
   chooseAppsAuthorizationAction,
@@ -64,18 +72,20 @@ export default function AppExperience() {
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [tab, setTab] = useState<MainTab>('home');
   const [dailyStatus, setDailyStatus] = useState<DailyStatus>('unrevealed');
-  const [authorizationBusy, setAuthorizationBusy] = useState(false);
   const [pickerBusy, setPickerBusy] = useState(false);
   const [authorizationStatus, setAuthorizationStatus] = useState<FamilyControlsAuthorizationDisplayStatus>('checking');
   const [selectionRequiresReview, setSelectionRequiresReview] = useState(false);
   const [familyControlsMessage, setFamilyControlsMessage] = useState<string | null>(null);
   const [grace, setGrace] = useState<GraceState>(initialGraceState);
-  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
+  const [access, setAccess] = useState<AccessState>(() => normalizeAccessState());
+  const [legalPage, setLegalPage] = useState<'terms' | 'privacy'>('terms');
+  const [developerReturnScreen, setDeveloperReturnScreen] = useState<'account' | 'paywall'>('account');
   const [hydrated, setHydrated] = useState(false);
   const [activeDateKey, setActiveDateKey] = useState(() => localDateKey(new Date()));
   const [movementCycle, setMovementCycle] = useState(() => createMovementCycle(localDateKey(new Date())));
   const [launchFinished, setLaunchFinished] = useState(false);
   const todayMovement = movementById(movementForCycle(movementCycle).id);
+  const trainingAccessActive = access.authStatus === 'signedIn' && hasActiveEntitlement(access.entitlementStatus);
   const handleLaunchReady = useCallback(() => {
     void SplashScreen.hideAsync();
   }, []);
@@ -175,13 +185,30 @@ export default function AppExperience() {
         progress,
         grace,
         dailyStatus,
-        onboardingCompleted,
+        access,
         movementCycle,
         selectionRequiresReview,
         dateKey: activeDateKey,
       })
     );
-  }, [activeDateKey, dailyStatus, draft, grace, hydrated, movementCycle, onboardingCompleted, progress, selectionRequiresReview]);
+  }, [access, activeDateKey, dailyStatus, draft, grace, hydrated, movementCycle, progress, selectionRequiresReview]);
+
+  useEffect(() => {
+    if (!hydrated || Platform.OS !== 'ios') return;
+    if (!trainingAccessActive) {
+      void FamilyControls.cancelScheduledLocks().catch(() => undefined);
+      return;
+    }
+    const parsed = parseLockTime(draft.lockTime);
+    if (!parsed || !canScheduleAccountability({
+      authorizationStatus,
+      dailyStatus,
+      selectedAppCount: draft.selectedAppCount,
+      selectionRequiresReview,
+      hasActiveTrainingEntitlement: true,
+    })) return;
+    void FamilyControls.scheduleDailyLock(parsed.hour, parsed.minute).catch(() => undefined);
+  }, [authorizationStatus, dailyStatus, draft.lockTime, draft.selectedAppCount, hydrated, selectionRequiresReview, trainingAccessActive]);
 
   return (
     <SafeAreaProvider>
@@ -197,10 +224,10 @@ export default function AppExperience() {
             setAccountMode('signIn');
             setScreen('account');
           }}
-          requestScreenTime={requestScreenTime}
           chooseApps={chooseApps}
-          authorizationBusy={authorizationBusy}
           pickerBusy={pickerBusy}
+          authorizationStatus={authorizationStatus}
+          familyControlsMessage={familyControlsMessage}
         />
       ) : null}
       {hydrated && screen === 'main' ? (
@@ -217,18 +244,18 @@ export default function AppExperience() {
           setGrace={setGrace}
           setDailyStatus={setDailyStatus}
           onRoutineCompleted={completeRoutine}
-          onCompletionContinue={() => {
-            setAccountMode('signUp');
-            setScreen('account');
-          }}
+          onCompletionContinue={() => setScreen('main')}
           onOpenAccount={() => {
             setAccountMode('signIn');
             setScreen('account');
           }}
-          onOpenPaywall={() => setScreen('paywall')}
+          onOpenPaywall={() => {
+            setAccountMode('signIn');
+            setScreen(access.authStatus === 'signedIn' ? 'paywall' : 'account');
+          }}
           onChooseApps={chooseApps}
           familyControlsStatus={authorizationStatus}
-          familyControlsBusy={authorizationBusy || pickerBusy}
+          familyControlsBusy={pickerBusy}
           familyControlsMessage={familyControlsMessage}
           selectionRequiresReview={selectionRequiresReview}
           onRefreshFamilyControls={refreshFamilyControls}
@@ -255,15 +282,51 @@ export default function AppExperience() {
         <AccountScreen
           mode={accountMode}
           setMode={setAccountMode}
-          onContinue={() => setScreen('paywall')}
+          onContinue={() => {
+            const next = { ...access, authStatus: 'signedIn' as const };
+            setAccess(next);
+            setScreen(resolveAccessDestination(next));
+          }}
           onAuthenticate={authenticate}
           onForgotPassword={requestPasswordReset}
-          onBack={() => setScreen(onboardingStep === 0 && !draft.nickname ? 'onboarding' : 'main')}
-          onNotNow={() => setScreen('main')}
+          onBack={() => {
+            if (trainingAccessActive) {
+              setScreen('main');
+              return;
+            }
+            setOnboardingStep(access.onboardingCompleted ? 4 : 0);
+            setScreen('onboarding');
+          }}
+          onOpenDeveloperControls={__DEV__ ? () => openDeveloperControls('account') : undefined}
         />
       ) : null}
       {hydrated && screen === 'paywall' ? (
-        <PaywallScreen onClose={() => setScreen('main')} onStartTrial={() => setScreen('main')} />
+        <PaywallScreen
+          onPurchase={purchaseSubscription}
+          onRestore={restorePurchases}
+          onOpenLegal={(page) => { setLegalPage(page); setScreen('legal'); }}
+          onOpenDeveloperControls={__DEV__ ? () => openDeveloperControls('paywall') : undefined}
+        />
+      ) : null}
+      {hydrated && screen === 'legal' ? (
+        <InformationScreen page={legalPage} onBack={() => setScreen('paywall')} />
+      ) : null}
+      {hydrated && __DEV__ && screen === 'developer' ? (
+        <DeveloperControls
+          onboardingCompleted={access.onboardingCompleted}
+          authStatus={access.authStatus}
+          entitlementStatus={access.entitlementStatus}
+          onBack={() => setScreen(developerReturnScreen)}
+          onReset={resetLocalState}
+          onRestartOnboarding={() => {
+            setAccess(normalizeAccessState());
+            setOnboardingStep(0);
+          }}
+          onMarkOnboardingComplete={() => setAccess((current) => ({ ...current, onboardingCompleted: true }))}
+          onSetAuth={(authStatus) => setAccess((current) => ({ ...current, authStatus }))}
+          onSetEntitlement={(entitlementStatus) => setAccess((current) => ({ ...current, entitlementStatus }))}
+          onResolveRoute={() => setScreen(resolveAccessDestination(access))}
+        />
       ) : null}
       {hydrated && !launchFinished ? (
         <BrandLaunchOverlay onReady={handleLaunchReady} onFinished={handleLaunchFinished} />
@@ -272,34 +335,16 @@ export default function AppExperience() {
   );
 
   function advanceOnboarding() {
-    if (onboardingStep < 10) {
+    if (onboardingStep < 4) {
       setOnboardingStep((step) => step + 1);
       return;
     }
     setDailyStatus('unrevealed');
     setTab('home');
-    setOnboardingCompleted(true);
-    setScreen('main');
+    setAccess((current) => ({ ...current, onboardingCompleted: true }));
+    setAccountMode('signUp');
+    setScreen('account');
     void updateLockTime(draft.lockTime);
-  }
-
-  async function requestScreenTime() {
-    if (authorizationBusy) return;
-    setAuthorizationBusy(true);
-    setFamilyControlsMessage(null);
-    try {
-      const result = await FamilyControls.requestAuthorization();
-      const connected = await applyAuthorizationStatus(result.status);
-      if (!connected && result.status === 'denied') {
-        setFamilyControlsMessage('Screen Time access is off. You can enable it from iOS Settings.');
-      }
-    } catch {
-      await refreshFamilyControls();
-      setFamilyControlsMessage('Screen Time access was not enabled. You can continue training without Locks.');
-    } finally {
-      setAuthorizationBusy(false);
-      setOnboardingStep((step) => (step === 8 ? 9 : step));
-    }
   }
 
   async function chooseApps() {
@@ -329,11 +374,12 @@ export default function AppExperience() {
         setSelectionRequiresReview(false);
         setFamilyControlsMessage(count > 0 ? null : 'No apps selected. Training still works without Locks.');
         const parsed = parseLockTime(draft.lockTime);
-        if (parsed && onboardingCompleted && canScheduleAccountability({
+        if (parsed && access.onboardingCompleted && canScheduleAccountability({
           authorizationStatus: status,
           dailyStatus,
           selectedAppCount: count,
           selectionRequiresReview: false,
+          hasActiveTrainingEntitlement: trainingAccessActive,
         })) {
           await FamilyControls.scheduleDailyLock(parsed.hour, parsed.minute).catch(() => undefined);
         }
@@ -369,7 +415,13 @@ export default function AppExperience() {
   async function updateLockTime(lockTime: string) {
     setDraft((current) => ({ ...current, lockTime }));
     const parsed = parseLockTime(lockTime);
-    if (!parsed || !canScheduleAccountability({ authorizationStatus, dailyStatus, selectedAppCount: draft.selectedAppCount, selectionRequiresReview })) return;
+    if (!parsed || !canScheduleAccountability({
+      authorizationStatus,
+      dailyStatus,
+      selectedAppCount: draft.selectedAppCount,
+      selectionRequiresReview,
+      hasActiveTrainingEntitlement: trainingAccessActive,
+    })) return;
     await FamilyControls.scheduleDailyLock(parsed.hour, parsed.minute).catch(() => undefined);
   }
 
@@ -383,11 +435,12 @@ export default function AppExperience() {
         grace?: GraceState;
         dailyStatus?: DailyStatus;
         onboardingCompleted?: boolean;
+        access?: Partial<AccessState>;
         movementCycle?: MovementCycleState;
         selectionRequiresReview?: boolean;
         dateKey?: string;
       };
-      const completed = Boolean(saved.onboardingCompleted);
+      const restoredAccess = normalizeAccessState(saved.access ?? { onboardingCompleted: saved.onboardingCompleted });
       setDraft({ ...initialDraft, ...saved.draft });
       const restoredProgress = { ...initialProgress, ...saved.progress };
       setProgress({
@@ -399,13 +452,34 @@ export default function AppExperience() {
       setDailyStatus(saved.dateKey === localDateKey(new Date()) ? saved.dailyStatus ?? 'unrevealed' : 'unrevealed');
       setMovementCycle(normalizeMovementCycle(saved.movementCycle, todayKey));
       setSelectionRequiresReview(Boolean(saved.selectionRequiresReview));
-      setOnboardingCompleted(completed);
-      setScreen(completed ? 'main' : 'onboarding');
+      setAccess(restoredAccess);
+      setScreen(resolveAccessDestination(restoredAccess));
     } catch {
       // Corrupt local UI state falls back to the safe first-ever experience.
     } finally {
       setHydrated(true);
     }
+  }
+
+  function openDeveloperControls(returnScreen: 'account' | 'paywall') {
+    setDeveloperReturnScreen(returnScreen);
+    setScreen('developer');
+  }
+
+  function resetLocalState() {
+    void AsyncStorage.removeItem(appStateStorageKey);
+    void FamilyControls.cancelScheduledLocks().catch(() => undefined);
+    setDraft(initialDraft);
+    setProgress(initialProgress);
+    setGrace(initialGraceState());
+    setDailyStatus('unrevealed');
+    setMovementCycle(createMovementCycle(localDateKey(new Date())));
+    setSelectionRequiresReview(false);
+    setFamilyControlsMessage(null);
+    setAccess(normalizeAccessState());
+    setOnboardingStep(0);
+    setTab('home');
+    setScreen('onboarding');
   }
 }
 
@@ -420,6 +494,20 @@ async function requestPasswordReset(_email: string): Promise<AuthResult> {
   return {
     ok: false,
     error: 'Password reset will activate when the VAEL authentication backend is connected.',
+  };
+}
+
+async function purchaseSubscription(_plan: SubscriptionPlan): Promise<AuthResult> {
+  return {
+    ok: false,
+    error: 'App Store purchasing is not connected in this build. Use Debug Developer Controls to test entitlement routing.',
+  };
+}
+
+async function restorePurchases(): Promise<AuthResult> {
+  return {
+    ok: false,
+    error: 'Restore Purchases will activate when the StoreKit or RevenueCat entitlement adapter is connected.',
   };
 }
 

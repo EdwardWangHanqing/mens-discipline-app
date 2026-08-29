@@ -86,7 +86,7 @@ const scenarios: Scenario[] = [
   { id: 'locks-skipped', label: 'Skipped', group: 'Locks', state: { tab: 'locks', dailyStatus: 'skipped', selectedAppCount: 4 } },
   { id: 'locks-unlocked', label: 'Unlocked', group: 'Locks', state: { tab: 'locks', dailyStatus: 'completed', selectedAppCount: 4 } },
 
-  ...Array.from({ length: 11 }, (_, step): Scenario => ({
+  ...Array.from({ length: 5 }, (_, step): Scenario => ({
     id: `onboarding-${step}`,
     label: step === 0 ? '00 · Brand' : `${String(step).padStart(2, '0')} · Screen ${step}`,
     group: 'Onboarding',
@@ -243,13 +243,13 @@ export function DesignQAPreview() {
           step={qa.onboardingStep}
           draft={draft}
           updateDraft={(patch) => setDraft((current) => ({ ...current, ...patch }))}
-          goNext={() => patchQa({ onboardingStep: Math.min(10, qa.onboardingStep + 1) })}
+          goNext={() => patchQa({ onboardingStep: Math.min(4, qa.onboardingStep + 1) })}
           goBack={() => patchQa({ onboardingStep: Math.max(0, qa.onboardingStep - 1) })}
           onSignIn={() => patchQa({ kind: 'account', accountMode: 'signIn' })}
-          requestScreenTime={() => setDraft((current) => ({ ...current, screenTimeConnected: true }))}
           chooseApps={() => setDraft((current) => ({ ...current, selectedAppCount: 4 }))}
-          authorizationBusy={false}
           pickerBusy={false}
+          authorizationStatus="approvedWithDataAccess"
+          familyControlsMessage={null}
         />
       );
     }
@@ -261,7 +261,6 @@ export function DesignQAPreview() {
           setMode={(accountMode) => patchQa({ accountMode })}
           onContinue={() => patchQa({ kind: 'paywall' })}
           onBack={() => patchQa({ kind: 'main', tab: 'home' })}
-          onNotNow={() => patchQa({ kind: 'main', tab: 'home' })}
           onAuthenticate={mockAuthentication}
           onForgotPassword={mockAuthentication}
         />
@@ -269,7 +268,7 @@ export function DesignQAPreview() {
     }
 
     if (qa.kind === 'paywall') {
-      return <PaywallScreen onClose={() => patchQa({ kind: 'main', tab: 'home' })} onStartTrial={() => patchQa({ kind: 'main', tab: 'home', dailyStatus: 'completed' })} />;
+      return <PaywallScreen onPurchase={mockAuthentication} onRestore={mockAuthentication} onOpenLegal={() => undefined} />;
     }
 
     const grace: GraceState = {

@@ -1,41 +1,17 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import { DateTimePicker } from '@expo/ui/community/datetime-picker';
-import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
+import { Image } from 'expo-image';
+import Animated, { FadeInRight, FadeOutLeft, useReducedMotion } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
 
-import {
-  Body,
-  Card,
-  ChoiceCard,
-  Divider,
-  Eyebrow,
-  Field,
-  Icon,
-  PrimaryButton,
-  Screen,
-  StepProgress,
-  TextButton,
-  Title,
-  TopBar,
-} from '../components/ui';
-import { colors, radii, spacing, typography } from '../theme/designSystem';
+import type { FamilyControlsAuthorizationDisplayStatus } from '../../modules/family-controls';
+import { Body, Icon, PrimaryButton, Screen, TextButton, Title, TopBar } from '../components/ui';
 import { VaelMark } from '../components/Brand';
+import { colors, radii, spacing, typography } from '../theme/designSystem';
 
-const goals = [
-  'Better control',
-  'Stronger hips & lower body',
-  'More consistency',
-  'More confidence',
-];
-
-const barriers = [
-  'I put it off',
-  'Apps pull me in',
-  'My schedule gets busy',
-  'I forget',
-  'I want more structure',
-];
+const foundationCoach = require('../../assets/images/onboarding-foundation-coach.png');
+const accountabilityCoach = require('../../assets/images/onboarding-accountability-coach.png');
 
 export type OnboardingDraft = {
   nickname: string;
@@ -46,411 +22,158 @@ export type OnboardingDraft = {
   screenTimeConnected: boolean;
 };
 
-export function OnboardingFlow({
-  step,
-  draft,
-  updateDraft,
-  goNext,
-  goBack,
-  onSignIn,
-  requestScreenTime,
-  chooseApps,
-  authorizationBusy,
-  pickerBusy,
-}: {
+export function OnboardingFlow({ step, draft, updateDraft, goNext, goBack, onSignIn, chooseApps, pickerBusy, authorizationStatus, familyControlsMessage }: {
   step: number;
   draft: OnboardingDraft;
   updateDraft: (patch: Partial<OnboardingDraft>) => void;
   goNext: () => void;
   goBack: () => void;
   onSignIn: () => void;
-  requestScreenTime: () => void;
   chooseApps: () => void;
-  authorizationBusy: boolean;
   pickerBusy: boolean;
+  authorizationStatus: FamilyControlsAuthorizationDisplayStatus;
+  familyControlsMessage: string | null;
 }) {
-  if (step === 0) {
-    return (
-      <Screen testID="onboarding-brand">
-        <View style={styles.brandTop}>
-          <Eyebrow accent>VAEL</Eyebrow>
-        </View>
-        <View style={styles.brandHero}>
-          <View style={styles.brandImageWell}>
-            <Svg width="100%" height="100%" viewBox="0 0 340 310" style={StyleSheet.absoluteFill}>
-              <Path d="M-20 250 L122 92 L238 214 L360 62" fill="none" stroke={colors.borderStrong} strokeWidth={1} />
-              <Path d="M-20 282 L122 124 L238 246 L360 94" fill="none" stroke={colors.border} strokeWidth={1} />
-              <Circle cx={274} cy={74} r={4} fill={colors.accent} />
-            </Svg>
-            <View style={styles.brandMark}><VaelMark size={128} strokeWidth={2.6} /></View>
-            <Text style={styles.brandWordmark}>VAEL</Text>
-            <Text style={styles.brandAttributes}>FOCUSED · DISCIPLINED · PRIVATE</Text>
-          </View>
-          <Title>Train what most men ignore.</Title>
-          <Body muted>Short, private training built for men&apos;s performance and consistency.</Body>
-        </View>
-        <View style={styles.bottomActions}>
-          <PrimaryButton label="Get Started" onPress={goNext} testID="get-started" />
-          <TextButton label="Sign In" onPress={onSignIn} />
-        </View>
-      </Screen>
-    );
-  }
-
+  const reduceMotion = useReducedMotion();
+  if (step === 0) return <BrandStep onContinue={goNext} onSignIn={onSignIn} />;
   return (
-    <Screen scroll testID={`onboarding-step-${step}`}>
+    <Screen scroll testID={`onboarding-step-${step}`} contentStyle={styles.stepScreen}>
       <TopBar onBack={goBack} />
-      <StepProgress current={step} total={11} />
-      <Animated.View
-        key={step}
-        entering={FadeInRight.duration(260)}
-        exiting={FadeOutLeft.duration(180)}
-        style={styles.stepBody}
-      >
-        {renderStep()}
+      <Animated.View key={step} entering={reduceMotion ? undefined : FadeInRight.duration(280)} exiting={reduceMotion ? undefined : FadeOutLeft.duration(180)} style={styles.stepBody}>
+        {step === 1 ? <FoundationStep onContinue={goNext} /> : null}
+        {step === 2 ? <DailyRuleStep onContinue={goNext} /> : null}
+        {step === 3 ? <LockTimeStep value={draft.lockTime} onChange={(lockTime) => updateDraft({ lockTime })} onContinue={goNext} /> : null}
+        {step === 4 ? <AccountabilityStep selectedAppCount={draft.selectedAppCount} authorizationStatus={authorizationStatus} message={familyControlsMessage} busy={pickerBusy} chooseApps={chooseApps} onContinue={goNext} /> : null}
       </Animated.View>
+      <ProgressDots current={step} total={5} />
     </Screen>
   );
-
-  function renderStep() {
-    switch (step) {
-      case 1:
-        return (
-          <StepLayout
-            eyebrow="YOUR SPACE"
-            title="First, what should we call you?"
-            support="A nickname is enough. This stays personal."
-            action={
-              <PrimaryButton label="Continue" onPress={goNext} disabled={!draft.nickname.trim()} />
-            }
-          >
-            <Field
-              autoFocus
-              autoCapitalize="words"
-              maxLength={24}
-              value={draft.nickname}
-              onChangeText={(nickname) => updateDraft({ nickname })}
-              placeholder="Nickname"
-              returnKeyType="next"
-              onSubmitEditing={() => draft.nickname.trim() && goNext()}
-              accessibilityLabel="Nickname"
-            />
-          </StepLayout>
-        );
-      case 2:
-        return (
-          <StepLayout
-            eyebrow="THE OVERLOOKED FOUNDATION"
-            title="Most men train what shows."
-            support="Chest. Arms. Abs. The hips get overlooked. That’s where we start."
-            action={<PrimaryButton label="Continue" onPress={goNext} />}
-          >
-            <Card style={styles.ahaCard} elevated>
-              <View style={styles.ahaIcon}>
-                <Icon name="figure.flexibility" color={colors.accent} size={46} />
-              </View>
-              <Text style={styles.ahaTitle}>Control begins at the center.</Text>
-              <Text style={styles.ahaCopy}>
-                Guided training built around hip control, lower-body strength, and consistency.
-              </Text>
-            </Card>
-          </StepLayout>
-        );
-      case 3:
-        return (
-          <ChoiceStep
-            eyebrow="YOUR FOCUS"
-            title="What are you here to build?"
-            options={goals}
-            selected={draft.goal}
-            select={(goal) => updateDraft({ goal })}
-            next={goNext}
-          />
-        );
-      case 4:
-        return (
-          <ChoiceStep
-            eyebrow="YOUR BARRIER"
-            title="What usually gets in the way?"
-            options={barriers}
-            selected={draft.barrier}
-            select={(barrier) => updateDraft({ barrier })}
-            next={goNext}
-          />
-        );
-      case 5:
-        return (
-          <StepLayout
-            eyebrow="THE DAILY FORMAT"
-            title="One movement. Five guided sets."
-            support="We handle the pace. You do the work."
-            action={<PrimaryButton label="Continue" onPress={goNext} />}
-          >
-            <Card style={styles.structureCard}>
-              <StructureRow icon="figure.strengthtraining.traditional" value="1" label="movement" />
-              <Divider />
-              <StructureRow icon="square.stack.3d.up" value="5" label="guided sets" />
-              <Divider />
-              <StructureRow icon="timer" value="20 sec" label="rest between sets" />
-            </Card>
-          </StepLayout>
-        );
-      case 6:
-        return (
-          <StepLayout
-            eyebrow="DAILY COMMITMENT"
-            title="When do you want today’s training done by?"
-            support="This becomes your recurring daily Lock Time."
-            action={<PrimaryButton label="Confirm Lock Time" onPress={goNext} />}
-          >
-            <View style={styles.timePickerCard}>
-              <DateTimePicker
-                value={dateFromLockTime(draft.lockTime)}
-                mode="time"
-                display="spinner"
-                themeVariant="dark"
-                accentColor={colors.accent}
-                style={styles.timePicker}
-                onValueChange={(_, date) => updateDraft({ lockTime: formatLockTime(date) })}
-                testID="lock-time-wheel"
-              />
-              <Text style={styles.timePickerValue}>{draft.lockTime}</Text>
-            </View>
-          </StepLayout>
-        );
-      case 7:
-        return (
-          <StepLayout
-            eyebrow="ACCOUNTABILITY"
-            title="Now make it a commitment."
-            support={`If today’s training isn’t complete by ${draft.lockTime}, the apps you choose will wait until you’re finished.`}
-            action={<PrimaryButton label="Set Up Accountability" onPress={goNext} />}
-          >
-            <View style={styles.commitmentFlow}>
-              <FlowNode icon="figure.run" label="Train" active />
-              <View style={styles.flowLine} />
-              <FlowNode icon="clock" label={draft.lockTime} />
-              <View style={styles.flowLine} />
-              <FlowNode icon="lock" label="Apps wait" />
-              <View style={styles.flowLine} />
-              <FlowNode icon="checkmark.shield" label="Clear" active />
-            </View>
-          </StepLayout>
-        );
-      case 8:
-        return (
-          <StepLayout
-            eyebrow="APPLE SCREEN TIME"
-            title="Connect Screen Time"
-            support="VAEL uses Apple’s Screen Time controls to apply the accountability rules you choose."
-            action={
-              <View style={styles.stackedActions}>
-                <PrimaryButton
-                  label={authorizationBusy ? 'Connecting…' : 'Connect Screen Time'}
-                  onPress={requestScreenTime}
-                  disabled={authorizationBusy}
-                  icon="checkmark.shield"
-                />
-                <TextButton label="Continue Without Locks" onPress={goNext} />
-              </View>
-            }
-          >
-            <Card style={styles.privacyCard}>
-              <Icon name="hand.raised" color={colors.accent} size={26} />
-              <View style={styles.privacyCopy}>
-                <Text style={styles.privacyTitle}>You stay in control.</Text>
-                <Text style={styles.privacyBody}>You choose which apps are included.</Text>
-              </View>
-            </Card>
-          </StepLayout>
-        );
-      case 9:
-        return (
-          <StepLayout
-            eyebrow="SELECTED APPS"
-            title="Which apps should wait until you’ve shown up?"
-            support="Choose the apps you want tied to your daily commitment."
-            action={
-              <View style={styles.stackedActions}>
-                <PrimaryButton
-                  label={draft.selectedAppCount ? 'Continue' : 'Choose Apps'}
-                  onPress={draft.selectedAppCount ? goNext : chooseApps}
-                  disabled={pickerBusy}
-                />
-                {draft.selectedAppCount ? (
-                  <TextButton label="Change Selection" onPress={chooseApps} />
-                ) : (
-                  <TextButton label="Continue Without Locks" onPress={goNext} />
-                )}
-              </View>
-            }
-          >
-            <Card style={styles.appsCard}>
-              <View style={styles.appsIcon}>
-                <Icon name="app.dashed" color={colors.accent} size={34} />
-              </View>
-              <Text style={styles.appsCount}>{draft.selectedAppCount || 'No'}</Text>
-              <Text style={styles.appsLabel}>
-                {draft.selectedAppCount === 1 ? 'app selected' : 'apps selected'}
-              </Text>
-              <Text style={styles.appsSupport}>
-                {draft.selectedAppCount
-                  ? 'Your selection can be changed later in Locks.'
-                  : 'Training still works without accountability.'}
-              </Text>
-            </Card>
-          </StepLayout>
-        );
-      case 10:
-        return (
-          <StepLayout
-            eyebrow="READY FOR TODAY"
-            title="Your Daily Setup"
-            support="Simple enough to repeat. Structured enough to keep you honest."
-            action={
-              <View style={styles.stackedActions}>
-                <PrimaryButton label="Continue to Home" onPress={goNext} />
-                <Text style={styles.reassurance}>Your first full session is on us.</Text>
-              </View>
-            }
-          >
-            <Card style={styles.setupCard}>
-              <SetupRow label="Focus" value={draft.goal} />
-              <Divider />
-              <SetupRow label="Daily training" value="1 movement · 5 guided sets" />
-              <Divider />
-              <SetupRow label="Done by" value={draft.lockTime} />
-              <Divider />
-              <SetupRow
-                label="Accountability"
-                value={draft.selectedAppCount ? `${draft.selectedAppCount} selected apps` : 'Inactive'}
-              />
-            </Card>
-          </StepLayout>
-        );
-      default:
-        return null;
-    }
-  }
 }
 
-function StepLayout({
-  eyebrow,
-  title,
-  support,
-  children,
-  action,
-}: {
-  eyebrow: string;
-  title: string;
-  support?: string;
-  children: ReactNode;
-  action: ReactNode;
+function BrandStep({ onContinue, onSignIn }: { onContinue: () => void; onSignIn: () => void }) {
+  return (
+    <Screen testID="onboarding-brand" contentStyle={styles.brandScreen}>
+      <View style={styles.brandAtmosphere} pointerEvents="none">
+        <Svg width="100%" height="100%" viewBox="0 0 393 560" style={StyleSheet.absoluteFill}>
+          <Path d="M-24 420 L95 252 L146 305 L198 224 L265 300 L318 244 L430 405" fill="none" stroke={colors.borderStrong} strokeWidth={1} />
+          <Path d="M-24 456 L95 288 L146 341 L198 260 L265 336 L318 280 L430 441" fill="none" stroke={colors.border} strokeWidth={1} />
+          <Circle cx={304} cy={182} r={5} fill={colors.accent} />
+        </Svg>
+      </View>
+      <View style={styles.brandIdentity}>
+        <VaelMark size={116} strokeWidth={2.8} />
+        <Text style={styles.brandWordmark}>VAEL</Text>
+        <Text style={styles.brandAttributes}>FOCUSED · DISCIPLINED · PRIVATE</Text>
+      </View>
+      <View style={styles.brandCopy}>
+        <Text style={styles.brandHeadline}>Train what{`\n`}most men <Text style={styles.accentWord}>ignore.</Text></Text>
+        <Text style={styles.brandSupport}>Short, private training for the foundation most routines overlook.</Text>
+        <Text style={styles.brandAreas}>HIPS · CORE · PELVIC CONTROL</Text>
+      </View>
+      <View style={styles.brandActions}>
+        <PrimaryButton label="Get Started" onPress={onContinue} testID="get-started" />
+        <TextButton label="Sign In" onPress={onSignIn} />
+        <ProgressDots current={0} total={5} />
+      </View>
+    </Screen>
+  );
+}
+
+function FoundationStep({ onContinue }: { onContinue: () => void }) {
+  return (
+    <StepScaffold eyebrow="THE FOUNDATION" title={<Text>Men train what shows.{`\n`}We train <Text style={styles.accentWord}>what controls.</Text></Text>} support="Hips. Glutes. Core. Pelvic control. Short guided work built around an overlooked part of men's training." action={<PrimaryButton label="Continue" onPress={onContinue} />}>
+      <View style={styles.foundationVisual}>
+        <Image source={foundationCoach} style={styles.foundationCoach} contentFit="contain" transition={180} />
+        <View style={styles.foundationShade} pointerEvents="none" />
+        <View style={styles.foundationList}>
+          <FocusRow icon="figure.flexibility" title="Hips" support="Power and stability." />
+          <FocusRow icon="figure.core.training" title="Core" support="Strength and control." />
+          <FocusRow icon="circle.hexagongrid" title="Pelvic Control" support="Control that carries over." />
+        </View>
+      </View>
+    </StepScaffold>
+  );
+}
+
+function DailyRuleStep({ onContinue }: { onContinue: () => void }) {
+  return (
+    <StepScaffold eyebrow="THE DAILY RULE" title={<Text>One movement.{`\n`}Five sets. <Text style={styles.accentWord}>Done.</Text></Text>} support="Your session is already structured. We handle the pace. You do the work." action={<PrimaryButton label="Continue" onPress={onContinue} />}>
+      <View style={styles.ruleHero}>
+        <StatHero value="1" label="MOVEMENT" />
+        <View style={styles.ruleDivider} />
+        <StatHero value="5" label="GUIDED SETS" />
+        <View style={styles.ruleDivider} />
+        <StatHero value="20" suffix="SEC" label="BETWEEN SETS" />
+      </View>
+      <View style={styles.ruleNote}><Icon name="timer" color={colors.accent} size={22} weight="semibold" /><Text style={styles.ruleNoteText}>No planning. No logging. Just follow the pace.</Text></View>
+    </StepScaffold>
+  );
+}
+
+function LockTimeStep({ value, onChange, onContinue }: { value: string; onChange: (value: string) => void; onContinue: () => void }) {
+  return (
+    <StepScaffold eyebrow="DAILY COMMITMENT" title={<Text>When do you{`\n`}want it <Text style={styles.accentWord}>done?</Text></Text>} support="Finish before your Lock Time and nothing changes. If you don't, the apps you choose wait until you're finished." action={<PrimaryButton label="Set Lock Time" onPress={onContinue} />}>
+      <View style={styles.timePickerCard}>
+        <View style={styles.timeHeader}><Icon name="clock" color={colors.accent} size={21} /><Text style={styles.timeLabel}>DAILY LOCK TIME</Text></View>
+        <DateTimePicker value={dateFromLockTime(value)} mode="time" display="spinner" themeVariant="dark" accentColor={colors.accent} style={styles.timePicker} onValueChange={(_, date) => onChange(formatLockTime(date))} testID="lock-time-wheel" />
+        <Text style={styles.timeValue}>{value}</Text>
+      </View>
+      <Text style={styles.trustLine}>Repeats daily. You can change it later in Locks.</Text>
+    </StepScaffold>
+  );
+}
+
+function AccountabilityStep({ selectedAppCount, authorizationStatus, message, busy, chooseApps, onContinue }: {
+  selectedAppCount: number;
+  authorizationStatus: FamilyControlsAuthorizationDisplayStatus;
+  message: string | null;
+  busy: boolean;
+  chooseApps: () => void;
+  onContinue: () => void;
 }) {
+  const denied = authorizationStatus === 'denied';
+  const selected = selectedAppCount > 0 && (authorizationStatus === 'approved' || authorizationStatus === 'approvedWithDataAccess');
   return (
-    <View style={styles.stepLayout}>
-      <View style={styles.stepHeader}>
-        <Eyebrow accent>{eyebrow}</Eyebrow>
-        <Title>{title}</Title>
-        {support ? <Body muted>{support}</Body> : null}
+    <StepScaffold eyebrow="ACCOUNTABILITY" title={<Text>Choose what <Text style={styles.accentWord}>waits.</Text></Text>} support="VAEL uses Apple's Screen Time controls to restrict only the apps you choose when today's training isn't complete." action={<View style={styles.actionStack}>
+      {selected ? <PrimaryButton label="Continue" onPress={onContinue} /> : null}
+      {!selected ? <PrimaryButton label={busy ? 'Opening…' : denied ? 'Open Settings' : 'Connect & Choose Apps'} onPress={denied ? () => void Linking.openSettings() : chooseApps} disabled={busy} /> : null}
+      {selected ? <TextButton label="Change Selection" onPress={chooseApps} /> : null}
+    </View>}>
+      <View style={styles.accountabilityVisual}>
+        <Image source={accountabilityCoach} style={styles.accountabilityCoach} contentFit="cover" />
+        <View style={styles.accountabilityShade} pointerEvents="none" />
+        <View style={styles.accountabilityStatus}>
+          <View style={[styles.lockOrb, denied && styles.lockOrbDenied]}><Icon name={denied ? 'exclamationmark.lock' : selected ? 'checkmark.shield.fill' : 'lock.fill'} color={colors.accent} size={36} weight="semibold" /></View>
+          <Text style={styles.appsCount}>{denied ? 'ACCESS OFF' : selected ? selectedAppCount : 'ONLY YOUR CHOICES'}</Text>
+          <Text style={styles.appsLabel}>{denied ? 'Screen Time access is disabled.' : selected ? `${selectedAppCount === 1 ? 'app' : 'apps'} selected` : 'You stay in control.'}</Text>
+        </View>
       </View>
-      <View style={styles.stepContent}>
-        <OnboardingVisual label={eyebrow} />
-        {children}
-      </View>
-      <View style={styles.stepAction}>{action}</View>
-    </View>
+      {message ? <Text accessibilityRole="alert" style={styles.permissionMessage}>{message}</Text> : null}
+      <View style={styles.privacyRow}><Icon name="hand.raised.fill" color={colors.accent} size={18} /><Text style={styles.privacyText}>VAEL never sees which apps you select. Apple keeps that selection private.</Text></View>
+    </StepScaffold>
   );
 }
 
-function OnboardingVisual({ label }: { label: string }) {
-  return (
-    <View style={styles.stepVisual}>
-      <Svg width="100%" height="100%" viewBox="0 0 340 108" style={StyleSheet.absoluteFill}>
-        <Path d="M-20 96 L88 8 L178 82 L270 18 L360 92" fill="none" stroke={colors.borderStrong} strokeWidth={1} />
-        <Path d="M-20 108 L88 20 L178 94 L270 30 L360 104" fill="none" stroke={colors.border} strokeWidth={1} />
-        <Circle cx={270} cy={18} r={3.5} fill={colors.accent} />
-      </Svg>
-      <VaelMark size={62} strokeWidth={2.4} />
-      <Text numberOfLines={1} style={styles.visualLabel}>{label}</Text>
-    </View>
-  );
+function StepScaffold({ eyebrow, title, support, children, action }: { eyebrow: string; title: ReactNode; support: string; children: ReactNode; action: ReactNode }) {
+  return <View style={styles.scaffold}><View style={styles.stepHeader}><Text style={styles.eyebrow}>{eyebrow}</Text><Title>{title}</Title><Body muted>{support}</Body></View><View style={styles.stepContent}>{children}</View><View style={styles.stepAction}>{action}</View></View>;
 }
 
-function ChoiceStep({
-  eyebrow,
-  title,
-  options,
-  selected,
-  select,
-  next,
-}: {
-  eyebrow: string;
-  title: string;
-  options: string[];
-  selected: string;
-  select: (value: string) => void;
-  next: () => void;
-}) {
-  return (
-    <StepLayout
-      eyebrow={eyebrow}
-      title={title}
-      action={<PrimaryButton label="Continue" onPress={next} disabled={!selected} />}
-    >
-      <View style={styles.choiceList}>
-        {options.map((option) => (
-          <ChoiceCard
-            key={option}
-            label={option}
-            selected={selected === option}
-            onPress={() => select(option)}
-          />
-        ))}
-      </View>
-    </StepLayout>
-  );
+function FocusRow({ icon, title, support }: { icon: Parameters<typeof Icon>[0]['name']; title: string; support: string }) {
+  return <View style={styles.focusRow}><View style={styles.focusIcon}><Icon name={icon} color={colors.accent} size={22} /></View><View style={styles.focusCopy}><Text style={styles.focusTitle}>{title}</Text><Text style={styles.focusSupport}>{support}</Text></View></View>;
 }
 
-function StructureRow({ icon, value, label }: { icon: Parameters<typeof Icon>[0]['name']; value: string; label: string }) {
-  return (
-    <View style={styles.structureRow}>
-      <View style={styles.structureIcon}>
-        <Icon name={icon} color={colors.accent} size={24} />
-      </View>
-      <Text style={styles.structureValue}>{value}</Text>
-      <Text style={styles.structureLabel}>{label}</Text>
-    </View>
-  );
+function StatHero({ value, suffix, label }: { value: string; suffix?: string; label: string }) {
+  return <View style={styles.statHero}><View style={styles.statValueRow}><Text style={styles.statValue}>{value}</Text>{suffix ? <Text style={styles.statSuffix}>{suffix}</Text> : null}</View><Text style={styles.statLabel}>{label}</Text></View>;
 }
 
-function FlowNode({ icon, label, active = false }: { icon: Parameters<typeof Icon>[0]['name']; label: string; active?: boolean }) {
-  return (
-    <View style={styles.flowNode}>
-      <View style={[styles.flowIcon, active && styles.flowIconActive]}>
-        <Icon name={icon} color={active ? colors.accent : colors.secondary} size={20} />
-      </View>
-      <Text numberOfLines={1} style={styles.flowLabel}>{label}</Text>
-    </View>
-  );
-}
-
-function SetupRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.setupRow}>
-      <Text style={styles.setupLabel}>{label}</Text>
-      <Text style={styles.setupValue}>{value}</Text>
-    </View>
-  );
+function ProgressDots({ current, total }: { current: number; total: number }) {
+  return <View accessibilityLabel={`Step ${current + 1} of ${total}`} style={styles.progressDots}>{Array.from({ length: total }, (_, index) => <View key={index} style={[styles.progressDot, index === current && styles.progressDotActive]} />)}</View>;
 }
 
 function dateFromLockTime(value: string) {
   const match = value.match(/^(\d{1,2}):(\d{2})\s(AM|PM)$/i);
   const date = new Date();
-  if (!match) {
-    date.setHours(21, 0, 0, 0);
-    return date;
-  }
+  if (!match) { date.setHours(21, 0, 0, 0); return date; }
   let hour = Number(match[1]) % 12;
   if (match[3].toUpperCase() === 'PM') hour += 12;
   date.setHours(hour, Number(match[2]), 0, 0);
@@ -458,115 +181,28 @@ function dateFromLockTime(value: string) {
 }
 
 function formatLockTime(date: Date) {
-  return new Intl.DateTimeFormat('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  }).format(date);
+  return new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).format(date);
 }
 
 const styles = StyleSheet.create({
-  brandTop: { paddingTop: spacing.md },
-  brandHero: { flex: 1, justifyContent: 'center', gap: spacing.lg, paddingBottom: spacing.xxxl },
-  brandImageWell: {
-    width: '100%',
-    height: 310,
-    borderRadius: radii.xl,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    marginBottom: spacing.md,
-    backgroundColor: colors.brandGraphite,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandMark: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandWordmark: { color: colors.primary, fontSize: 31, fontWeight: '300', letterSpacing: 14, marginLeft: 14, marginTop: spacing.lg },
+  stepScreen: { paddingBottom: spacing.md }, stepBody: { flex: 1 }, brandScreen: { overflow: 'hidden' },
+  brandAtmosphere: { position: 'absolute', left: -spacing.xl, right: -spacing.xl, top: 60, height: 510, opacity: 0.72 },
+  brandIdentity: { flex: 1.15, alignItems: 'center', justifyContent: 'center', paddingTop: spacing.xxxl },
+  brandWordmark: { color: colors.primary, fontSize: 31, fontWeight: '300', letterSpacing: 14, marginLeft: 14, marginTop: spacing.md },
   brandAttributes: { color: colors.secondary, fontSize: 9, letterSpacing: 2.1, marginTop: spacing.sm },
-  bottomActions: { gap: spacing.sm, paddingBottom: spacing.xl },
-  stepBody: { flex: 1 },
-  timePickerCard: {
-    minHeight: 250,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  timePicker: { width: '100%', height: 200 },
-  timePickerValue: { ...typography.eyebrow, color: colors.accent, marginBottom: spacing.lg },
-  stepLayout: { flex: 1, minHeight: 720 },
-  stepHeader: { gap: spacing.md, paddingTop: spacing.xxxl },
-  stepContent: { flex: 1, paddingTop: spacing.xxl, gap: spacing.xxl },
-  stepVisual: { height: 108, borderRadius: radii.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSoft, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.xl, gap: spacing.lg },
-  visualLabel: { flex: 1, color: colors.secondary, fontSize: 10, letterSpacing: 1.4, textAlign: 'right' },
-  stepAction: { paddingTop: spacing.xxl, paddingBottom: spacing.lg },
-  stackedActions: { gap: spacing.sm },
-  choiceList: { gap: spacing.md },
-  ahaCard: { padding: spacing.xxl, minHeight: 300, justifyContent: 'flex-end', gap: spacing.md },
-  ahaIcon: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: colors.accentSurface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xxxl,
-  },
-  ahaTitle: { color: colors.primary, fontSize: 22, fontWeight: '700' },
-  ahaCopy: { color: colors.secondary, fontSize: 15, lineHeight: 22 },
-  structureCard: { paddingVertical: spacing.sm },
-  structureRow: { minHeight: 82, flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
-  structureIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: radii.md,
-    backgroundColor: colors.accentSurface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  structureValue: { color: colors.primary, fontSize: 25, fontWeight: '700', minWidth: 62 },
-  structureLabel: { color: colors.secondary, fontSize: 15, flex: 1 },
-  commitmentFlow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  flowNode: { width: 62, alignItems: 'center', gap: spacing.sm },
-  flowIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderColor: colors.borderStrong,
-    borderWidth: 1,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  flowIconActive: { borderColor: colors.accent },
-  flowLabel: { color: colors.secondary, fontSize: 10, textAlign: 'center' },
-  flowLine: { height: 1, flex: 1, backgroundColor: colors.borderStrong, marginTop: 26 },
-  privacyCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, padding: spacing.xl },
-  privacyCopy: { flex: 1, gap: spacing.xs },
-  privacyTitle: { color: colors.primary, fontSize: 17, fontWeight: '700' },
-  privacyBody: { color: colors.secondary, fontSize: 14 },
-  appsCard: { alignItems: 'center', paddingVertical: spacing.xxxl },
-  appsIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 24,
-    backgroundColor: colors.accentSurface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xl,
-  },
-  appsCount: { color: colors.primary, fontSize: 42, fontWeight: '700' },
-  appsLabel: { ...typography.eyebrow, color: colors.accent, marginTop: spacing.xs },
-  appsSupport: { color: colors.secondary, fontSize: 13, textAlign: 'center', marginTop: spacing.lg },
-  setupCard: { paddingVertical: spacing.sm },
-  setupRow: { paddingVertical: spacing.lg, gap: spacing.xs },
-  setupLabel: { ...typography.eyebrow, color: colors.secondary, textTransform: 'uppercase' },
-  setupValue: { color: colors.primary, fontSize: 17, fontWeight: '600' },
-  reassurance: { color: colors.secondary, fontSize: 13, textAlign: 'center' },
+  brandCopy: { gap: spacing.lg, paddingBottom: spacing.xxxl }, brandHeadline: { color: colors.primary, fontSize: 43, lineHeight: 49, letterSpacing: -1.2, fontWeight: '800' },
+  brandSupport: { color: colors.secondary, fontSize: 17, lineHeight: 25, maxWidth: 330 }, brandAreas: { ...typography.eyebrow, color: colors.accent, fontSize: 10 },
+  brandActions: { gap: spacing.sm, paddingBottom: spacing.md }, accentWord: { color: colors.accent }, scaffold: { flex: 1, minHeight: 560 },
+  stepHeader: { gap: spacing.md, paddingTop: spacing.sm }, eyebrow: { ...typography.eyebrow, color: colors.accent }, stepContent: { flex: 1, justifyContent: 'center', paddingVertical: spacing.md, gap: spacing.md }, stepAction: { paddingBottom: spacing.xs },
+  foundationVisual: { height: 276, overflow: 'hidden', borderRadius: radii.xl, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.borderStrong, backgroundColor: colors.surface },
+  foundationCoach: { position: 'absolute', width: '76%', height: '118%', right: -34, bottom: -46 }, foundationShade: { position: 'absolute', inset: 0, backgroundColor: 'rgba(6,7,8,0.28)' },
+  foundationList: { flex: 1, justifyContent: 'center', gap: spacing.md, padding: spacing.lg, width: '59%' }, focusRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  focusIcon: { width: 40, height: 40, borderRadius: 15, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: 'rgba(17,18,20,0.9)', alignItems: 'center', justifyContent: 'center' }, focusCopy: { flex: 1, gap: 1 }, focusTitle: { color: colors.primary, fontSize: 15, fontWeight: '700' }, focusSupport: { color: colors.secondary, fontSize: 11, lineHeight: 15 },
+  ruleHero: { borderRadius: radii.xl, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: colors.surface, overflow: 'hidden' }, ruleDivider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.borderStrong, marginHorizontal: spacing.xl },
+  statHero: { minHeight: 96, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.xxl }, statValueRow: { width: 116, flexDirection: 'row', alignItems: 'baseline', gap: spacing.xs }, statValue: { color: colors.accent, fontSize: 52, lineHeight: 58, fontWeight: '800', letterSpacing: -2 }, statSuffix: { color: colors.accent, fontSize: 12, fontWeight: '800', letterSpacing: 1.2 }, statLabel: { color: colors.primary, fontSize: 13, fontWeight: '700', letterSpacing: 1.5 },
+  ruleNote: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.sm }, ruleNoteText: { flex: 1, color: colors.secondary, fontSize: 13, lineHeight: 19 },
+  timePickerCard: { borderRadius: radii.xl, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: colors.surface, overflow: 'hidden', alignItems: 'center' }, timeHeader: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, paddingTop: spacing.md }, timeLabel: { ...typography.eyebrow, color: colors.accent }, timePicker: { width: '100%', height: 188 }, timeValue: { color: colors.primary, fontSize: 24, fontWeight: '700', paddingBottom: spacing.lg }, trustLine: { color: colors.tertiary, fontSize: 12, textAlign: 'center' },
+  accountabilityVisual: { height: 235, overflow: 'hidden', borderRadius: radii.xl, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.borderStrong, backgroundColor: colors.surface }, accountabilityCoach: { position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.58 }, accountabilityShade: { position: 'absolute', inset: 0, backgroundColor: 'rgba(3,4,5,0.48)' }, accountabilityStatus: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm }, lockOrb: { width: 80, height: 80, borderRadius: 40, borderWidth: 1.5, borderColor: colors.accent, backgroundColor: 'rgba(255,201,77,0.08)', alignItems: 'center', justifyContent: 'center', shadowColor: colors.accent, shadowOpacity: 0.24, shadowRadius: 16 }, lockOrbDenied: { borderColor: colors.borderStrong, shadowOpacity: 0 }, appsCount: { color: colors.accent, fontSize: 15, fontWeight: '800', letterSpacing: 1.8, marginTop: spacing.sm }, appsLabel: { color: colors.secondary, fontSize: 14 },
+  permissionMessage: { color: colors.primary, fontSize: 13, lineHeight: 19, borderWidth: 1, borderColor: colors.borderStrong, borderRadius: radii.md, backgroundColor: colors.surface, padding: spacing.md }, privacyRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center', paddingHorizontal: spacing.sm }, privacyText: { flex: 1, color: colors.secondary, fontSize: 11, lineHeight: 16 }, actionStack: { gap: spacing.xs },
+  progressDots: { minHeight: 22, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: spacing.md }, progressDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.borderStrong }, progressDotActive: { backgroundColor: colors.accent, width: 9, height: 9, borderRadius: 5 },
 });

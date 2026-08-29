@@ -599,3 +599,38 @@ persisted daily result, never a reroll action.
 The owner-supplied startup specification is also authoritative: native launch
 uses a warm-graphite field and faint VAEL mark, followed by one cold-launch-only
 draw/glow/settle sequence that transitions directly into the first real screen.
+
+---
+
+## DEC-026 — Required Account and Required Paywall Before Home
+
+**Status:** Accepted owner override — 2026-08-28
+
+The first-run flow is now:
+
+**Brand / Onboarding → Required Account Creation or Sign In → Required Paywall
+→ Active Entitlement → Home → Reveal → Training.**
+
+This supersedes DEC-023 and all earlier first-free, optional-account,
+post-routine-account, closable-paywall, and signed-out-limited-Home decisions.
+There is no first free routine. A new daily training session requires both a
+signed-in account and one of: Monthly active, Annual 3-Day Trial, or Annual
+active entitlement.
+
+Monthly remains USD $9.99/month and has no free trial. Annual remains USD
+$39.99/year, is selected by default / Best Value, and alone includes a 3-Day
+Free Trial. The 3-Month plan remains removed.
+
+Account state and entitlement state are separate. `signedIn` must never imply
+premium access. The required Paywall cannot be dismissed, navigated back from,
+or bypassed to Home/Training without active entitlement. Existing users may use
+Brand → Sign In, restore account state, reconcile entitlement, then reach Home
+only when entitlement is active.
+
+Until real authentication and StoreKit/RevenueCat services are connected, the
+application may expose production-shaped adapter boundaries and deterministic
+Debug-only controls. Debug controls must never be reachable in Release builds
+and must not mutate real App Store purchase or Family Controls state.
+
+The safety rule remains: no valid training access means no active
+accountability schedule or shield enforcement.

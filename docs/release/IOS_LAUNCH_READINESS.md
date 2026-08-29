@@ -13,10 +13,10 @@
 - iOS first; Android later, with cross-platform architecture reserved.
 - First value experience does **not** force login.
 - Exactly one full free routine is completed before the user is asked to create/sign in to an account; earned progress/history remains visible if they decline.
-- Account creation/sign-in is required before starting Trial / Subscription.
+- Account creation/sign-in is required before Paywall, Home, or Training.
 - Account direction: Apple + Google + Email; Phone OTP is not an MVP priority.
-- 3-day free trial is locked; subscription plans are Monthly $9.99/month and Annual $39.99/year. Annual is default/recommended; 3-Month is removed.
-- Paywall may be closed. Closing it does not grant ongoing free daily training. No active training entitlement means no active accountability lock.
+- The 3-Day Free Trial belongs only to Annual. Subscription plans are Monthly $9.99/month with no trial and Annual $39.99/year with the trial. Annual is default/recommended; 3-Month is removed.
+- Paywall is required and cannot be dismissed or navigated around to Home/Training without active entitlement. No valid training access means no active accountability lock.
 - Daily training structure is exactly 1 movement/day, seven unique movements
   sampled from a ten-movement library per persisted cycle, exactly 5 sets,
   movement-specific reps/cadence, and exactly 20s rest.
@@ -158,9 +158,9 @@ This track runs in parallel with development; it must not block coding.
 # 3. Account architecture and deletion
 
 ## 3.1 Login timing
-- [x] Preserve the Phase 04 decision: the first complete product experience, including exactly one full free routine, works without an account.
-- [x] Ask for account creation/sign-in after first routine completion; the user may decline and retain locally earned progress/history in a limited signed-out Home state.
-- [x] Require account creation/sign-in before Trial / Subscription; do not repeatedly force the account screen on app open.
+- [x] Require account creation/sign-in immediately after onboarding; there is no first free routine or signed-out Home state.
+- [x] Route every signed-in user without an active training entitlement to the required Paywall on launch.
+- [x] Keep authentication and entitlement state separate; account success never grants training access by itself.
 - [ ] Document and implement which features require an account (paid training, cloud sync, cross-device history, subscription restoration linkage, etc.).
 
 ## 3.2 Login methods
@@ -189,7 +189,7 @@ This track runs in parallel with development; it must not block coding.
 - [ ] One subscription group for the MVP plans unless a later monetization decision requires otherwise.
 - [ ] Monthly product created at the locked reference price of USD $9.99/month.
 - [ ] Annual product created at the locked reference price of USD $39.99/year and configured as the default/recommended option.
-- [ ] 3-day free trial configured as the intended introductory offer.
+- [ ] Annual-only 3-day free trial configured as the intended introductory offer; confirm Monthly has no trial.
 - [ ] Product IDs follow a permanent naming convention and match App Store Connect / RevenueCat / code exactly.
 - [ ] Product display names, descriptions, review screenshots, pricing and availability are complete.
 - [ ] First subscription is submitted with the first app version as required.
@@ -214,13 +214,14 @@ This track runs in parallel with development; it must not block coding.
 - [ ] Terms of Use / EULA link works.
 - [ ] Restore Purchases exists and is easy to find.
 - [ ] Existing subscriber sign-in / restore path works.
-- [ ] Paywall can be closed; closing it does not grant ongoing free daily training.
+- [ ] Required Paywall cannot be closed, swiped back, or relaunched around to reach Home/Training without active entitlement.
 - [ ] No active training entitlement results in no active accountability lock.
 - [ ] App Store description clearly indicates which showcased functionality requires subscription when relevant.
 
 ## 4.4 Subscription state testing
 Test in local StoreKit **and** real Sandbox/TestFlight.
 - [ ] Eligible free-trial purchase.
+- [ ] Monthly purchase charges immediately and never presents trial language.
 - [ ] Non-eligible trial user.
 - [ ] Monthly purchase.
 - [ ] Annual purchase.
@@ -344,9 +345,10 @@ Each permission must have a specific user-facing reason and a denial path.
 
 ## Core product
 - [ ] Fresh install.
-- [ ] Onboarding skip/back/interrupt paths.
-- [ ] First routine works without account.
-- [ ] Save-progress/account prompt after first routine.
+- [ ] Onboarding back/interrupt paths; there is no skip or first-free-routine bypass.
+- [ ] Onboarding completion routes to required account creation/sign-in.
+- [ ] Signed-in users without active entitlement route to the required Paywall.
+- [ ] Monthly, Annual trial, Annual active, expired and signed-out launch-routing states.
 - [ ] App selection works.
 - [ ] Lock activates at intended time.
 - [ ] Completing before lock time prevents that day's lock according to Phase 02 rules.

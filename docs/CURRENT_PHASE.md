@@ -203,6 +203,20 @@ and complete authentication UI/integration boundaries. These are no longer
 items in the historical list below. Real provider/backend authentication
 remains unconfigured and must not be represented as live.
 
+## Owner Update — 2026-08-28
+
+DEC-026 replaces the historical first-free activation path. The accepted
+first-run route is now:
+
+**Brand / Onboarding → Required Account → Required Paywall → Active Entitlement
+→ Home → Reveal → Training.**
+
+There is no routine before account/paywall. Monthly is USD $9.99/month with no
+trial. Annual is USD $39.99/year, selected by default, and alone includes the
+3-Day Free Trial. Auth and entitlement remain separate states. Until production
+providers are connected, only production-shaped adapters and Debug-only local
+test overrides may represent signed-in/entitled states.
+
 ## Historical Do Not Start Yet
 
 Do not invent or finalize outside the next approved phase:
@@ -245,21 +259,20 @@ but must preserve the locked UX behavior and state semantics.
 
 **Status:** Closed / Passed on 2026-08-22 per Owner decision.
 
-Passed coverage includes Home, Train, Locks, the core three-tab cross-state QA,
-onboarding, first full free routine, post-free signed-out behavior, Profile /
-Account / Subscription utility coverage, and the final UX coverage audit.
+Passed coverage included Home, Train, Locks, the core three-tab cross-state QA,
+the historical onboarding model, Profile / Account / Subscription utility
+coverage, and the final UX coverage audit. The historical first-free and
+signed-out Home behavior is superseded by the 2026-08-28 Owner revision above.
 
-The final primary navigation is **Home | Train | Locks**. The first complete
-product experience does not require an account: the user can complete exactly
-one full free daily routine (one movement, five sets, four 20-second rests) and
-retain earned progress/history locally. After completion, account creation or
-sign-in is required before starting the 3-Day Free Trial or any subscription.
+The final primary navigation remains **Home | Train | Locks**. Current access
+order is Onboarding → Required Account → Required Paywall → Active Entitlement
+→ Home. Authentication and entitlement remain separate states.
 
-The locked subscription reference is **USD $9.99/month** and **USD
-$39.99/year**, with Annual selected by default; the 3-Month plan is removed.
-The paywall is closable and includes Restore Purchases, Terms, Privacy, trial
-and renewal disclosure. No active training entitlement means no active
-accountability lock; closing the paywall does not create ongoing free training.
+The locked subscription reference is **USD $9.99/month with no trial** and
+**USD $39.99/year with the Annual-only 3-Day Free Trial**, with Annual selected
+by default; the 3-Month plan is removed. The required Paywall has no close/back
+bypass and includes Restore Purchases, Terms, Privacy, trial and renewal
+disclosure. No active training entitlement means no active accountability lock.
 
 ## Phase 05 Simulator UI — Owner Revision 02 (2026-08-24)
 

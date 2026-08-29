@@ -1,6 +1,6 @@
 # Men's Discipline App — Project Handoff
 
-**Last updated:** 2026-08-26 (America/Vancouver)
+**Last updated:** 2026-08-28 (America/Vancouver)
 
 **Repository:** `/Users/hanqingwang/Desktop/mens-discipline-app`
 
@@ -45,6 +45,14 @@ Always start with `git status --short --branch` and preserve existing work. Phas
 03.11 has owner approval and is now fast-forward integrated into `main`.
 
 ## Latest Accepted Product Pivot
+
+DEC-026 is the newest first-run and monetization routing authority. It
+supersedes the first-free/optional-account/closable-paywall paragraphs later in
+this continuity document. The current route is Onboarding → Required Account →
+Required Paywall → Active Entitlement → Home. Monthly has no trial; Annual alone
+has a 3-Day Free Trial. Account and entitlement are separate states.
+
+The older DEC-021 Camera pivot below remains authoritative for training.
 
 DEC-021 is authoritative.
 
@@ -150,19 +158,16 @@ is training preparation and the guided session, and Locks is accountability
 configuration/current lock state/Grace/Skip. Profile / Settings is reached from
 Home's upper-right entry.
 
-The first complete product experience requires no account. Onboarding includes
-exactly one full free daily routine: one movement, five sets,
-movement-specific reps/cadence, and four 20-second rests. Earned
-progress/history remains visible after completion, including in the signed-out
-limited Home state. New training
-requires an active entitlement. Account creation/sign-in is required before
-starting Trial/Subscription, using Apple, Google, or Email.
+The 2026-08-28 Owner override replaces the former first-free and signed-out
+Home model. Onboarding now routes directly to required account creation/sign-in
+using Apple, Google, or Email, then to the required Paywall. Home and Training
+require both a signed-in account and an active entitlement.
 
-The locked monetization reference is Monthly USD $9.99 and Annual USD $39.99
-(Annual default/recommended); 3-Month is removed. The 3-Day Free Trial remains.
-The paywall may be closed, must expose Restore Purchases / Terms / Privacy and
-clear trial/renewal disclosure, and does not grant ongoing free training when
-closed. Restore Purchases re-checks a valid existing App Store entitlement; it
+The locked monetization reference is Monthly USD $9.99 with no trial and Annual
+USD $39.99 with the Annual-only 3-Day Free Trial (Annual default/recommended);
+3-Month is removed. The required Paywall cannot be closed or bypassed and must
+expose Restore Purchases / Terms / Privacy with clear trial/renewal disclosure.
+Restore Purchases re-checks a valid existing App Store entitlement; it
 does not restart an expired subscription or undo cancellation. An entitlement
 that is still paid-through remains active after auto-renew cancellation.
 

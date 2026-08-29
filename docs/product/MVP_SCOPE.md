@@ -440,24 +440,20 @@ replaced by an older navigation model during Phase 05 visual work.
 
 # 19. First Free Experience
 
-The user's first complete routine should be available as:
+**Superseded by the 2026-08-28 Owner Override.** There is no first-free routine.
 
-**exactly one full free daily routine**
+The required first-run order is:
 
-The first routine is production-shaped: exactly one movement, exactly five
-sets, movement-specific guided repetitions and cadence, exactly four 20-second rests, and
-Set 5 → completion. It is not a shortened tutorial workout.
+**Onboarding → Account Creation / Sign In → Required Paywall → Active Entitlement → Home**
 
-The user should be able to understand the core product value before being required to start a subscription trial.
-
-This first experience should demonstrate the core loop as much as practical.
+No new daily training may begin until the user is signed in and has Monthly
+active, Annual Trial, or Annual active entitlement.
 
 ---
 
 # 20. Trial
 
-After the first complete free routine and account creation/sign-in, the
-monetization flow uses:
+After onboarding and account creation/sign-in, the Annual monetization flow uses:
 
 **3-Day Free Trial**
 
@@ -467,9 +463,7 @@ Do not silently change this to:
 - 14 days;
 - another trial duration.
 
-The three-day trial was selected intentionally. A user may decline account
-creation and return to a limited Home state, but cannot start Trial / Subscription
-until signed in.
+The three-day trial belongs only to Annual. Monthly has no free trial.
 
 ---
 
@@ -483,6 +477,9 @@ The locked MVP subscription options are:
 Reference pricing is USD $9.99/month and USD $39.99/year. Annual is the default
 recommended selection. The 3-Month plan is removed.
 
+Monthly charges immediately and has no free trial. Annual includes the 3-Day
+Free Trial, then renews at USD $39.99/year.
+
 RevenueCat is planned for subscription entitlement management.
 
 RevenueCat integration belongs to the later monetization implementation phase rather than the initial technical proof of concept.
@@ -491,20 +488,13 @@ RevenueCat integration belongs to the later monetization implementation phase ra
 
 # 22. Account Flow
 
-Account creation must NOT be forced as the first thing the user sees when opening the app.
+Account is required after the short onboarding setup and before Paywall, Home,
+or Training. Brand remains the first screen and includes an existing-user Sign
+In shortcut, so account is not the first visual impression.
 
-The user should first be able to experience the product.
-
-After the first complete routine, the user should be encouraged to:
-
-**save progress**
-
-through account creation / sign-in.
-
-The user may continue viewing locally earned Momentum, Calendar/history, Total
-Sessions, Cycles Completed, Longest Streak, and the finalized Day 1 outcome
-without an account. New daily training and Trial/Subscription require an
-account; do not repeatedly force the account screen on app open.
+Account state and subscription entitlement remain independent. Signing in does
+not grant premium access. Signed-in users without an active entitlement route
+to the required Paywall.
 
 ---
 

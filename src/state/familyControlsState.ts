@@ -23,13 +23,16 @@ export function canScheduleAccountability({
   dailyStatus,
   selectedAppCount,
   selectionRequiresReview,
+  hasActiveTrainingEntitlement = true,
 }: {
   authorizationStatus: FamilyControlsAuthorizationDisplayStatus;
   dailyStatus: DailyStatus;
   selectedAppCount: number;
   selectionRequiresReview: boolean;
+  hasActiveTrainingEntitlement?: boolean;
 }) {
   return (
+    hasActiveTrainingEntitlement &&
     isFamilyControlsAuthorizationUsable(authorizationStatus) &&
     !selectionRequiresReview &&
     selectedAppCount > 0 &&

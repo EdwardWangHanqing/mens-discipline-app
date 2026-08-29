@@ -1562,8 +1562,9 @@ export function MembershipScreen({ onBack, onOpenPaywall }: { onBack: () => void
       <Card style={styles.membershipPlanCard}>
         <View style={styles.membershipPlanTop}><View style={styles.membershipMark}><Text style={styles.membershipMarkText}>V</Text></View><View style={styles.membershipPlanCopy}><Text style={styles.membershipPlanTitle}>VAEL Membership</Text><Text style={styles.membershipPlanStatus}>No active subscription</Text></View></View>
         <Divider />
-        <View style={styles.membershipDetail}><Icon name="calendar" color={colors.accent} size={20} /><Text style={styles.membershipDetailCopy}>Start with a 3-day free trial</Text></View>
+        <View style={styles.membershipDetail}><Icon name="calendar" color={colors.accent} size={20} /><Text style={styles.membershipDetailCopy}>Annual includes a 3-day free trial</Text></View>
         <View style={styles.membershipDetail}><Icon name="tag" color={colors.accent} size={20} /><Text style={styles.membershipDetailCopy}>Annual $39.99 / year</Text></View>
+        <View style={styles.membershipDetail}><Icon name="creditcard" color={colors.accent} size={20} /><Text style={styles.membershipDetailCopy}>Monthly $9.99 / month · no trial</Text></View>
       </Card>
       <View style={styles.menuGroup}>
         <MenuRow icon="creditcard" label="Choose a Membership" onPress={onOpenPaywall} />

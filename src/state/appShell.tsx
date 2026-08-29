@@ -3,7 +3,7 @@ import { createContext, useContext, useMemo, useState, type Dispatch, type React
 import type { OnboardingDraft } from '../screens/OnboardingFlow';
 import type { ProgressSummary } from '../screens/MainExperience';
 
-export type RootScreen = 'onboarding' | 'main' | 'account' | 'paywall';
+export type RootScreen = 'onboarding' | 'main' | 'account' | 'paywall' | 'legal' | 'developer';
 
 export const initialDraft: OnboardingDraft = {
   nickname: '',
