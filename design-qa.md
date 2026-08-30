@@ -1,42 +1,46 @@
-# Design QA — Round 03
+# Design QA — Round 04
 
-**Date:** 2026-08-24
-
-**Viewport:** iPhone 17 Pro Simulator
+**Date:** 2026-08-30
+**Viewport:** iPhone 17e Simulator, 369 × 800 logical pixels, 3× device density
+**Target state:** New-user onboarding, step 2 of 5 (`onboarding-step-1`)
 **Final result:** passed
 
-## Evidence reviewed
+## Source and implementation evidence
 
-- Owner references: Locks, Grace, Skip, skipped Home/Train, completed Home/Train, and supplied lock/action assets.
-- Current-run pre-fix capture: `docs/ui-audit/round-03/pre-fix/locks-current.png`.
-- Current-run accepted captures: `docs/ui-audit/round-03/post-fix/`.
-- Reference and implementation captures were inspected in paired visual-comparison inputs at the same product state.
+- Source visual: `/Users/hanqingwang/Desktop/Male APP/APP/设计GPT/Onboarding/Onboarding 2.png` (941 × 1672).
+- Supplied coach: `/Users/hanqingwang/Desktop/Male APP/APP/设计GPT/Onboarding/Onboarding教练.png`.
+- Supplied icons: the three `ChatGPT Image 2026年8月30日 ...` PNG files in `/Users/hanqingwang/Downloads/`.
+- Current-run full-screen implementation: `/Users/hanqingwang/Desktop/VAEL-audit-2026-08-30/design-qa/05-foundation-final.jpg`.
+- Focused comparison evidence: the same full-screen capture, because the target occupies the full viewport and includes typography, icon rows, coach placement, CTA, and progress state.
+- The reference and final implementation were opened together in the same visual-comparison input before acceptance.
 
-## Audit steps
+## Iteration history
 
-1. **New-user truth** — Passed. Home, Profile, History, Milestones, weekly consistency, calendar, momentum, and lifetime progress now begin at zero without fake achievements.
-2. **Skip outcome consistency** — Passed. Home, Train, Locks, calendar, and momentum use the same skipped state; no completion deadline remains after Skip.
-3. **Completion outcome consistency** — Passed. Completion is recorded at the valid final set, Home and Train show the completed state, and the supplied unlock asset is used.
-4. **Grace lifecycle** — Passed. Three daily uses, five-minute persisted timer, native shield removal, automatic shield restoration, and visible remaining-use count are implemented.
-5. **Destructive confirmation** — Passed. Skip requires a continuous two-second hold, uses a left-to-right progress fill, cancels on early release, and produces tactile feedback on completion.
-6. **Locks fidelity** — Passed. Supplied shield, lock-ring, hourglass, and Skip assets are used. Selected native app/category labels are shown in a bounded list with overflow summary.
-7. **Lock schedule** — Passed. The row opens a native iPhone-style time wheel and saves the new schedule to app state and the Screen Time schedule bridge when available.
-8. **Motion** — Passed. Tabs, Profile/subscreens, Reveal state, sheets, and calendar month transitions animate; calendar supports horizontal swipe.
-9. **Visual hierarchy and accessibility** — Passed. Primary actions remain visible, destructive intent is explicit, touch targets have accessibility labels, and state colors retain the graphite/yellow system.
-10. **Regression** — Passed. TypeScript, lint, state/routine tests, native Simulator build, launch, and screenshot review completed successfully.
+1. Captured the pre-change simulator state at `00-foundation-before.png`; the existing card layout, small coach, and SF Symbols did not match the supplied composition.
+2. `01-foundation-iteration-1.jpg`: installed the supplied icon art and rebuilt the page structure; coach remained too small/low and icon canvases showed square edges.
+3. `02-foundation-iteration-2.jpg`: center-cropped the icon assets and enlarged the coach; composition moved substantially closer to the reference.
+4. `03-foundation-final.jpg` and `04-foundation-final.jpg`: corrected coach overlap, typography scale, row widths, icon size, and wrapping.
+5. `05-foundation-final.jpg`: raised the CTA/dots and preserved the coach-behind-button relationship from the source. Accepted.
 
-## Accepted screenshots
+## Fidelity checks
 
-- `home-current-state.png` — skipped Home
-- `train-skipped.png` — skipped Train
-- `train-completed.png` — completed Train
-- `locks-compact.png` — bounded selected-app list and supplied icon assets
-- `grace-three.png` — first Grace confirmation showing three uses
-- `grace-active.png` — active Grace countdown and two remaining uses
-- `grace-ended.png` — lock and actions restored after Grace expiry
-- `lock-time-edit.png` — editable native time wheel
-- `profile-zero.png` and `history-empty.png` — truthful new-user progress
+1. **Copy and hierarchy** — Passed. Eyebrow, three-line headline, yellow emphasis, support copy, row labels, and row descriptions match the source wording and hierarchy.
+2. **Supplied assets** — Passed. The existing supplied coach is retained; all three supplied anatomy icons are used in the intended order.
+3. **Layout** — Passed. Coach, rows, CTA, and progress indicator reproduce the source composition within the narrower iPhone 17e viewport.
+4. **Interaction** — Passed. Continue advances to the existing next onboarding state. The real five-step progress model remains truthful rather than displaying the seven decorative dots shown in the concept image.
+5. **Regression** — Passed. Other onboarding screens and their back navigation were not redesigned; TypeScript and lint pass.
 
-## Residual boundary
+## Whole-app audit evidence
 
-Coach imagery remains a replaceable media placeholder by Owner decision. Future per-movement Coach animation and audio replacement does not require a layout redesign.
+Current-run screenshots are stored in `/Users/hanqingwang/Desktop/VAEL-audit-2026-08-30/full-app/` and cover onboarding, required account/paywall, Home, Train (overview/countdown/active/pause/rest), Locks, Profile, History, Milestones, Membership, Settings, Notifications, Introduction, and Privacy.
+
+### Confirmed findings outside the requested edit scope
+
+- **Release blocker:** authentication and password reset are presentation-only adapters and always return integration errors.
+- **Release blocker:** App Store purchase and restore are not connected; required access can only be exercised with debug entitlement controls.
+- **Release blocker:** Privacy/Terms/Support content explicitly identifies itself as preview material and requires final public policy/contact information.
+- **High:** on the 369 × 800 viewport, the first-ever Home `Reveal` button is partially covered by the fixed bottom navigation; see `08-home-unrevealed.jpg`.
+- **High maintenance:** Expo Doctor reports 12 SDK patch mismatches. `npm audit --omit=dev` reports 16 transitive findings (5 high, 11 moderate), primarily in Metro/image parsing and Expo tooling.
+- **Development-only:** one onboarding screenshot showed the Expo Dev Client warning banner; it is not present in Release builds, but the warning should be resolved before routine debug QA is considered clean.
+
+No additional production UI or logic was changed for these findings in this round.

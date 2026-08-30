@@ -11,6 +11,9 @@ import { VaelMark } from '../components/Brand';
 import { colors, radii, spacing, typography } from '../theme/designSystem';
 
 const foundationCoach = require('../../assets/images/onboarding-foundation-coach.png');
+const foundationHips = require('../../assets/images/onboarding-foundation-hips.png');
+const foundationCore = require('../../assets/images/onboarding-foundation-core.png');
+const foundationPelvicControl = require('../../assets/images/onboarding-foundation-pelvic-control.png');
 const accountabilityCoach = require('../../assets/images/onboarding-accountability-coach.png');
 
 export type OnboardingDraft = {
@@ -37,11 +40,11 @@ export function OnboardingFlow({ step, draft, updateDraft, goNext, goBack, onSig
 }) {
   const reduceMotion = useReducedMotion();
   if (step === 0) return <BrandStep onContinue={goNext} onSignIn={onSignIn} />;
+  if (step === 1) return <FoundationStep onContinue={goNext} />;
   return (
     <Screen scroll testID={`onboarding-step-${step}`} contentStyle={styles.stepScreen}>
       <TopBar onBack={goBack} />
       <Animated.View key={step} entering={reduceMotion ? undefined : FadeInRight.duration(280)} exiting={reduceMotion ? undefined : FadeOutLeft.duration(180)} style={styles.stepBody}>
-        {step === 1 ? <FoundationStep onContinue={goNext} /> : null}
         {step === 2 ? <DailyRuleStep onContinue={goNext} /> : null}
         {step === 3 ? <LockTimeStep value={draft.lockTime} onChange={(lockTime) => updateDraft({ lockTime })} onContinue={goNext} /> : null}
         {step === 4 ? <AccountabilityStep selectedAppCount={draft.selectedAppCount} authorizationStatus={authorizationStatus} message={familyControlsMessage} busy={pickerBusy} chooseApps={chooseApps} onContinue={goNext} /> : null}
@@ -82,17 +85,27 @@ function BrandStep({ onContinue, onSignIn }: { onContinue: () => void; onSignIn:
 
 function FoundationStep({ onContinue }: { onContinue: () => void }) {
   return (
-    <StepScaffold eyebrow="THE FOUNDATION" title={<Text>Men train what shows.{`\n`}We train <Text style={styles.accentWord}>what controls.</Text></Text>} support="Hips. Glutes. Core. Pelvic control. Short guided work built around an overlooked part of men's training." action={<PrimaryButton label="Continue" onPress={onContinue} />}>
-      <View style={styles.foundationVisual}>
+    <Screen testID="onboarding-step-1" contentStyle={styles.foundationScreen}>
+      <View style={styles.foundationHeader}>
+        <Text style={styles.eyebrow}>THE FOUNDATION</Text>
+        <Text style={styles.foundationHeadline}>
+          Most men train{`\n`}what shows.{`\n`}We train <Text style={styles.accentWord}>what controls.</Text>
+        </Text>
+        <Text style={styles.foundationSupport}>Hips, Core, Pelvic control.{`\n`}The foundation of men’s{`\n`}performance.</Text>
+      </View>
+      <View style={styles.foundationStage}>
         <Image source={foundationCoach} style={styles.foundationCoach} contentFit="contain" transition={180} />
-        <View style={styles.foundationShade} pointerEvents="none" />
         <View style={styles.foundationList}>
-          <FocusRow icon="figure.flexibility" title="Hips" support="Power and stability." />
-          <FocusRow icon="figure.core.training" title="Core" support="Strength and control." />
-          <FocusRow icon="circle.hexagongrid" title="Pelvic Control" support="Control that carries over." />
+          <FoundationFocusRow image={foundationHips} title="Hips" support="Power and stability." />
+          <FoundationFocusRow image={foundationCore} title="Core" support="Strength and control." />
+          <FoundationFocusRow image={foundationPelvicControl} title="Pelvic Control" support="Control that carries over." />
         </View>
       </View>
-    </StepScaffold>
+      <View style={styles.foundationActions}>
+        <PrimaryButton label="Continue" onPress={onContinue} />
+        <ProgressDots current={1} total={5} />
+      </View>
+    </Screen>
   );
 }
 
@@ -159,8 +172,8 @@ function StepScaffold({ eyebrow, title, support, children, action }: { eyebrow: 
   return <View style={styles.scaffold}><View style={styles.stepHeader}><Text style={styles.eyebrow}>{eyebrow}</Text><Title>{title}</Title><Body muted>{support}</Body></View><View style={styles.stepContent}>{children}</View><View style={styles.stepAction}>{action}</View></View>;
 }
 
-function FocusRow({ icon, title, support }: { icon: Parameters<typeof Icon>[0]['name']; title: string; support: string }) {
-  return <View style={styles.focusRow}><View style={styles.focusIcon}><Icon name={icon} color={colors.accent} size={22} /></View><View style={styles.focusCopy}><Text style={styles.focusTitle}>{title}</Text><Text style={styles.focusSupport}>{support}</Text></View></View>;
+function FoundationFocusRow({ image, title, support }: { image: number; title: string; support: string }) {
+  return <View style={styles.focusRow}><Image source={image} style={styles.focusIcon} contentFit="contain" /><View style={styles.focusCopy}><Text style={styles.focusTitle}>{title}</Text><Text style={styles.focusSupport}>{support}</Text></View></View>;
 }
 
 function StatHero({ value, suffix, label }: { value: string; suffix?: string; label: string }) {
@@ -195,10 +208,19 @@ const styles = StyleSheet.create({
   brandSupport: { color: colors.secondary, fontSize: 17, lineHeight: 25, maxWidth: 330 }, brandAreas: { ...typography.eyebrow, color: colors.accent, fontSize: 10 },
   brandActions: { gap: spacing.sm, paddingBottom: spacing.md }, accentWord: { color: colors.accent }, scaffold: { flex: 1, minHeight: 560 },
   stepHeader: { gap: spacing.md, paddingTop: spacing.sm }, eyebrow: { ...typography.eyebrow, color: colors.accent }, stepContent: { flex: 1, justifyContent: 'center', paddingVertical: spacing.md, gap: spacing.md }, stepAction: { paddingBottom: spacing.xs },
-  foundationVisual: { height: 276, overflow: 'hidden', borderRadius: radii.xl, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.borderStrong, backgroundColor: colors.surface },
-  foundationCoach: { position: 'absolute', width: '76%', height: '118%', right: -34, bottom: -46 }, foundationShade: { position: 'absolute', inset: 0, backgroundColor: 'rgba(6,7,8,0.28)' },
-  foundationList: { flex: 1, justifyContent: 'center', gap: spacing.md, padding: spacing.lg, width: '59%' }, focusRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  focusIcon: { width: 40, height: 40, borderRadius: 15, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: 'rgba(17,18,20,0.9)', alignItems: 'center', justifyContent: 'center' }, focusCopy: { flex: 1, gap: 1 }, focusTitle: { color: colors.primary, fontSize: 15, fontWeight: '700' }, focusSupport: { color: colors.secondary, fontSize: 11, lineHeight: 15 },
+  foundationScreen: { overflow: 'hidden', paddingTop: 27, paddingBottom: spacing.md },
+  foundationHeader: { zIndex: 2, gap: 11 },
+  foundationHeadline: { color: colors.primary, fontSize: 28, lineHeight: 36, letterSpacing: -0.7, fontWeight: '800' },
+  foundationSupport: { color: colors.secondary, fontSize: 14, lineHeight: 20 },
+  foundationStage: { flex: 1, minHeight: 330, position: 'relative', marginHorizontal: -spacing.xl },
+  foundationCoach: { position: 'absolute', width: 355, height: 545, right: -70, bottom: -47 },
+  foundationList: { zIndex: 2, width: 170, gap: 22, paddingTop: 24, paddingLeft: spacing.sm },
+  focusRow: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 5 },
+  focusIcon: { width: 48, height: 48, borderRadius: 24 },
+  focusCopy: { flex: 1, gap: 3 },
+  focusTitle: { color: colors.primary, fontSize: 14, lineHeight: 18, fontWeight: '700' },
+  focusSupport: { maxWidth: 98, color: colors.secondary, fontSize: 12, lineHeight: 17 },
+  foundationActions: { zIndex: 3, gap: spacing.sm, paddingBottom: spacing.xl },
   ruleHero: { borderRadius: radii.xl, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: colors.surface, overflow: 'hidden' }, ruleDivider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.borderStrong, marginHorizontal: spacing.xl },
   statHero: { minHeight: 96, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.xxl }, statValueRow: { width: 116, flexDirection: 'row', alignItems: 'baseline', gap: spacing.xs }, statValue: { color: colors.accent, fontSize: 52, lineHeight: 58, fontWeight: '800', letterSpacing: -2 }, statSuffix: { color: colors.accent, fontSize: 12, fontWeight: '800', letterSpacing: 1.2 }, statLabel: { color: colors.primary, fontSize: 13, fontWeight: '700', letterSpacing: 1.5 },
   ruleNote: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.sm }, ruleNoteText: { flex: 1, color: colors.secondary, fontSize: 13, lineHeight: 19 },

@@ -173,7 +173,7 @@ export function PaywallScreen({ context, entitlementStatus, onClose, onPurchase,
         <View style={styles.membershipMark}><Icon name="checkmark.shield.fill" color={colors.accent} size={34} /></View>
         <Eyebrow accent>{context === 'required' ? 'VAEL MEMBERSHIP' : 'MEMBERSHIP'}</Eyebrow>
         <Title>{context === 'required' ? 'Your daily standard starts here.' : entitlementStatus === 'expired' ? 'Return to your standard.' : 'Choose your membership.'}</Title>
-        <Body muted>{context === 'required' ? 'Daily men&apos;s performance training, guided structure, accountability, and momentum.' : entitlementStatus === 'expired' ? 'Your previous access has ended. Choose a plan to continue when you are ready.' : 'Choose Annual or Monthly. You can close this screen without changing your current app state.'}</Body>
+        <Body muted>{context === 'required' ? 'Daily men’s performance training, guided structure, accountability, and momentum.' : entitlementStatus === 'expired' ? 'Your previous access has ended. Choose a plan to continue when you are ready.' : 'Choose Annual or Monthly. You can close this screen without changing your current app state.'}</Body>
       </View>
 
       <View style={styles.benefits}>
