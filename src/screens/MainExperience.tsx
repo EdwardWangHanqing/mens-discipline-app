@@ -12,7 +12,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { DateTimePicker } from '@expo/ui/community/datetime-picker';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -103,6 +103,7 @@ export type MainExperiencePreviewState = {
 };
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const completionCelebrationVideo = require('../../assets/videos/completion-celebration-muted.mp4');
+const BOTTOM_NAV_BAR_HEIGHT = 60;
 
 export function MainExperience({
   nickname,
@@ -161,6 +162,7 @@ export function MainExperience({
   onReplaceMovement: () => void;
   previewState?: MainExperiencePreviewState;
 }) {
+  const insets = useSafeAreaInsets();
   const designPreview = previewState !== undefined;
   const router = useRouter();
   const previewFrozen = previewState?.frozen ?? false;
@@ -375,6 +377,7 @@ export function MainExperience({
               if (designPreview) setSubscreen('profile');
               else router.push({ pathname: '/profile', params: { movementId: movement.id } });
             }}
+            bottomInset={insets.bottom}
           />
         ) : null}
         {tab === 'train' ? (
@@ -410,7 +413,7 @@ export function MainExperience({
           />
         ) : null}
           </Animated.View>
-          <BottomNavigation selected={tab} onSelect={setTab} />
+          <BottomNavigation selected={tab} onSelect={setTab} bottomInset={insets.bottom} />
         </View>
         {confirmation ? (
           <ConfirmationSheet
@@ -525,6 +528,7 @@ function HomeTab({
   begin,
   resume,
   openProfile,
+  bottomInset,
 }: {
   nickname: string;
   dailyStatus: DailyStatus;
@@ -535,8 +539,11 @@ function HomeTab({
   begin: () => void;
   resume: () => void;
   openProfile: () => void;
+  bottomInset: number;
 }) {
   const [greeting, setGreeting] = useState('Good evening');
+  const { height, width } = useWindowDimensions();
+  const compactHeight = width <= 390 || height <= 820;
 
   useEffect(() => {
     const updateGreeting = () => setGreeting(greetingForHour(new Date().getHours()));
@@ -549,7 +556,15 @@ function HomeTab({
   }, []);
 
   return (
-    <ScrollView style={styles.tabContent} contentContainerStyle={styles.homeContent} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.tabContent}
+      contentContainerStyle={[
+        styles.homeContent,
+        compactHeight && styles.homeContentCompact,
+        { paddingBottom: BOTTOM_NAV_BAR_HEIGHT + bottomInset + spacing.xxl },
+      ]}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.homeHeader}>
         <View style={styles.homeGreeting}>
           <Text style={styles.greeting}>{greeting}, {nickname || 'Edward'}.</Text>
@@ -560,8 +575,8 @@ function HomeTab({
         </Pressable>
       </View>
 
-      <MomentumCard progress={progress} dailyStatus={dailyStatus} />
-      <MovementCard dailyStatus={dailyStatus} lockTime={lockTime} movement={movement} reveal={reveal} begin={begin} resume={resume} />
+      <MomentumCard progress={progress} dailyStatus={dailyStatus} compact={compactHeight} />
+      <MovementCard dailyStatus={dailyStatus} lockTime={lockTime} movement={movement} reveal={reveal} begin={begin} resume={resume} compact={compactHeight} />
       <CalendarCard completedDates={progress.completedDates} skippedDates={progress.skippedDates} />
       <Card style={styles.lifetimeCard}>
         <Eyebrow>Lifetime Progress</Eyebrow>
@@ -577,11 +592,11 @@ function HomeTab({
   );
 }
 
-function MomentumCard({ progress, dailyStatus }: { progress: ProgressSummary; dailyStatus: DailyStatus }) {
+function MomentumCard({ progress, dailyStatus, compact }: { progress: ProgressSummary; dailyStatus: DailyStatus; compact: boolean }) {
   const weekCount = Math.min(7, progress.completedDates.filter(isDateInCurrentWeek).length);
   const skipped = dailyStatus === 'skipped';
   return (
-    <Card style={styles.momentumCard}>
+    <Card style={[styles.momentumCard, compact && styles.momentumCardCompact]}>
       <View style={styles.momentumTop}>
         <View style={styles.momentumCopy}>
           <Eyebrow>Momentum</Eyebrow>
@@ -625,7 +640,7 @@ function MomentumCard({ progress, dailyStatus }: { progress: ProgressSummary; da
           dayDate.setDate(dayDate.getDate() + index);
           const done = progress.completedDates.includes(localDateKey(dayDate));
           return (
-            <View key={`${day}-${index}`} style={[styles.dayCell, done && styles.dayCellDone]}>
+            <View key={`${day}-${index}`} style={[styles.dayCell, compact && styles.dayCellCompact, done && styles.dayCellDone]}>
               <Text style={[styles.dayLetter, done && styles.dayLetterDone]}>{day}</Text>
               {done ? <View pointerEvents="none" style={styles.dayCheck}><Icon name="checkmark" color={colors.accent} size={13} weight="bold" /></View> : null}
             </View>
@@ -643,6 +658,7 @@ function MovementCard({
   reveal,
   begin,
   resume,
+  compact,
 }: {
   dailyStatus: DailyStatus;
   lockTime: string;
@@ -650,13 +666,14 @@ function MovementCard({
   reveal: () => void;
   begin: () => void;
   resume: () => void;
+  compact: boolean;
 }) {
   const hidden = dailyStatus === 'unrevealed';
   const completed = dailyStatus === 'completed';
   const skipped = dailyStatus === 'skipped';
   const inProgress = dailyStatus === 'inProgress';
   return (
-    <Card style={styles.movementCard}>
+    <Card style={[styles.movementCard, compact && styles.movementCardCompact]}>
       <Animated.View key={dailyStatus} entering={FadeInDown.duration(420).springify()} style={styles.movementHeader}>
         <View style={styles.movementThumbnail}>
           {hidden ? (
@@ -1012,14 +1029,14 @@ function LocksTab({
   );
 }
 
-function BottomNavigation({ selected, onSelect }: { selected: MainTab; onSelect: (tab: MainTab) => void }) {
+function BottomNavigation({ selected, onSelect, bottomInset }: { selected: MainTab; onSelect: (tab: MainTab) => void; bottomInset: number }) {
   const tabs: { id: MainTab; label: string; icon: Parameters<typeof Icon>[0]['name'] }[] = [
     { id: 'home', label: 'HOME', icon: selected === 'home' ? 'house.fill' : 'house' },
     { id: 'train', label: 'TRAIN', icon: 'dumbbell' },
     { id: 'locks', label: 'LOCKS', icon: selected === 'locks' ? 'lock.fill' : 'lock' },
   ];
   return (
-    <View style={styles.bottomNav}>
+    <View style={[styles.bottomNav, { paddingBottom: Math.max(bottomInset, spacing.sm) }]}>
       {tabs.map((tab) => {
         const active = selected === tab.id;
         return (
@@ -2005,13 +2022,15 @@ const styles = StyleSheet.create({
   tabScene: { flex: 1, backgroundColor: colors.canvas },
   subscreenOverlay: { position: 'absolute', inset: 0, zIndex: 2, backgroundColor: colors.canvas },
   tabContent: { flex: 1 },
-  homeContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.xxl, gap: spacing.xxxl },
+  homeContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, gap: spacing.xxxl },
+  homeContentCompact: { gap: spacing.md },
   homeHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.lg },
   homeGreeting: { flex: 1, gap: spacing.xs },
   greeting: { color: colors.primary, fontSize: 19, fontWeight: '600', letterSpacing: 1 },
   support: { color: colors.secondary, fontSize: 15 },
   profileButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   momentumCard: { gap: spacing.lg, padding: spacing.lg },
+  momentumCardCompact: { gap: spacing.sm },
   momentumTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   momentumCopy: { flex: 1 },
   momentumValue: { color: colors.primary, fontSize: 54, lineHeight: 62, fontWeight: '700', marginVertical: spacing.xs },
@@ -2022,11 +2041,13 @@ const styles = StyleSheet.create({
   weekRingLabel: { color: colors.secondary, fontSize: 11, letterSpacing: 1.4, marginTop: 2 },
   weekDays: { flexDirection: 'row', gap: spacing.sm },
   dayCell: { flex: 1, minHeight: 54, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  dayCellCompact: { minHeight: 48 },
   dayCellDone: { borderColor: colors.accent },
   dayLetter: { color: colors.secondary, fontSize: 13, fontWeight: '700' },
   dayLetterDone: { color: colors.primary },
   dayCheck: { position: 'absolute', left: 0, right: 0, bottom: 5, alignItems: 'center' },
   movementCard: { padding: spacing.lg, gap: spacing.lg },
+  movementCardCompact: { gap: spacing.sm },
   movementHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   movementThumbnail: { width: 116, aspectRatio: 4 / 3, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, overflow: 'hidden', backgroundColor: colors.surfaceSoft },
   coverImage: { width: '100%', height: '100%' },
@@ -2058,7 +2079,7 @@ const styles = StyleSheet.create({
   calendarDayText: { color: colors.secondary, fontSize: 13 },
   calendarDayTextDone: { color: colors.accentInk, fontWeight: '700' },
   lifetimeCard: { gap: spacing.md },
-  bottomNav: { minHeight: 68, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, backgroundColor: colors.surfaceSoft, flexDirection: 'row', paddingBottom: spacing.sm },
+  bottomNav: { minHeight: BOTTOM_NAV_BAR_HEIGHT, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, backgroundColor: colors.surfaceSoft, flexDirection: 'row', paddingTop: spacing.xs },
   navItem: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
   navLabel: { color: colors.secondary, fontSize: 10, letterSpacing: 1.1, fontWeight: '600' },
   navLabelActive: { color: colors.accent },

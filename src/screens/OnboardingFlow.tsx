@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
-import { Linking, StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { DateTimePicker } from '@expo/ui/community/datetime-picker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import Animated, { FadeInRight, FadeOutLeft, useReducedMotion } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -84,6 +85,11 @@ function BrandStep({ onContinue, onSignIn }: { onContinue: () => void; onSignIn:
 }
 
 function FoundationStep({ onContinue }: { onContinue: () => void }) {
+  const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const compactHeight = width <= 390 || height <= 820;
+  const coachWidth = Math.min(430, Math.max(344, width * 0.99));
+  const actionInset = Math.max(insets.bottom, spacing.xl) + spacing.xs;
   return (
     <Screen testID="onboarding-step-1" contentStyle={styles.foundationScreen}>
       <View style={styles.foundationHeader}>
@@ -93,15 +99,20 @@ function FoundationStep({ onContinue }: { onContinue: () => void }) {
         </Text>
         <Text style={styles.foundationSupport}>Hips, Core, Pelvic control.{`\n`}The foundation of men’s{`\n`}performance.</Text>
       </View>
-      <View style={styles.foundationStage}>
-        <Image source={foundationCoach} style={styles.foundationCoach} contentFit="contain" transition={180} />
-        <View style={styles.foundationList}>
+      <View style={[styles.foundationStage, compactHeight && styles.foundationStageCompact]}>
+        <Image
+          source={foundationCoach}
+          style={[styles.foundationCoach, { width: coachWidth }, compactHeight && styles.foundationCoachCompact]}
+          contentFit="contain"
+          transition={180}
+        />
+        <View style={[styles.foundationList, compactHeight && styles.foundationListCompact]}>
           <FoundationFocusRow image={foundationHips} title="Hips" support="Power and stability." />
           <FoundationFocusRow image={foundationCore} title="Core" support="Strength and control." />
           <FoundationFocusRow image={foundationPelvicControl} title="Pelvic Control" support="Control that carries over." />
         </View>
       </View>
-      <View style={styles.foundationActions}>
+      <View style={[styles.foundationActions, { paddingBottom: actionInset }]}>
         <PrimaryButton label="Continue" onPress={onContinue} />
         <ProgressDots current={1} total={5} />
       </View>
@@ -212,15 +223,18 @@ const styles = StyleSheet.create({
   foundationHeader: { zIndex: 2, gap: 11 },
   foundationHeadline: { color: colors.primary, fontSize: 28, lineHeight: 36, letterSpacing: -0.7, fontWeight: '800' },
   foundationSupport: { color: colors.secondary, fontSize: 14, lineHeight: 20 },
-  foundationStage: { flex: 1, minHeight: 330, position: 'relative', marginHorizontal: -spacing.xl },
-  foundationCoach: { position: 'absolute', width: 355, height: 545, right: -70, bottom: -47 },
-  foundationList: { zIndex: 2, width: 170, gap: 22, paddingTop: 24, paddingLeft: spacing.sm },
+  foundationStage: { flex: 1, minHeight: 358, position: 'relative', marginHorizontal: -spacing.xl },
+  foundationStageCompact: { minHeight: 330 },
+  foundationCoach: { position: 'absolute', aspectRatio: 2 / 3, right: '-17%', bottom: -78 },
+  foundationCoachCompact: { right: '-15%', bottom: -136 },
+  foundationList: { zIndex: 2, width: 174, gap: 22, paddingTop: spacing.xxxl + spacing.md, paddingLeft: spacing.sm },
+  foundationListCompact: { paddingTop: spacing.xxl + spacing.md },
   focusRow: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 5 },
   focusIcon: { width: 48, height: 48, borderRadius: 24 },
   focusCopy: { flex: 1, gap: 3 },
   focusTitle: { color: colors.primary, fontSize: 14, lineHeight: 18, fontWeight: '700' },
   focusSupport: { maxWidth: 98, color: colors.secondary, fontSize: 12, lineHeight: 17 },
-  foundationActions: { zIndex: 3, gap: spacing.sm, paddingBottom: spacing.xl },
+  foundationActions: { zIndex: 3, gap: spacing.sm },
   ruleHero: { borderRadius: radii.xl, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: colors.surface, overflow: 'hidden' }, ruleDivider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.borderStrong, marginHorizontal: spacing.xl },
   statHero: { minHeight: 96, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.xxl }, statValueRow: { width: 116, flexDirection: 'row', alignItems: 'baseline', gap: spacing.xs }, statValue: { color: colors.accent, fontSize: 52, lineHeight: 58, fontWeight: '800', letterSpacing: -2 }, statSuffix: { color: colors.accent, fontSize: 12, fontWeight: '800', letterSpacing: 1.2 }, statLabel: { color: colors.primary, fontSize: 13, fontWeight: '700', letterSpacing: 1.5 },
   ruleNote: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.sm }, ruleNoteText: { flex: 1, color: colors.secondary, fontSize: 13, lineHeight: 19 },
