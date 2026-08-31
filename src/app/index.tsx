@@ -51,6 +51,10 @@ import {
   chooseAppsAuthorizationAction,
   isFamilyControlsAuthorizationUsable,
 } from '../state/familyControlsState';
+import {
+  sendMilestoneNotification,
+  syncStoredNotificationSchedules,
+} from '../services/userPreferences';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -216,6 +220,11 @@ export default function AppExperience() {
     })) return;
     void FamilyControls.scheduleDailyLock(parsed.hour, parsed.minute).catch(() => undefined);
   }, [authorizationStatus, dailyStatus, draft.lockTime, draft.selectedAppCount, hydrated, selectionRequiresReview, trainingAccessActive]);
+
+  useEffect(() => {
+    if (!hydrated || Platform.OS !== 'ios') return;
+    void syncStoredNotificationSchedules(draft.lockTime).catch(() => undefined);
+  }, [draft.lockTime, hydrated]);
 
   return (
     <SafeAreaProvider>
@@ -421,24 +430,26 @@ export default function AppExperience() {
     void FamilyControls.completeRoutineToday().catch(() => undefined);
     setDailyStatus('completed');
     const dateKey = localDateKey(new Date());
-    setProgress((current) => {
-      if (current.completedDates.includes(dateKey)) return current;
-      const sessions = current.sessions + 1;
-      const completedDates = [...current.completedDates, dateKey];
-      const momentumDays = calculateCurrentMomentum(completedDates, new Date());
-      return {
-        sessions,
-        cycles: Math.floor(sessions / 7),
-        momentumDays,
-        longestMomentum: Math.max(current.longestMomentum, momentumDays),
-        completedDates,
-        skippedDates: current.skippedDates.filter((date) => date !== dateKey),
-      };
-    });
+    if (progress.completedDates.includes(dateKey)) return;
+    const sessions = progress.sessions + 1;
+    const completedDates = [...progress.completedDates, dateKey];
+    const momentumDays = calculateCurrentMomentum(completedDates, new Date());
+    const nextProgress = {
+      sessions,
+      cycles: Math.floor(sessions / 7),
+      momentumDays,
+      longestMomentum: Math.max(progress.longestMomentum, momentumDays),
+      completedDates,
+      skippedDates: progress.skippedDates.filter((date) => date !== dateKey),
+    };
+    setProgress(nextProgress);
+    const milestone = reachedMilestone(progress, nextProgress);
+    if (milestone) void sendMilestoneNotification('Milestone earned', milestone).catch(() => undefined);
   }
 
   async function updateLockTime(lockTime: string) {
     setDraft((current) => ({ ...current, lockTime }));
+    void syncStoredNotificationSchedules(lockTime).catch(() => undefined);
     const parsed = parseLockTime(lockTime);
     if (!parsed || !canScheduleAccountability({
       authorizationStatus,
@@ -561,4 +572,16 @@ function localDateKey(date: Date) {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+function reachedMilestone(previous: ProgressSummary, next: ProgressSummary) {
+  const cycleTargets = [1, 5, 10, 25, 50];
+  const sessionTargets = [1, 25, 50, 100, 365];
+  const streakTargets = [7, 30];
+  const cycle = cycleTargets.find((target) => previous.cycles < target && next.cycles >= target);
+  if (cycle) return cycle === 1 ? 'Your first cycle is complete.' : `${cycle} cycles complete.`;
+  const session = sessionTargets.find((target) => previous.sessions < target && next.sessions >= target);
+  if (session) return session === 1 ? 'Your first session is complete.' : `${session} sessions complete.`;
+  const streak = streakTargets.find((target) => previous.longestMomentum < target && next.longestMomentum >= target);
+  return streak ? `${streak} days of momentum.` : null;
 }

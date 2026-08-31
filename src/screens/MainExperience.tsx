@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Image,
+  Linking,
   PanResponder,
   Pressable,
   ScrollView,
@@ -62,6 +63,20 @@ import {
 import type { OnboardingDraft } from './OnboardingFlow';
 import { colors, radii, spacing, typography } from '../theme/designSystem';
 import { consumeGrace, expireGrace, greetingForHour } from '../state/dailyState';
+import {
+  defaultUserPreferences,
+  getNotificationAuthorizationStatus,
+  loadStoredLockTime,
+  loadUserPreferences,
+  notificationsAuthorized,
+  performHaptic,
+  performHapticIfEnabled,
+  requestNotificationAuthorization,
+  saveUserPreferences,
+  syncNotificationSchedules,
+  type NotificationPreferenceKey,
+  type UserPreferences,
+} from '../services/userPreferences';
 
 export type MainTab = 'home' | 'train' | 'locks';
 export type DailyStatus = 'unrevealed' | 'revealed' | 'inProgress' | 'completed' | 'skipped';
@@ -177,9 +192,19 @@ export function MainExperience({
   const [setCompleting, setSetCompleting] = useState(false);
   const [confirmation, setConfirmation] = useState<'grace' | 'skip' | null>(null);
   const [clock, setClock] = useState(0);
+  const previousHapticPhase = useRef<SessionPhase | null>(null);
   const repProgress = useSharedValue(0);
   const restProgress = useSharedValue(1);
   const graceActive = grace.activeUntil !== null && grace.activeUntil > clock;
+
+  useEffect(() => {
+    const previous = previousHapticPhase.current;
+    previousHapticPhase.current = session;
+    if (designPreview || previewFrozen) return;
+    if (session === 'rest' && previous === 'active') void performHapticIfEnabled('impact');
+    if (session === 'active' && previous === 'rest') void performHapticIfEnabled('selection');
+    if (session === 'complete' && previous === 'finishing') void performHapticIfEnabled('success');
+  }, [designPreview, previewFrozen, session]);
 
   useEffect(() => {
     if (designPreview || tab !== 'locks') return;
@@ -596,7 +621,7 @@ function MomentumCard({ progress, dailyStatus, compact }: { progress: ProgressSu
   const weekCount = Math.min(7, progress.completedDates.filter(isDateInCurrentWeek).length);
   const skipped = dailyStatus === 'skipped';
   return (
-    <Card style={[styles.momentumCard, compact && styles.momentumCardCompact]}>
+    <Card style={[styles.momentumCard, compact ? styles.momentumCardCompact : {}]}>
       <View style={styles.momentumTop}>
         <View style={styles.momentumCopy}>
           <Eyebrow>Momentum</Eyebrow>
@@ -673,7 +698,7 @@ function MovementCard({
   const skipped = dailyStatus === 'skipped';
   const inProgress = dailyStatus === 'inProgress';
   return (
-    <Card style={[styles.movementCard, compact && styles.movementCardCompact]}>
+    <Card style={[styles.movementCard, compact ? styles.movementCardCompact : {}]}>
       <Animated.View key={dailyStatus} entering={FadeInDown.duration(420).springify()} style={styles.movementHeader}>
         <View style={styles.movementThumbnail}>
           {hidden ? (
@@ -1604,6 +1629,19 @@ export function SettingsScreen({
   openIntroduction: () => void;
   onRestartOnboarding?: () => void;
 }) {
+  const [preferences, setPreferences] = useState<UserPreferences>(defaultUserPreferences);
+
+  useEffect(() => {
+    void loadUserPreferences().then(setPreferences);
+  }, []);
+
+  const updateHaptics = (enabled: boolean) => {
+    const next = { ...preferences, haptics: enabled };
+    setPreferences(next);
+    void saveUserPreferences(next);
+    if (enabled) performHaptic('selection');
+  };
+
   return (
     <Screen scroll>
       <TopBar title="Settings" onBack={onBack} />
@@ -1613,11 +1651,13 @@ export function SettingsScreen({
       </View>
       <SectionTitle title="Experience" />
       <Card>
-        <SettingToggle icon="speaker.wave.2" title="Coach Voice" support="Voice guidance during training" initial />
-        <Divider />
-        <SettingToggle icon="music.note" title="Training Music" support="Background audio during sessions" />
-        <Divider />
-        <SettingToggle icon="iphone.radiowaves.left.and.right" title="Haptics" support="Guided set cues" initial />
+        <SettingToggle
+          icon="iphone.radiowaves.left.and.right"
+          title="Haptics"
+          support="Set transitions and routine completion"
+          value={preferences.haptics}
+          onValueChange={updateHaptics}
+        />
       </Card>
       <SectionTitle title="Support & Legal" />
       <Card style={styles.compactListCard}>
@@ -1721,30 +1761,97 @@ export function IntroductionReplayScreen({ onBack }: { onBack: () => void }) {
 }
 
 export function NotificationsScreen({ onBack }: { onBack: () => void }) {
+  const [preferences, setPreferences] = useState<UserPreferences>(defaultUserPreferences);
+  const [authorizationStatus, setAuthorizationStatus] = useState<Awaited<ReturnType<typeof getNotificationAuthorizationStatus>>>('unknown');
+  const [busy, setBusy] = useState(false);
+  const [notificationError, setNotificationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void Promise.all([loadUserPreferences(), getNotificationAuthorizationStatus()]).then(([saved, status]) => {
+      setPreferences(saved);
+      setAuthorizationStatus(status);
+    }).catch(() => setNotificationError('Notification settings are temporarily unavailable.'));
+  }, []);
+
+  const updateNotificationPreference = async (key: NotificationPreferenceKey, enabled: boolean) => {
+    if (busy) return;
+    setBusy(true);
+    setNotificationError(null);
+    try {
+      let status = authorizationStatus;
+      if (enabled && !notificationsAuthorized(status)) {
+        status = await requestNotificationAuthorization();
+        setAuthorizationStatus(status);
+        if (!notificationsAuthorized(status)) return;
+      }
+      const next = {
+        ...preferences,
+        notifications: { ...preferences.notifications, [key]: enabled },
+      };
+      setPreferences(next);
+      await saveUserPreferences(next);
+      await syncNotificationSchedules(next, await loadStoredLockTime());
+    } catch {
+      setNotificationError('VAEL could not update notification settings. Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const blocked = authorizationStatus === 'denied';
   return (
     <Screen scroll>
       <TopBar title="Notifications" onBack={onBack} />
       <View style={styles.pageHeader}><Eyebrow>Stay On Track</Eyebrow><Title compact>Only the reminders that matter.</Title></View>
       <Card>
-        <SettingToggle icon="sun.max" title="Daily Reveal" support="When today’s movement is ready" initial />
+        <SettingToggle
+          icon="sun.max"
+          title="Daily Reveal"
+          support="Every day at 6:00 AM"
+          value={preferences.notifications.dailyReveal}
+          onValueChange={(enabled) => void updateNotificationPreference('dailyReveal', enabled)}
+          disabled={busy}
+        />
         <Divider />
-        <SettingToggle icon="clock.badge.exclamationmark" title="Before Lock Time" support="A quiet reminder 30 minutes before" initial />
+        <SettingToggle
+          icon="clock.badge.exclamationmark"
+          title="Before Lock Time"
+          support="30 minutes before your saved lock time"
+          value={preferences.notifications.beforeLock}
+          onValueChange={(enabled) => void updateNotificationPreference('beforeLock', enabled)}
+          disabled={busy}
+        />
         <Divider />
-        <SettingToggle icon="medal" title="Milestones" support="When a meaningful marker is reached" />
+        <SettingToggle
+          icon="medal"
+          title="Milestones"
+          support="When a meaningful marker is reached"
+          value={preferences.notifications.milestones}
+          onValueChange={(enabled) => void updateNotificationPreference('milestones', enabled)}
+          disabled={busy}
+        />
       </Card>
+      {blocked ? (
+        <Pressable accessibilityRole="button" onPress={() => void Linking.openSettings()}>
+          <Text style={styles.settingsFootnote}>Notifications are off in iOS Settings. Tap here to enable them.</Text>
+        </Pressable>
+      ) : null}
+      {notificationError ? <Text style={styles.settingsFootnote}>{notificationError}</Text> : null}
     </Screen>
   );
 }
 
 function LockPreferencesScreen({ onBack }: { onBack: () => void }) {
+  const [dailyAccountability, setDailyAccountability] = useState(true);
+  const [graceAvailability, setGraceAvailability] = useState(true);
   return (
     <Screen scroll>
       <TopBar title="Lock Preferences" onBack={onBack} />
       <View style={styles.pageHeader}><Eyebrow>Accountability</Eyebrow><Title compact>Firm, never noisy.</Title></View>
       <Card>
-        <SettingToggle icon="lock.shield" title="Daily Accountability" support="Tie selected apps to completion" initial />
+        <SettingToggle icon="lock.shield" title="Daily Accountability" support="Tie selected apps to completion" value={dailyAccountability} onValueChange={setDailyAccountability} />
         <Divider />
-        <SettingToggle icon="hourglass" title="Grace Availability" support="Three 5-minute uses per day" initial />
+        <SettingToggle icon="hourglass" title="Grace Availability" support="Three 5-minute uses per day" value={graceAvailability} onValueChange={setGraceAvailability} />
       </Card>
       <Text style={styles.settingsFootnote}>Changes to active lock rules take effect tomorrow.</Text>
     </Screen>
@@ -1931,13 +2038,33 @@ function Milestone({ icon, title, support, earned = false }: { icon: Parameters<
   );
 }
 
-function SettingToggle({ icon, title, support, initial = false }: { icon: Parameters<typeof Icon>[0]['name']; title: string; support: string; initial?: boolean }) {
-  const [enabled, setEnabled] = useState(initial);
+function SettingToggle({
+  icon,
+  title,
+  support,
+  value,
+  onValueChange,
+  disabled = false,
+}: {
+  icon: Parameters<typeof Icon>[0]['name'];
+  title: string;
+  support: string;
+  value: boolean;
+  onValueChange: (enabled: boolean) => void;
+  disabled?: boolean;
+}) {
   return (
     <View style={styles.settingRow}>
       <Icon name={icon} color={colors.secondary} size={21} />
       <View style={styles.settingCopy}><Text style={styles.settingTitle}>{title}</Text><Text style={styles.settingSupport}>{support}</Text></View>
-      <Switch value={enabled} onValueChange={setEnabled} trackColor={{ false: colors.borderStrong, true: colors.accent }} thumbColor={enabled ? colors.accentInk : colors.secondary} />
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        disabled={disabled}
+        trackColor={{ false: colors.borderStrong, true: colors.accent }}
+        ios_backgroundColor={colors.borderStrong}
+        thumbColor={colors.primary}
+      />
     </View>
   );
 }
