@@ -668,8 +668,7 @@ function MomentumCard({ progress, dailyStatus, compact }: { progress: ProgressSu
           const done = progress.completedDates.includes(localDateKey(dayDate));
           return (
             <View key={`${day}-${index}`} style={[styles.dayCell, compact && styles.dayCellCompact, done && styles.dayCellDone]}>
-              <Text style={[styles.dayLetter, done && styles.dayLetterDone]}>{day}</Text>
-              {done ? <View pointerEvents="none" style={styles.dayCheck}><Icon name="checkmark" color={colors.accent} size={13} weight="bold" /></View> : null}
+              <Text style={styles.dayLetter}>{day}</Text>
             </View>
           );
         })}
@@ -2202,8 +2201,6 @@ const styles = StyleSheet.create({
   dayCellCompact: { minHeight: 48 },
   dayCellDone: { borderColor: colors.accent },
   dayLetter: { color: colors.secondary, fontSize: 13, fontWeight: '700' },
-  dayLetterDone: { color: colors.primary },
-  dayCheck: { position: 'absolute', left: 0, right: 0, bottom: 1, height: 13, alignItems: 'center', justifyContent: 'center' },
   movementCard: { padding: spacing.lg, gap: spacing.lg },
   movementCardCompact: { gap: spacing.sm },
   movementHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
