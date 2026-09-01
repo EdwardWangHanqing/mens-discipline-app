@@ -28,6 +28,8 @@ import Animated, {
   useAnimatedStyle,
   useAnimatedProps,
   useSharedValue,
+  withRepeat,
+  withSequence,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
@@ -1086,14 +1088,21 @@ function SetSegments({
   currentSet,
   progress,
   completeCurrent = false,
+  nextSetPulsing = false,
 }: {
   currentSet: number;
   progress?: SharedValue<number>;
   completeCurrent?: boolean;
+  nextSetPulsing?: boolean;
 }) {
-  const completeCount = Math.min(DAILY_SET_COUNT, Math.max(0, currentSet - 1));
+  const completeCount = Math.min(DAILY_SET_COUNT, Math.max(0, currentSet - 1 + (nextSetPulsing ? 1 : 0)));
   return (
-    <View style={styles.setSegments} accessibilityLabel={`${completeCount} of 5 sets complete`}>
+    <View
+      style={styles.setSegments}
+      accessibilityLabel={nextSetPulsing
+        ? `${completeCount} of 5 sets complete. Set ${currentSet + 1} next.`
+        : `${completeCount} of 5 sets complete`}
+    >
       {Array.from({ length: DAILY_SET_COUNT }, (_, index) => {
         const segmentNumber = index + 1;
         return (
@@ -1102,6 +1111,7 @@ function SetSegments({
               complete={segmentNumber < currentSet}
               current={segmentNumber === currentSet && !completeCurrent}
               completeCurrent={segmentNumber === currentSet && completeCurrent}
+              next={nextSetPulsing && segmentNumber === currentSet + 1}
               progress={progress}
             />
           </View>
@@ -1115,15 +1125,35 @@ function SetSegmentFill({
   complete,
   current,
   completeCurrent,
+  next,
   progress,
 }: {
   complete: boolean;
   current: boolean;
   completeCurrent: boolean;
+  next: boolean;
   progress?: SharedValue<number>;
 }) {
+  const pulse = useSharedValue(0);
+  useEffect(() => {
+    cancelAnimation(pulse);
+    if (next) {
+      pulse.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 620, easing: Easing.inOut(Easing.quad) }),
+          withTiming(0, { duration: 620, easing: Easing.inOut(Easing.quad) }),
+        ),
+        -1,
+        false,
+      );
+    } else {
+      pulse.value = 0;
+    }
+    return () => cancelAnimation(pulse);
+  }, [next, pulse]);
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scaleX: complete || completeCurrent ? 1 : current && progress ? progress.value : 0 }],
+    opacity: next ? 0.22 + pulse.value * 0.78 : 1,
+    transform: [{ scaleX: complete || completeCurrent || next ? 1 : current && progress ? progress.value : 0 }],
   }));
   return <Animated.View style={[styles.setSegmentFill, animatedStyle]} />;
 }
@@ -1433,9 +1463,10 @@ function SessionScreen({
           </View>
         ) : null}
         <SetSegments
-          currentSet={isRest ? setNumber + 1 : setNumber}
+          currentSet={setNumber}
           progress={isRest ? undefined : repProgress}
           completeCurrent={isCountdown || isRest}
+          nextSetPulsing={isRest}
         />
         {isCountdown ? (
           <View style={styles.countdownBlock}>
