@@ -16,13 +16,23 @@ export type Movement = MovementDefinition & {
 const canonicalCoach = require('../../assets/images/coach-kneeling-drive.png');
 const kneelingDriveReady = require('../../assets/images/kneeling-drive-ready.png');
 const kneelingDriveCoachVideo = require('../../assets/videos/kneeling-drive-coach-muted.mp4');
+const butterflyOpenReady = require('../../assets/images/butterfly-open-ready.png');
+const butterflyOpenCoachVideo = require('../../assets/videos/butterfly-open-coach-muted.mp4');
 
 // Production movement quantities are sourced from the Owner's
 // "Movement Pool and Reveal Update". Coach media remains replaceable.
 export const movements: Movement[] = movementDefinitions.map((definition) => ({
   ...definition,
-  coachImage: definition.id === 'kneeling-drive' ? kneelingDriveReady : canonicalCoach,
-  coachVideo: definition.id === 'kneeling-drive' ? kneelingDriveCoachVideo : undefined,
+  coachImage: definition.id === 'kneeling-drive'
+    ? kneelingDriveReady
+    : definition.id === 'butterfly-open'
+      ? butterflyOpenReady
+      : canonicalCoach,
+  coachVideo: definition.id === 'kneeling-drive'
+    ? kneelingDriveCoachVideo
+    : definition.id === 'butterfly-open'
+      ? butterflyOpenCoachVideo
+      : undefined,
 }));
 
 export function movementById(id: string | undefined): Movement {
