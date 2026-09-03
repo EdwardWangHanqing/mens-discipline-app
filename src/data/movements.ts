@@ -18,6 +18,8 @@ const kneelingDriveReady = require('../../assets/images/kneeling-drive-ready.png
 const kneelingDriveCoachVideo = require('../../assets/videos/kneeling-drive-coach-muted.mp4');
 const butterflyOpenReady = require('../../assets/images/butterfly-open-ready.png');
 const butterflyOpenCoachVideo = require('../../assets/videos/butterfly-open-coach-muted.mp4');
+const bridgeExtensionReady = require('../../assets/images/bridge-extension-ready.png');
+const bridgeExtensionCoachVideo = require('../../assets/videos/bridge-extension-coach-muted.mp4');
 
 // Production movement quantities are sourced from the Owner's
 // "Movement Pool and Reveal Update". Coach media remains replaceable.
@@ -27,12 +29,16 @@ export const movements: Movement[] = movementDefinitions.map((definition) => ({
     ? kneelingDriveReady
     : definition.id === 'butterfly-open'
       ? butterflyOpenReady
-      : canonicalCoach,
+      : definition.id === 'bridge-extension'
+        ? bridgeExtensionReady
+        : canonicalCoach,
   coachVideo: definition.id === 'kneeling-drive'
     ? kneelingDriveCoachVideo
     : definition.id === 'butterfly-open'
       ? butterflyOpenCoachVideo
-      : undefined,
+      : definition.id === 'bridge-extension'
+        ? bridgeExtensionCoachVideo
+        : undefined,
 }));
 
 export function movementById(id: string | undefined): Movement {
